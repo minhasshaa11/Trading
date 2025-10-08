@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packages - Trading App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; padding-bottom: 80px; background-color: #0c1021; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; display: flex; justify-content: space-around; z-index: 1000; background-color: #111827; border-top: 1px solid #374151; padding: 8px 0; }
+        .nav-link { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; text-decoration: none; color: #9ca3af; font-weight: 500; font-size: 0.8rem; transition: all 0.2s ease-in-out; padding: 4px 0; gap: 4px; }
+        .nav-link svg { width: 24px; height: 24px; }
+        .nav-link.active { color: #111827; font-weight: 700; background-color: #f59e0b; border-radius: 16px; padding: 8px 12px; margin: -4px 0; box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
+        .card { background-color: rgba(31, 41, 55, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.7); display: none; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-box { background-color: #1f2937; border-radius: 1rem; padding: 2rem; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #374151; }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-gray-100">
+    <script>
+        if (!localStorage.getItem('authToken')) window.location.href = '/login.html';
+    </script>
+
+    <div class="container mx-auto p-4">
+        <header class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-white">Investment Packages</h1>
+                <p class="text-gray-400">Select a package to start earning daily profits.</p>
+            </div>
+            <div>
+                <p class="text-lg">Balance: <span id="balance-display" class="font-bold text-green-400">$0.00</span></p>
+            </div>
+        </header>
+
+        <main id="packages-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></main>
+        <div id="status-message" class="text-center mt-6 min-h-[24px] font-semibold"></div>
+    </div>
+
+    <div id="custom-confirm-modal" class="modal-overlay">
+        <div class="modal-box text-center">
+            <h2 id="modal-title" class="text-xl font-bold text-white mb-4">Confirm Purchase</h2>
+            <p id="modal-text" class="text-gray-300 mb-6">Are you sure you want to purchase this package?</p>
+            <div class="flex justify-center gap-4">
+                <button id="modal-cancel-btn" class="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-700 rounded-lg font-semibold">Cancel</button>
+                <button id="modal-confirm-btn" class="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-link" id="nav-dashboard"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>Dashboard</span></a>
+        <a href="packages.html" class="nav-link" id="nav-packages"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg><span>Packages</span></a>
+        <a href="earning.html" class="nav-link" id="nav-earning"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg><span>Earn</span></a>
+        <a href="wallet.html" class="nav-link" id="nav-wallet"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg><span>Wallet</span></a>
+        <a href="profile.html" class="nav-link" id="nav-profile"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><span>Profile</span></a>
+    </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLink = document.getElementById('nav-packages');
+            if (navLink) navLink.classList.add('active');
+
+            const token = localStorage.getItem('authToken');
+            const headers = { 'Content-Type': 'application/json', 'x-auth-token': token };
+
+            const balanceDisplay = document.getElementById('balance-display');
+            const packagesContainer = document.getElementById('packages-container');
+            const statusMessage = document.getElementById('status-message');
+            
+            const modal = document.getElementById('custom-confirm-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalText = document.getElementById('modal-text');
+            const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+            const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+            let activeUserPackage = null;
+
+            const packages = {
+                "Bronze": { price: 20, dailyProfit: 1, durationDays: 30 },
+                "Silver": { price: 100, dailyProfit: 5.5, durationDays: 30 },
+                "Gold": { price: 200, dailyProfit: 12, durationDays: 30 },
+                "Platinum": { price: 500, dailyProfit: 32.5, durationDays: 30 },
+                "Diamond": { price: 1000, dailyProfit: 70, durationDays: 30 },
+            };
+
+            function showCustomConfirm(packageName, onConfirm) {
+                modalTitle.textContent = `Confirm Purchase`;
+                modalText.textContent = `Are you sure you want to purchase the ${packageName} Plan?`;
+                modal.style.display = 'flex';
+
+                const confirmHandler = () => {
+                    onConfirm();
+                    modal.style.display = 'none';
+                    cleanup();
+                };
+
+                const cancelHandler = () => {
+                    modal.style.display = 'none';
+                    cleanup();
+                };
+
+                const cleanup = () => {
+                    modalConfirmBtn.removeEventListener('click', confirmHandler);
+                    modalCancelBtn.removeEventListener('click', cancelHandler);
+                };
+
+                modalConfirmBtn.addEventListener('click', confirmHandler);
+                modalCancelBtn.addEventListener('click', cancelHandler);
+            }
+
+            function showStatus(message, isError = false) {
+                statusMessage.textContent = message;
+                statusMessage.className = `text-center mt-6 min-h-[24px] font-semibold ${isError ? 'text-red-400' : 'text-green-500'}`;
+            }
+
+            async function fetchUserStatus() {
+                try {
+                    const response = await fetch('/api/user/info', { headers });
+                    const result = await response.json();
+                    if (result.success) {
+                        balanceDisplay.textContent = `$${result.user.balance.toFixed(2)}`;
+                        activeUserPackage = result.user.active_package;
+                        renderPackages();
+                    } else {
+                        console.error('Failed to fetch user status:', result.message);
+                    }
+                } catch (error) {
+                    console.error('Error fetching user status:', error);
+                }
+            }
+
+            async function purchasePackage(packageName) {
+                showCustomConfirm(packageName, async () => {
+                    showStatus('Processing your purchase...', false);
+                    try {
+                        const response = await fetch('/api/user/purchase-package', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({ packageName: packageName })
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            showStatus(result.message, false);
+                            fetchUserStatus();
+                        } else {
+                            showStatus(result.message, true);
+                        }
+                    } catch (error) {
+                        showStatus('An error occurred. Please try again.', true);
+                    }
+                });
+            }
+
+            function renderPackages() {
+                packagesContainer.innerHTML = '';
+                for (const [name, details] of Object.entries(packages)) {
+                    const totalProfit = details.dailyProfit * details.durationDays;
+                    const card = document.createElement('div');
+                    card.className = 'card p-6 rounded-xl shadow-lg flex flex-col';
+
+                    let buttonHtml = '';
+                    if (activeUserPackage === name) {
+                        buttonHtml = `<button disabled class="mt-6 w-full py-3 font-bold text-white bg-green-600 rounded-lg cursor-default">Plan Activated</button>`;
+                    } else {
+                        buttonHtml = `<button class="purchase-btn mt-6 w-full py-3 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg">Activate Plan</button>`;
+                    }
+
+                    card.innerHTML = `
+                        <h2 class="text-xl font-bold text-white mb-2">${name} Plan</h2>
+                        <p class="text-3xl font-bold text-yellow-400 mb-4">$${details.price.toLocaleString()}</p>
+                        <ul class="text-gray-300 space-y-2 flex-grow">
+                            <li><strong>Daily Profit:</strong> $${details.dailyProfit.toLocaleString()}</li>
+                            <li><strong>Duration:</strong> ${details.durationDays} Days</li>
+                            <li><strong>Total Profit:</strong> $${totalProfit.toLocaleString()}</li>
+                        </ul>
+                        ${buttonHtml}
+                    `;
+                    
+                    const purchaseBtn = card.querySelector('.purchase-btn');
+                    if (purchaseBtn) {
+                        purchaseBtn.addEventListener('click', () => purchasePackage(name));
+                    }
+                    
+                    packagesContainer.appendChild(card);
+                }
+            }
+            
+            fetchUserStatus();
+        });
+    </script>
+</body>
+</html>

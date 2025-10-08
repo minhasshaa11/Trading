@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Earning - Investment Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            padding-bottom: 80px; 
+            background-color: #0c1021;
+            background-image: radial-gradient(circle at top, rgba(31, 41, 55, 0.5) 0%, #0c1021 50%);
+        }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; display: flex; justify-content: space-around; z-index: 1000; background-color: #111827; border-top: 1px solid #374151; padding: 8px 0; }
+        .nav-link { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; text-decoration: none; color: #9ca3af; font-weight: 500; font-size: 0.8rem; transition: all 0.2s ease-in-out; padding: 4px 0; gap: 4px; }
+        .nav-link svg { width: 24px; height: 24px; }
+        .nav-link.active { color: #111827; font-weight: 700; background-color: #f59e0b; border-radius: 16px; padding: 8px 12px; margin: -4px 0; box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
+        .card { background-color: rgba(31, 41, 55, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex flex-col items-center justify-center min-h-screen">
+
+    <script>
+        // Authentication check
+        const token = localStorage.getItem('authToken');
+        if (!token) { window.location.href = '/login.html'; }
+    </script>
+
+    <main class="w-full max-w-md p-4 text-center">
+        <div id="earning-card" class="card p-8 rounded-2xl shadow-lg">
+            <div id="loader">
+                <p class="text-gray-400">Loading your earning status...</p>
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-link" id="nav-dashboard">
+             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <span>Dashboard</span>
+        </a>
+        <a href="packages.html" class="nav-link" id="nav-packages">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <span>Packages</span>
+        </a>
+        <a href="earning.html" class="nav-link" id="nav-earning">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <span>Earn</span>
+        </a>
+        <a href="wallet.html" class="nav-link" id="nav-wallet">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+            <span>Wallet</span>
+        </a>
+        <a href="profile.html" class="nav-link" id="nav-profile">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLink = document.getElementById('nav-earning');
+            if(navLink) navLink.classList.add('active');
+
+            const token = localStorage.getItem('authToken');
+            const headers = { 'Content-Type': 'application/json', 'x-auth-token': token };
+            
+            const earningCard = document.getElementById('earning-card');
+            let countdownInterval;
+
+            // --- UI RENDERING FUNCTIONS ---
+            function showReadyToClaim(profitAmount) {
+                earningCard.innerHTML = `
+                    <h1 class="text-2xl font-bold text-white mb-2">Claim Your Daily Profit</h1>
+                    <p class="text-gray-400 mb-6">Your profit of <span class="font-bold text-yellow-400">$${profitAmount.toLocaleString()}</span> is ready.</p>
+                    <button id="claim-btn" class="w-full bg-gradient-to-br from-green-500 to-teal-600 text-white font-bold py-4 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                        Claim Now
+                    </button>
+                    <p id="status-message" class="text-sm mt-4 min-h-[20px]"></p>
+                `;
+                document.getElementById('claim-btn').addEventListener('click', handleClaim);
+            }
+
+            function showWaiting(nextClaimTime) {
+                earningCard.innerHTML = `
+                    <h1 class="text-2xl font-bold text-white mb-2">Profit Claimed</h1>
+                    <p class="text-gray-400 mb-6">You can claim your next profit in:</p>
+                    <div id="countdown" class="text-4xl font-bold text-yellow-400 font-mono">--:--:--</div>
+                `;
+                startCountdown(nextClaimTime);
+            }
+
+            function showError(message) {
+                earningCard.innerHTML = `
+                    <h1 class="text-xl font-bold text-red-400 mb-2">Unable to Claim</h1>
+                    <p class="text-gray-400 mb-6">${message}</p>
+                    <a href="packages.html" class="text-blue-400 hover:underline">View Packages</a>
+                `;
+            }
+
+            // --- COUNTDOWN LOGIC ---
+            function startCountdown(endTime) {
+                if (countdownInterval) clearInterval(countdownInterval);
+                const countdownElem = document.getElementById('countdown');
+
+                countdownInterval = setInterval(() => {
+                    const now = new Date().getTime();
+                    const distance = endTime - now;
+
+                    if (distance < 0) {
+                        clearInterval(countdownInterval);
+                        countdownElem.textContent = "00:00:00";
+                        location.reload(); // Reload the page when the timer finishes
+                        return;
+                    }
+
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    countdownElem.textContent = 
+                        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }, 1000);
+            }
+
+            // --- API CALLS ---
+            async function handleClaim() {
+                const claimBtn = document.getElementById('claim-btn');
+                const statusMessage = document.getElementById('status-message');
+                claimBtn.disabled = true;
+                claimBtn.textContent = 'Processing...';
+
+                try {
+                    const response = await fetch('/api/user/claim-earnings', {
+                        method: 'POST',
+                        headers: headers 
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        fetchUserStatus(); // Re-fetch status to show the countdown
+                    } else {
+                        statusMessage.className = 'text-sm mt-4 min-h-[20px] text-red-400';
+                        statusMessage.textContent = result.message;
+                        claimBtn.disabled = false;
+                        claimBtn.textContent = 'Claim Now';
+                    }
+                } catch (error) {
+                    statusMessage.className = 'text-sm mt-4 min-h-[20px] text-red-400';
+                    statusMessage.textContent = 'An error occurred.';
+                    claimBtn.disabled = false;
+                    claimBtn.textContent = 'Claim Now';
+                }
+            }
+            
+            async function fetchUserStatus() {
+                try {
+                    const response = await fetch('/api/user/info', { headers });
+                    const result = await response.json();
+                    
+                    if (!result.success) {
+                        showError("Could not verify your account status.");
+                        return;
+                    }
+                    
+                    const user = result.user;
+                    if (!user.active_package) {
+                        showError("You do not have an active investment package.");
+                        return;
+                    }
+                    if (new Date() > new Date(user.package_expiry_date)) {
+                        showError("Your investment package has expired.");
+                        return;
+                    }
+
+                    const todayReset = new Date();
+                    todayReset.setUTCHours(0, 0, 0, 0); // Midnight UTC (5 AM PKT)
+
+                    if (user.last_claim_timestamp && new Date(user.last_claim_timestamp) > todayReset) {
+                        const tomorrowReset = new Date(todayReset.getTime() + 24 * 60 * 60 * 1000);
+                        showWaiting(tomorrowReset.getTime());
+                    } else {
+                        const profitMap = { "Bronze": 1, "Silver": 5.5, "Gold": 12, "Platinum": 32.5, "Diamond": 70 };
+                        const profit = profitMap[user.active_package] || 0;
+                        showReadyToClaim(profit);
+                    }
+                } catch (error) {
+                    showError("Could not connect to the server.");
+                }
+            }
+
+            // Initial load
+            fetchUserStatus();
+        });
+    </script>
+</body>
+</html>
