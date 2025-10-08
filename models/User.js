@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 // MODIFIED: Added tax and finalAmount to record withdrawal details
 const transactionSchema = new mongoose.Schema({
