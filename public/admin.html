@@ -31,10 +31,8 @@
         <div class="mb-4 border-b border-gray-700">
             <nav class="flex flex-wrap space-x-4" aria-label="Tabs">
                 <button class="tab-button active font-medium px-3 py-2 rounded-t-lg" data-tab="transactions">Transactions</button>
-                <button class="tab-button font-medium px-3 py-2 rounded-t-lg" data-tab="volume">Live Volume</button>
                 <button class="tab-button font-medium px-3 py-2 rounded-t-lg" data-tab="credit">Manual Credit</button>
                 <button class="tab-button font-medium px-3 py-2 rounded-t-lg" data-tab="commission">Commission</button>
-                <button class="tab-button font-medium px-3 py-2 rounded-t-lg" data-tab="market">Market Control</button>
             </nav>
         </div>
 
@@ -59,24 +57,6 @@
                         <tbody id="users-table-body"></tbody>
                     </table>
                 </div>
-            </div>
-
-            <div id="volume-tab" class="tab-content">
-                 <div class="bg-gray-800 rounded-lg p-4">
-                     <h2 class="text-xl font-bold mb-4">Live Trade Exposure</h2>
-                     <p class="text-sm text-gray-400 mb-4">This shows the total amount of money in active trades for each direction.</p>
-                     <table class="min-w-full">
-                         <thead class="bg-gray-700">
-                             <tr>
-                                 <th class="p-3 text-left text-sm font-semibold">Pair</th>
-                                 <th class="p-3 text-left text-sm font-semibold">Total UP Volume</th>
-                                 <th class="p-3 text-left text-sm font-semibold">Total DOWN Volume</th>
-                                 <th class="p-3 text-left text-sm font-semibold">Net Exposure</th>
-                             </tr>
-                         </thead>
-                         <tbody id="volume-table-body"></tbody>
-                     </table>
-                 </div>
             </div>
 
             <div id="credit-tab" class="tab-content">
@@ -113,20 +93,6 @@
                  </div>
             </div>
 
-            <div id="market-tab" class="tab-content">
-                 <div class="bg-gray-800 rounded-lg p-6 max-w-md mx-auto text-center">
-                     <h2 class="text-xl font-bold mb-4">Force Current Candle</h2>
-                     <div class="mb-4">
-                         <label for="pair-select" class="block mb-2 text-sm font-medium">Select Trading Pair</label>
-                         <select id="pair-select" class="w-full bg-gray-700 p-2 rounded"></select>
-                     </div>
-                     <p class="mb-2">Current Status for Selected Pair: <strong id="market-status" class="text-xl"></strong></p>
-                     <div class="flex justify-center space-x-4 mt-4">
-                         <button class="market-btn bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded" data-direction="up">Force UP</button>
-                         <button class="market-btn bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded" data-direction="down">Force DOWN</button>
-                     </div>
-                 </div>
-            </div>
         </div>
     </div>
 
@@ -145,9 +111,6 @@
             const searchInput = document.getElementById('search-input');
             const creditForm = document.getElementById('credit-form');
             const commissionForm = document.getElementById('commission-form');
-            const marketStatusEl = document.getElementById('market-status');
-            const pairSelect = document.getElementById('pair-select');
-            const volumeTableBody = document.getElementById('volume-table-body');
 
             const tabs = document.querySelectorAll('.tab-button');
             const tabContents = document.querySelectorAll('.tab-content');
@@ -183,9 +146,7 @@
                         const pendingDeposits = user.transactions.filter(tx => tx.status === 'pending_review');
                         let depositsHTML = pendingDeposits.length > 0 ? '' : '<p class="text-gray-500 text-xs">None</p>';
                         
-                        // --- MODIFIED DEPOSIT HTML GENERATION ---
                         pendingDeposits.forEach(tx => {
-                            // Now displays the amount and removes the unneeded input field
                             depositsHTML += `<div class="my-2 p-2 bg-gray-700 rounded">
                                 <p class="font-bold text-green-400">$${(tx.amount || 0).toFixed(2)}</p>
                                 <p class="text-xs break-all"><strong>TXID:</strong> ${tx.txid}</p>
@@ -195,7 +156,6 @@
                                 </div>
                             </div>`;
                         });
-                        // ------------------------------------------
 
                         const pendingWithdrawals = user.transactions.filter(tx => tx.status === 'pending_processing');
                         let withdrawalsHTML = pendingWithdrawals.length > 0 ? '' : '<p class="text-gray-500 text-xs">None</p>';
@@ -209,8 +169,14 @@
                         const formattedDeposits = (user.totalDeposits || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
                         const formattedVolume = (user.totalTradeVolume || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
+                        const userInfoHTML = `
+                            <div>
+                                <strong>${user.username}</strong>
+                                <p class="text-xs text-gray-400">${user.email || 'No email'}</p>
+                            </div>`;
+
                         row.innerHTML = `
-                            <td class="p-3 align-top text-sm"><strong>${user.username}</strong></td>
+                            <td class="p-3 align-top text-sm">${userInfoHTML}</td>
                             <td class="p-3 align-top text-sm font-mono">${formattedBalance}</td>
                             <td class="p-3 align-top text-sm font-mono">${formattedDeposits}</td>
                             <td class="p-3 align-top text-sm font-mono">${formattedVolume}</td>
@@ -220,33 +186,34 @@
                         usersTableBody.appendChild(row);
                     });
 
-                    // This part for volume and market control is unchanged
-                    const volumeByPair = {};
-                    (data.tradePairs || []).forEach(pair => { volumeByPair[pair] = { UP: 0, DOWN: 0 }; });
-                    (data.tradeVolume || []).forEach(item => { if (volumeByPair[item._id.asset]) { volumeByPair[item._id.asset][item._id.direction] = item.totalAmount; } });
-                    volumeTableBody.innerHTML = '';
-                    for (const pair in volumeByPair) {
-                        const upVolume = volumeByPair[pair].UP;
-                        const downVolume = volumeByPair[pair].DOWN;
-                        const netExposure = upVolume - downVolume;
-                        const netColor = netExposure > 0 ? 'text-green-400' : (netExposure < 0 ? 'text-red-400' : '');
-                        const rowHTML = `<tr><td class="p-3 font-bold">${pair}</td><td class="p-3 text-green-400">$${upVolume.toFixed(2)}</td><td class="p-3 text-red-400">$${downVolume.toFixed(2)}</td><td class="p-3 font-bold ${netColor}">$${netExposure.toFixed(2)}</td></tr>`;
-                        volumeTableBody.innerHTML += rowHTML;
-                    }
-                    if (pairSelect.options.length === 0 && data.tradePairs) { data.tradePairs.forEach(pair => { const option = document.createElement('option'); option.value = pair; option.textContent = pair; pairSelect.appendChild(option); }); }
-                    if (data.marketStatus) { updateMarketStatus(data.marketStatus); }
-
                 } catch (error) {
                     alert(`Error fetching data: ${error.message}`);
                     showLogin();
                 }
             };
 
-            const updateMarketStatus = (marketStatus) => { /* ... (existing code unchanged) ... */ };
-
-            const handleApiAction = async (url, body) => { /* ... (existing code unchanged) ... */ };
+            const handleApiAction = async (url, body) => {
+                 const adminKey = getAdminKey();
+                 try {
+                     const response = await fetch(url, {
+                         method: 'POST',
+                         headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+                         body: JSON.stringify(body)
+                     });
+                     const result = await response.json();
+                     if (!result.success) throw new Error(result.message);
+                     alert(result.message);
+                     fetchData();
+                 } catch (error) {
+                     alert(`Error: ${error.message}`);
+                 }
+            };
             
-            const showLogin = () => { /* ... (existing code unchanged) ... */ };
+            const showLogin = () => {
+                sessionStorage.removeItem('adminKey');
+                loginModal.style.display = 'flex';
+                dashboardContent.classList.add('hidden');
+            };
 
             loginButton.addEventListener('click', () => {
                 const key = adminKeyInput.value;
@@ -257,13 +224,10 @@
             searchInput.addEventListener('input', fetchData);
 
             usersTableBody.addEventListener('click', e => {
-                // --- MODIFIED 'approve-deposit-btn' LOGIC ---
                 if (e.target.classList.contains('approve-deposit-btn')) {
-                    // Now gets the amount from the button's data attribute instead of an input
                     const amount = e.target.dataset.amount;
                     handleApiAction('/api/admin/approve-deposit', { userId: e.target.dataset.userid, txid: e.target.dataset.txid, amount: parseFloat(amount) });
                 }
-                // ------------------------------------------
                 if (e.target.classList.contains('reject-deposit-btn')) {
                     handleApiAction('/api/admin/reject-deposit', { userId: e.target.dataset.userid, txid: e.target.dataset.txid });
                 }
@@ -271,15 +235,26 @@
                     handleApiAction('/api/admin/approve-withdrawal', { userId: e.target.dataset.userid, txid: e.target.dataset.txid });
                 }
                 if (e.target.classList.contains('reject-withdrawal-btn')) {
-                    handleApiAction('/api/admin/reject-withdrawal', { userId: e.g.dataset.userid, txid: e.target.dataset.txid });
+                    handleApiAction('/api/admin/reject-withdrawal', { userId: e.target.dataset.userid, txid: e.target.dataset.txid });
                 }
             });
 
-            creditForm.addEventListener('submit', e => { /* ... (existing code unchanged) ... */ });
-            commissionForm.addEventListener('submit', e => { /* ... (existing code unchanged) ... */ });
-            document.querySelectorAll('.market-btn').forEach(button => { /* ... (existing code unchanged) ... */ });
-            pairSelect.addEventListener('change', fetchData);
+            creditForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const username = document.getElementById('credit-username').value;
+                const amount = document.getElementById('credit-amount').value;
+                handleApiAction('/api/admin/credit-user', { username, amount });
+                creditForm.reset();
+            });
 
+            commissionForm.addEventListener('submit', e => {
+                e.preventDefault();
+                const username = document.getElementById('commission-username').value;
+                const amount = document.getElementById('commission-amount').value;
+                handleApiAction('/api/admin/give-commission', { username, amount });
+                commissionForm.reset();
+            });
+            
             if (getAdminKey()) { fetchData(); } else { showLogin(); }
         });
     </script>
