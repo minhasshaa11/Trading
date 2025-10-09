@@ -151,7 +151,7 @@
             const navLink = document.getElementById('nav-wallet');
             if(navLink) navLink.classList.add('active');
 
-            // --- Deposit Tab Elements and Logic (Unchanged) ---
+            // --- Deposit Tab Elements ---
             const loadingSpinner_d = document.getElementById('loading-spinner-deposit');
             const errorContainer_d = document.getElementById('error-message-container-deposit');
             const errorMessageEl_d = document.getElementById('error-message-deposit');
@@ -165,12 +165,8 @@
             const submitTxidButton_d = document.getElementById('submit-txid-button');
             const historyContainer_d = document.getElementById('history-container-deposit');
             const historyLoading_d = document.getElementById('history-loading-deposit');
-            const fetchDepositAddress = async () => { /* ... (existing code unchanged) ... */ };
-            const fetchDepositHistory = async () => { /* ... (existing code unchanged) ... */ };
-            copyButton_d.addEventListener('click', () => { /* ... (existing code unchanged) ... */ });
-            txidForm_d.addEventListener('submit', async (event) => { /* ... (existing code unchanged) ... */ });
 
-            // --- Withdraw Tab Elements and Logic (UPDATED) ---
+            // --- Withdraw Tab Elements ---
             const balanceDisplay_w = document.getElementById('balance-display-withdraw');
             const withdrawForm_w = document.getElementById('withdraw-form');
             const amountInput_w = document.getElementById('amount-input-withdraw');
@@ -183,6 +179,73 @@
             // Define the minimum withdrawal amount to match the backend
             const MINIMUM_WITHDRAWAL = 10;
 
+            // --- RESTORED DEPOSIT LOGIC ---
+            const fetchDepositAddress = async () => {
+                try {
+                    const response = await fetch('/api/deposit/address', { headers });
+                    const data = await response.json();
+                    loadingSpinner_d.classList.add('hidden');
+                    if (data.success) {
+                        depositAddressEl_d.textContent = data.address;
+                        addressContainer_d.classList.remove('hidden');
+                    } else { throw new Error(data.message || 'Could not generate deposit address.'); }
+                } catch (err) {
+                    loadingSpinner_d.classList.add('hidden');
+                    errorMessageEl_d.textContent = err.message;
+                    errorContainer_d.classList.remove('hidden');
+                }
+            };
+            const fetchDepositHistory = async () => {
+                try {
+                    const response = await fetch('/api/deposit/history', { headers });
+                    const data = await response.json();
+                    historyLoading_d.classList.add('hidden');
+                    if (data.success && data.history.length > 0) {
+                        historyContainer_d.innerHTML = '';
+                        data.history.forEach(tx => {
+                            const txDate = new Date(tx.date).toLocaleString();
+                            const statusColor = tx.status === 'completed' ? 'text-green-400' : (tx.status === 'rejected' ? 'text-red-400' : 'text-yellow-400');
+                            const statusText = tx.status.replace('_', ' ');
+                            historyContainer_d.innerHTML += `<div class="bg-gray-900 p-3 rounded-lg flex justify-between items-center text-sm"><div><p class="text-gray-400"><a href="https://etherscan.io/tx/${tx.txid}" target="_blank" class="text-blue-400 hover:underline truncate" title="${tx.txid}">${tx.txid.substring(0, 10)}...</a></p><p class="text-xs text-gray-500">${txDate}</p></div><div class="font-semibold ${statusColor} capitalize">${statusText}</div></div>`;
+                        });
+                    } else { historyContainer_d.innerHTML = '<p class="text-gray-500 text-center">No deposit history found.</p>';}
+                } catch (err) {
+                    historyLoading_d.classList.add('hidden');
+                    historyContainer_d.innerHTML = '<p class="text-red-400 text-center">Could not load history.</p>';
+                }
+            };
+            copyButton_d.addEventListener('click', () => {
+                navigator.clipboard.writeText(depositAddressEl_d.textContent).then(() => {
+                    copyButton_d.textContent = 'Copied!';
+                    setTimeout(() => { copyButton_d.textContent = 'Copy'; }, 2000);
+                });
+            });
+            txidForm_d.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                submitTxidButton_d.disabled = true;
+                submitTxidButton_d.textContent = 'Submitting...';
+                try {
+                    const response = await fetch('/api/deposit/verify', {
+                        method: 'POST', headers: headers,
+                        body: JSON.stringify({ txid: txidInput_d.value.trim(), amount: parseFloat(amountInput_d.value) })
+                    });
+                    const result = await response.json();
+                    if (!result.success) throw new Error(result.message);
+                    formMessage_d.className = 'mt-4 text-center text-sm text-green-400';
+                    formMessage_d.textContent = result.message;
+                    txidForm_d.reset();
+                    fetchDepositHistory();
+                } catch (error) {
+                    formMessage_d.className = 'mt-4 text-center text-sm text-red-400';
+                    formMessage_d.textContent = error.message;
+                } finally {
+                    submitTxidButton_d.disabled = false;
+                    submitTxidButton_d.textContent = 'Submit for Verification';
+                }
+            });
+            // --- END OF RESTORED LOGIC ---
+
+            // --- WITHDRAWAL LOGIC ---
             const fetchUserData_w = async () => {
                 try {
                     const response = await fetch('/api/user/info', { headers });
@@ -220,6 +283,7 @@
                 // --- NEW VALIDATION CHECK ---
                 const amount = parseFloat(amountInput_w.value);
                 if (isNaN(amount) || amount < MINIMUM_WITHDRAWAL) {
+                    // Changed to use the form message element instead of alert()
                     formMessage_w.className = 'mt-4 text-center text-sm text-red-400';
                     formMessage_w.textContent = `Minimum withdrawal amount is $${MINIMUM_WITHDRAWAL}.`;
                     return; // Stop the function here
