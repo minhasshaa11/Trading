@@ -2,13 +2,13 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const crypto = require('crypto'); // Needed to generate random codes
+const crypto = require('crypto');
 
 // --- REGISTER A NEW USER ---
 router.post('/register', async (req, res) => {
     try {
-        // ✅ CHANGED: Added 'refCode' to the request body
-        const { username, email, password, confirmPassword, region, refCode } = req.body;
+        // MODIFIED: Now also accepts a parameter from Telegram
+        const { username, email, password, confirmPassword, region, refCode, telegramStartParam } = req.body;
 
         if (!username || !email || !password || !confirmPassword || !region) {  
             return res.status(400).json({ message: "All fields are required." });  
@@ -18,20 +18,24 @@ router.post('/register', async (req, res) => {
         }  
 
         let referredBy = null;
-        let referrer = null; // We need the full referrer object
-        // If a referral code was provided, find the user who owns it
-        if (refCode) {
-            referrer = await User.findOne({ referralCode: refCode });
+        let referrer = null;
+        
+        // --- MODIFIED: Prioritize Telegram's start parameter for referral code ---
+        const finalRefCode = telegramStartParam || refCode;
+
+        // If a referral code was provided (from either source), find the user who owns it
+        if (finalRefCode) {
+            referrer = await User.findOne({ referralCode: finalRefCode });
             if (referrer) {
                 referredBy = referrer._id;
             }
         }
+        // -------------------------------------------------------------------------
 
         // Create a new user, including the referrer's ID if found
         const user = new User({ username, email, password, region, referredBy });  
         
-        // ✅ NEW: Generate a unique referral code for the new user
-        // This loop ensures the generated code is truly unique
+        // Generate a unique referral code for the new user (unchanged)
         let isUnique = false;
         let referralCode = '';
         while (!isUnique) {
@@ -45,13 +49,11 @@ router.post('/register', async (req, res) => {
 
         await user.save();  
 
-        // --- NEW LOGIC TO INCREMENT REFERRAL COUNT ---
-        // If the new user was referred, find the referrer and increment their count.
+        // Increment referral count logic (unchanged)
         if (referrer) {
             referrer.referralCount += 1;
             await referrer.save();
         }
-        // ---------------------------------------------
 
         res.status(201).json({ message: "User registered successfully. Please log in." });
 
@@ -69,7 +71,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// --- LOGIN A USER ---
+// --- LOGIN A USER (Unchanged) ---
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
