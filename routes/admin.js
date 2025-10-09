@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-// REMOVED: No longer need the Trade model or variables from index.js
 
 // Admin security middleware (unchanged)
 const adminAuth = (req, res, next) => {
@@ -14,10 +13,11 @@ const adminAuth = (req, res, next) => {
 
 router.use(adminAuth);
 
-// GET all admin data (SIMPLIFIED)
+// GET all admin data (This was already correct)
 router.get('/data', async (req, res) => {
     try {
         const searchQuery = req.query.search ? { username: new RegExp(req.query.search, 'i') } : {};
+        // This line correctly sends all transaction data, including the amount.
         const users = await User.find(searchQuery).populate('referredBy', 'username').sort({ createdAt: -1 });
         
         res.json({
@@ -31,31 +31,41 @@ router.get('/data', async (req, res) => {
 
 // --- DEPOSIT & WITHDRAWAL MANAGEMENT ---
 router.post('/approve-deposit', async (req, res) => {
-    const { userId, txid, amount } = req.body;
-    if (!userId || !txid || !amount || isNaN(parseFloat(amount))) {
+    // --- MODIFIED: We no longer need the amount from the request body ---
+    const { userId, txid } = req.body;
+    if (!userId || !txid) {
         return res.status(400).json({ success: false, message: "Missing required fields." });
     }
+    // -------------------------------------------------------------------
     try {
         const user = await User.findById(userId);
         if (!user) return res.status(404).json({ success: false, message: "User not found." });
+        
         const transaction = user.transactions.find(tx => tx.txid === txid);
         if (!transaction || transaction.status !== 'pending_review') {
             return res.status(400).json({ success: false, message: "Transaction not found or already processed." });
         }
         
-        const depositAmount = parseFloat(amount);
+        // --- MODIFIED: Use the amount from the transaction record for security ---
+        const depositAmount = parseFloat(transaction.amount);
+        if (isNaN(depositAmount)) {
+            return res.status(400).json({ success: false, message: "Invalid transaction amount stored." });
+        }
+        // -----------------------------------------------------------------------
+
         transaction.status = 'completed';
         user.balance += depositAmount;
         user.totalDeposits = (user.totalDeposits || 0) + depositAmount;
         
         await user.save();
-        res.json({ success: true, message: `Deposit approved. New balance: ${user.balance.toFixed(2)}` });
+        res.json({ success: true, message: `Deposit of $${depositAmount.toFixed(2)} approved. New balance: ${user.balance.toFixed(2)}` });
     } catch (error) {
         res.status(500).json({ success: false, message: "Server error during approval." });
     }
 });
 
 router.post('/reject-deposit', async (req, res) => {
+    // This route is unchanged
     const { userId, txid } = req.body;
     try {
         const user = await User.findById(userId);
@@ -71,6 +81,7 @@ router.post('/reject-deposit', async (req, res) => {
     }
 });
 
+// All other routes below are unchanged...
 router.post('/approve-withdrawal', async (req, res) => {
     const { userId, txid } = req.body;
     try {
@@ -106,7 +117,6 @@ router.post('/reject-withdrawal', async (req, res) => {
     }
 });
 
-// --- MANUAL USER CREDIT ---
 router.post('/credit-user', async (req, res) => {
     const { username, amount } = req.body;
     if (!username || !amount || isNaN(parseFloat(amount))) {
@@ -123,7 +133,6 @@ router.post('/credit-user', async (req, res) => {
     }
 });
 
-// --- REFERRAL COMMISSION ---
 router.post('/give-commission', async (req, res) => {
     const { username, amount } = req.body;
     if (!username || !amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
@@ -133,12 +142,7 @@ router.post('/give-commission', async (req, res) => {
         const commissionAmount = parseFloat(amount);
         const user = await User.findOneAndUpdate(
             { username: username }, 
-            { 
-                $inc: { 
-                    balance: commissionAmount,
-                    referralCommissions: commissionAmount 
-                } 
-            },
+            { $inc: { balance: commissionAmount, referralCommissions: commissionAmount } },
             { new: true }
         );
         if (!user) return res.status(404).json({ success: false, message: "User not found." });
