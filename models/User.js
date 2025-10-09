@@ -55,6 +55,17 @@ const userSchema = new mongoose.Schema({
     default: 0
   },
 
+  // --- NEW FIELDS FOR WITHDRAWAL RULES ---
+  withdrawalCount: {
+    type: Number,
+    default: 0
+  },
+  referralCount: {
+    type: Number,
+    default: 0
+  },
+  // ---------------------------------------
+
   // ADDED: Fields for trading volume requirement
   totalDeposits: {
     type: Number,
