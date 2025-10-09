@@ -18,9 +18,10 @@ router.post('/register', async (req, res) => {
         }  
 
         let referredBy = null;
+        let referrer = null; // We need the full referrer object
         // If a referral code was provided, find the user who owns it
         if (refCode) {
-            const referrer = await User.findOne({ referralCode: refCode });
+            referrer = await User.findOne({ referralCode: refCode });
             if (referrer) {
                 referredBy = referrer._id;
             }
@@ -43,6 +44,14 @@ router.post('/register', async (req, res) => {
         user.referralCode = referralCode;
 
         await user.save();  
+
+        // --- NEW LOGIC TO INCREMENT REFERRAL COUNT ---
+        // If the new user was referred, find the referrer and increment their count.
+        if (referrer) {
+            referrer.referralCount += 1;
+            await referrer.save();
+        }
+        // ---------------------------------------------
 
         res.status(201).json({ message: "User registered successfully. Please log in." });
 
