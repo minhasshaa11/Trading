@@ -4,86 +4,63 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const crypto = require('crypto');
 
-// --- REGISTER A NEW USER ---
-router.post('/register', async (req, res) => {
+// --- NEW TELEGRAM LOGIN/REGISTER ROUTE ---
+router.post('/telegram-login', async (req, res) => {
     try {
-        // MODIFIED: Now also accepts a parameter from Telegram
-        const { username, email, password, confirmPassword, region, refCode, telegramStartParam } = req.body;
+        const { telegramUser, telegramStartParam } = req.body;
 
-        if (!username || !email || !password || !confirmPassword || !region) {  
-            return res.status(400).json({ message: "All fields are required." });  
-        }  
-        if (password !== confirmPassword) {  
-            return res.status(400).json({ message: "Passwords do not match." });  
-        }  
+        if (!telegramUser || !telegramUser.id) {
+            return res.status(400).json({ success: false, message: 'Invalid Telegram user data.' });
+        }
 
-        let referredBy = null;
-        let referrer = null;
-        
-        // --- MODIFIED: Prioritize Telegram's start parameter for referral code ---
-        const finalRefCode = telegramStartParam || refCode;
+        // Find a user by their unique Telegram ID
+        let user = await User.findOne({ telegramId: telegramUser.id });
 
-        // If a referral code was provided (from either source), find the user who owns it
-        if (finalRefCode) {
-            referrer = await User.findOne({ referralCode: finalRefCode });
+        // If the user does NOT exist, create a new account
+        if (!user) {
+            let referredBy = null;
+            let referrer = null;
+            
+            // Check if they were referred via a start parameter
+            if (telegramStartParam) {
+                referrer = await User.findOne({ referralCode: telegramStartParam });
+                if (referrer) {
+                    referredBy = referrer._id;
+                }
+            }
+
+            // Generate a unique referral code for the new user
+            let isUnique = false;
+            let referralCode = '';
+            while (!isUnique) {
+                referralCode = `REF-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+                const existingUser = await User.findOne({ referralCode: referralCode });
+                if (!existingUser) {
+                    isUnique = true;
+                }
+            }
+
+            // Create the new user
+            user = new User({
+                telegramId: telegramUser.id,
+                username: telegramUser.username || `user${telegramUser.id}`,
+                firstName: telegramUser.first_name,
+                lastName: telegramUser.last_name,
+                // You no longer need password, email, or region for this login method
+                referralCode: referralCode,
+                referredBy: referredBy
+            });
+            
+            await user.save();
+
+            // If they were referred, update the referrer's count
             if (referrer) {
-                referredBy = referrer._id;
+                referrer.referralCount = (referrer.referralCount || 0) + 1;
+                await referrer.save();
             }
         }
-        // -------------------------------------------------------------------------
 
-        // Create a new user, including the referrer's ID if found
-        const user = new User({ username, email, password, region, referredBy });  
-        
-        // Generate a unique referral code for the new user (unchanged)
-        let isUnique = false;
-        let referralCode = '';
-        while (!isUnique) {
-            referralCode = `REF-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
-            const existingUser = await User.findOne({ referralCode: referralCode });
-            if (!existingUser) {
-                isUnique = true;
-            }
-        }
-        user.referralCode = referralCode;
-
-        await user.save();  
-
-        // Increment referral count logic (unchanged)
-        if (referrer) {
-            referrer.referralCount += 1;
-            await referrer.save();
-        }
-
-        res.status(201).json({ message: "User registered successfully. Please log in." });
-
-    } catch (error) {
-        if (error.code === 11000) {
-            if (error.keyPattern.username) {
-                return res.status(409).json({ message: "Username already exists." });
-            }
-            if (error.keyPattern.email) {
-                return res.status(409).json({ message: "Email is already registered." });
-            }
-        }
-        console.error("Registration Error:", error);  
-        res.status(500).json({ message: "Server error during registration." });
-    }
-});
-
-// --- LOGIN A USER (Unchanged) ---
-router.post('/login', async (req, res) => {
-    try {
-        const { username, password } = req.body;
-        if (!username || !password) {
-            return res.status(400).json({ message: "Username and password are required." });
-        }
-
-        const user = await User.findOne({ username });  
-        if (!user || !(await user.comparePassword(password))) {  
-            return res.status(401).json({ message: "Invalid credentials." });  
-        }  
-        
+        // --- LOGIN THE USER (either existing or newly created) ---
         const payload = { 
             id: user._id,
             username: user.username 
@@ -92,18 +69,14 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
 
         res.json({ 
+            success: true,
             message: "Logged in successfully.", 
-            token,
-            user: {
-                id: user._id,
-                username: user.username,
-                balance: user.balance
-            }
+            token
         });
 
     } catch (error) {
-        console.error("Login Error:", error);
-        res.status(500).json({ message: "Server error during login." });
+        console.error("Telegram Login Error:", error);
+        res.status(500).json({ success: false, message: "Server error during login." });
     }
 });
 
