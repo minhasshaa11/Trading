@@ -19,7 +19,6 @@
 <body class="bg-gray-900 text-gray-100">
 
     <script>
-        // Redirect if not logged in.
         if (!localStorage.getItem('authToken')) { window.location.href = '/login.html'; }
     </script>
 
@@ -93,6 +92,14 @@
                         <div class="bg-gray-700 p-4 rounded-lg"><p class="text-3xl font-bold" id="ref-count">-</p><p class="text-sm text-gray-400">Referred</p></div>
                         <div class="bg-gray-700 p-4 rounded-lg"><p class="text-3xl font-bold text-green-400" id="ref-commissions">$0.00</p><p class="text-sm text-gray-400">Commissions</p></div>
                     </div>
+                    
+                    <!-- RESTORED: Section for the list of referred users -->
+                    <div id="referral-list-section" class="pt-4">
+                        <h3 class="text-lg font-semibold mb-2">Users You've Referred</h3>
+                        <div id="referral-list-container" class="space-y-2 max-h-48 overflow-y-auto">
+                            <p id="referral-list-loading" class="text-gray-400">Loading list...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -117,10 +124,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('nav-profile').classList.add('active');
-
-            // --- FIXED: Using your actual bot username ---
             const BOT_USERNAME = 'bond1xbot'; 
-
             const token = localStorage.getItem('authToken');
             const headers = { 'x-auth-token': token };
 
@@ -143,10 +147,12 @@
             const lifetimeProfitEl = document.getElementById('lifetime-profit');
             const activityContainer = document.getElementById('recent-activity-container');
             const activityLoading = document.getElementById('activity-loading');
+            // RESTORED: Elements for the referral list
+            const referralListContainer = document.getElementById('referral-list-container');
+            const referralListLoading = document.getElementById('referral-list-loading');
 
             const generateColor = (str) => {
-                let hash = 0;
-                if (!str) return '#6b7280';
+                let hash = 0; if (!str) return '#6b7280';
                 for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
                 let color = '#';
                 for (let i = 0; i < 3; i++) {
@@ -157,96 +163,91 @@
             };
 
             // --- API Fetch Functions ---
-            
-            // Fetches main user info (name, balance, package)
             const fetchUserInfo = () => {
-                fetch('/api/user/info', { headers })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            const user = data.user;
-                            const displayName = user.firstName || user.username;
-                            usernameDisplay.textContent = displayName;
-                            joinedDateDisplay.textContent = new Date(user.createdAt).toLocaleDateString();
-                            avatarDiv.textContent = displayName.charAt(0).toUpperCase();
-                            avatarDiv.style.backgroundColor = generateColor(displayName);
-                            balanceDisplay.textContent = `$${user.balance.toFixed(2)}`;
-
-                            packageLoading.style.display = 'none';
-                            if (user.active_package) {
-                                packageNameEl.textContent = user.active_package;
-                                packageExpiryEl.textContent = new Date(user.package_expiry_date).toLocaleDateString();
-                                packageContent.classList.remove('hidden');
-                            } else {
-                                noPackageContent.classList.remove('hidden');
-                            }
+                fetch('/api/user/info', { headers }).then(res => res.json()).then(data => {
+                    if (data.success) {
+                        const user = data.user;
+                        const displayName = user.firstName || user.username;
+                        usernameDisplay.textContent = displayName;
+                        joinedDateDisplay.textContent = new Date(user.createdAt).toLocaleDateString();
+                        avatarDiv.textContent = displayName.charAt(0).toUpperCase();
+                        avatarDiv.style.backgroundColor = generateColor(displayName);
+                        balanceDisplay.textContent = `$${user.balance.toFixed(2)}`;
+                        packageLoading.style.display = 'none';
+                        if (user.active_package) {
+                            packageNameEl.textContent = user.active_package;
+                            packageExpiryEl.textContent = new Date(user.package_expiry_date).toLocaleDateString();
+                            packageContent.classList.remove('hidden');
+                        } else {
+                            noPackageContent.classList.remove('hidden');
                         }
-                    });
+                    }
+                });
             };
 
-            // Fetches referral stats and generates the correct Telegram link
             const fetchReferralInfo = () => {
-                fetch('/api/user/referral-info', { headers })
-                    .then(res => res.json())
-                    .then(data => {
-                        refLoading.style.display = 'none';
-                        if (data.success) {
-                            refContent.classList.remove('hidden');
-                            const referralLink = `https://t.me/${BOT_USERNAME}?start=${data.referralCode}`;
-                            refLinkInput.value = referralLink;
-                            document.getElementById('ref-count').textContent = data.referralCount;
-                            document.getElementById('ref-commissions').textContent = `$${data.totalCommissions.toFixed(2)}`;
-                        }
-                    });
+                fetch('/api/user/referral-info', { headers }).then(res => res.json()).then(data => {
+                    refLoading.style.display = 'none';
+                    if (data.success) {
+                        refContent.classList.remove('hidden');
+                        const referralLink = `https://t.me/${BOT_USERNAME}?start=${data.referralCode}`;
+                        refLinkInput.value = referralLink;
+                        document.getElementById('ref-count').textContent = data.referralCount;
+                        document.getElementById('ref-commissions').textContent = `$${data.totalCommissions.toFixed(2)}`;
+                    }
+                });
             };
 
-            // NEW: Fetches the account financial summary
             const fetchAccountSummary = () => {
-                fetch('/api/user/account-summary', { headers })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            totalDepositedEl.classList.remove('skeleton', 'h-8');
-                            totalWithdrawnEl.classList.remove('skeleton', 'h-8');
-                            lifetimeProfitEl.classList.remove('skeleton', 'h-8');
-                            
-                            totalDepositedEl.textContent = `$${data.summary.totalDeposits.toFixed(2)}`;
-                            totalWithdrawnEl.textContent = `$${data.summary.totalWithdrawals.toFixed(2)}`;
-                            
-                            const profit = data.summary.lifetimeProfit;
-                            lifetimeProfitEl.textContent = `$${profit.toFixed(2)}`;
-                            lifetimeProfitEl.classList.add(profit >= 0 ? 'text-green-400' : 'text-red-400');
-                        }
-                    });
+                fetch('/api/user/account-summary', { headers }).then(res => res.json()).then(data => {
+                    if (data.success) {
+                        totalDepositedEl.classList.remove('skeleton', 'h-8');
+                        totalWithdrawnEl.classList.remove('skeleton', 'h-8');
+                        lifetimeProfitEl.classList.remove('skeleton', 'h-8');
+                        totalDepositedEl.textContent = `$${data.summary.totalDeposits.toFixed(2)}`;
+                        totalWithdrawnEl.textContent = `$${data.summary.totalWithdrawals.toFixed(2)}`;
+                        const profit = data.summary.lifetimeProfit;
+                        lifetimeProfitEl.textContent = `$${profit.toFixed(2)}`;
+                        lifetimeProfitEl.classList.add(profit >= 0 ? 'text-green-400' : 'text-red-400');
+                    }
+                });
             };
             
-            // NEW: Fetches the last few transactions
             const fetchRecentActivity = () => {
-                 fetch('/api/user/recent-activity', { headers })
-                    .then(res => res.json())
-                    .then(data => {
-                        activityLoading.style.display = 'none';
-                        if (data.success && data.activities.length > 0) {
-                             data.activities.forEach(act => {
-                                const statusColors = { 'completed': 'text-green-400', 'pending_review': 'text-yellow-400', 'failed': 'text-red-400' };
-                                const activityEl = document.createElement('div');
-                                activityEl.className = 'flex justify-between items-center bg-gray-700 p-3 rounded-lg';
-                                activityEl.innerHTML = `
-                                    <div>
-                                        <p class="font-semibold capitalize">${act.type}</p>
-                                        <p class="text-xs text-gray-400">${new Date(act.date).toLocaleString()}</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="font-bold text-lg">$${act.amount.toFixed(2)}</p>
-                                        <p class="text-xs font-semibold capitalize ${statusColors[act.status] || 'text-gray-400'}">${act.status.replace('_', ' ')}</p>
-                                    </div>
-                                `;
-                                activityContainer.appendChild(activityEl);
-                            });
-                        } else {
-                            activityContainer.innerHTML = '<p class="text-sm text-gray-500 text-center">No recent activity found.</p>';
-                        }
-                    });
+                 fetch('/api/user/recent-activity', { headers }).then(res => res.json()).then(data => {
+                    activityLoading.style.display = 'none';
+                    if (data.success && data.activities.length > 0) {
+                         data.activities.forEach(act => {
+                            const statusColors = { 'completed': 'text-green-400', 'pending_review': 'text-yellow-400', 'failed': 'text-red-400' };
+                            const activityEl = document.createElement('div');
+                            activityEl.className = 'flex justify-between items-center bg-gray-700 p-3 rounded-lg';
+                            activityEl.innerHTML = `<div><p class="font-semibold capitalize">${act.type}</p><p class="text-xs text-gray-400">${new Date(act.date).toLocaleString()}</p></div><div class="text-right"><p class="font-bold text-lg">$${act.amount.toFixed(2)}</p><p class="text-xs font-semibold capitalize ${statusColors[act.status] || 'text-gray-400'}">${act.status.replace('_', ' ')}</p></div>`;
+                            activityContainer.appendChild(activityEl);
+                        });
+                    } else {
+                        activityContainer.innerHTML = '<p class="text-sm text-gray-500 text-center">No recent activity found.</p>';
+                    }
+                });
+            };
+
+            // RESTORED: Function to fetch and display the list of referred users
+            const fetchMyReferrals = () => {
+                fetch('/api/user/my-referrals', { headers }).then(res => res.json()).then(data => {
+                    referralListLoading.style.display = 'none';
+                    if (data.success && data.referrals.length > 0) {
+                        referralListContainer.innerHTML = ''; // Clear loading message
+                        data.referrals.forEach(ref => {
+                            const joinDate = new Date(ref.createdAt).toLocaleDateString();
+                            const referralEl = document.createElement('div');
+                            referralEl.className = 'flex justify-between items-center bg-gray-900 p-2 rounded';
+                            const displayName = ref.firstName || ref.username; // Use firstName if available
+                            referralEl.innerHTML = `<p class="text-sm font-medium text-white">${displayName}</p><p class="text-xs text-gray-400">Joined: ${joinDate}</p>`;
+                            referralListContainer.appendChild(referralEl);
+                        });
+                    } else {
+                        referralListContainer.innerHTML = '<p class="text-sm text-gray-500 text-center">You have not referred any users yet.</p>';
+                    }
+                });
             };
 
             // --- Event Listeners ---
@@ -262,6 +263,7 @@
             fetchReferralInfo();
             fetchAccountSummary();
             fetchRecentActivity();
+            fetchMyReferrals(); // RESTORED: Call the function to load the list
         });
     </script>
 </body>
