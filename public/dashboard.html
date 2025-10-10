@@ -89,28 +89,25 @@
     </nav>
     
     <script>
-        // Use a function to run all our code to avoid global scope issues
         function main() {
             const mainContent = document.getElementById('main-content');
             const errorDisplay = document.getElementById('error-display');
-            const errorMessage = document.getElementById('error-message');
+            const errorMessageEl = document.getElementById('error-message');
 
             const showError = (message) => {
                 mainContent.style.display = 'none';
-                errorMessage.textContent = message;
+                errorMessageEl.textContent = message;
                 errorDisplay.style.display = 'block';
             };
 
-            // Check if the Telegram script has loaded
             if (!window.Telegram || !window.Telegram.WebApp) {
-                showError('Telegram script not loaded. Please restart the app.');
+                showError('This app can only be opened inside Telegram.');
                 return;
             }
 
             const tg = window.Telegram.WebApp;
             tg.ready();
 
-            // --- All your element getters go here ---
             const usernameDisplay = document.getElementById('username-display');
             const balanceDisplay = document.getElementById('balance-display');
             const packageDisplay = document.getElementById('package-display');
@@ -132,7 +129,7 @@
                     const expiry = new Date(data.packageExpiry).toLocaleDateString();
                     dynamicActionSection.innerHTML = `
                         <h2 class="text-xl font-semibold text-white">Your Daily Task is Ready</h2>
-                        <p class="text-gray-400 mt-2 mb-4">Click to claim your daily profit. Expires on ${expiry}.</p>
+                        <p class="text-gray-400 mt-2 mb-4">Click to claim your daily profit. Your package expires on ${expiry}.</p>
                         <a href="/earning.html" class="inline-block bg-gradient-to-br from-green-500 to-teal-600 text-white font-bold py-3 px-8 rounded-lg">Go to Earning Page</a>`;
                 } else {
                     dynamicActionSection.innerHTML = `
@@ -149,7 +146,7 @@
                     if (response && response.success) {
                         renderData(response.data);
                     } else {
-                        showError(response.message || 'Could not load dashboard data.');
+                        showError(response.message || 'Could not load dashboard data from server.');
                     }
                 });
                 socket.on('disconnect', () => console.log('Disconnected from server.'));
@@ -158,7 +155,7 @@
             const authenticate = async () => {
                 try {
                     if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
-                        throw new Error('Could not get Telegram user data. Please open this app through the Telegram bot.');
+                        throw new Error('Could not get Telegram user data. Please restart the app inside Telegram.');
                     }
                     
                     const response = await fetch('/api/auth/telegram-login', {
@@ -171,8 +168,8 @@
                     });
 
                     if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || `Server error: ${response.status}`);
+                        const errorData = await response.json().catch(() => ({ message: `Server error: ${response.status}` }));
+                        throw new Error(errorData.message);
                     }
 
                     const data = await response.json();
@@ -180,19 +177,17 @@
                         localStorage.setItem('authToken', data.token);
                         initializeDashboard(data.token);
                     } else {
-                        throw new Error('Authentication failed: No token received.');
+                        throw new Error('Authentication failed: No token received from server.');
                     }
                 } catch (error) {
                     showError(`Authentication Error: ${error.message}`);
                 }
             };
             
-            // Set the active nav link and run the main auth flow
             document.getElementById('nav-dashboard').classList.add('active');
             authenticate();
         }
 
-        // Run the main function after the page has fully loaded
         window.addEventListener('load', main);
     </script>
 </body>
