@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const crypto = require('crypto');
 
-// --- NEW TELEGRAM LOGIN/REGISTER ROUTE ---
+// --- THE ONLY AUTH ROUTE YOU NEED NOW ---
 router.post('/telegram-login', async (req, res) => {
     try {
         const { telegramUser, telegramStartParam } = req.body;
@@ -38,7 +38,7 @@ router.post('/telegram-login', async (req, res) => {
                 }
             }
 
-            // Create the new user
+            // Create the new user object
             user = new User({
                 telegramId: telegramUser.id,
                 username: telegramUser.username || `user${telegramUser.id}`,
@@ -55,8 +55,8 @@ router.post('/telegram-login', async (req, res) => {
             await user.save();
 
             if (referrer) {
-                referrer.referralCount = (referrer.referralCount || 0) + 1;
-                await referrer.save();
+                // Use findByIdAndUpdate for a more robust update
+                await User.findByIdAndUpdate(referrer._id, { $inc: { referralCount: 1 } });
             }
         }
 
