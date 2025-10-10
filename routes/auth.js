@@ -21,7 +21,6 @@ router.post('/telegram-login', async (req, res) => {
             let referredBy = null;
             let referrer = null;
             
-            // Check if they were referred via a start parameter
             if (telegramStartParam) {
                 referrer = await User.findOne({ referralCode: telegramStartParam });
                 if (referrer) {
@@ -29,7 +28,6 @@ router.post('/telegram-login', async (req, res) => {
                 }
             }
 
-            // Generate a unique referral code for the new user
             let isUnique = false;
             let referralCode = '';
             while (!isUnique) {
@@ -46,14 +44,16 @@ router.post('/telegram-login', async (req, res) => {
                 username: telegramUser.username || `user${telegramUser.id}`,
                 firstName: telegramUser.first_name,
                 lastName: telegramUser.last_name,
-                // You no longer need password, email, or region for this login method
                 referralCode: referralCode,
-                referredBy: referredBy
+                referredBy: referredBy,
+                // --- THIS IS THE FIX: Add the missing required fields ---
+                totalDeposits: 0,
+                totalTradeVolume: 0
+                // ----------------------------------------------------
             });
             
             await user.save();
 
-            // If they were referred, update the referrer's count
             if (referrer) {
                 referrer.referralCount = (referrer.referralCount || 0) + 1;
                 await referrer.save();
