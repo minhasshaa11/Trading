@@ -197,7 +197,7 @@
                         if (data.success) {
                             refContent.classList.remove('hidden');
                             // CHANGED: Generate the correct t.me link
-                            const referralLink = `https://t.me/${BOT_USERNAME}?start=${data.referralCode}`;
+                            const referralLink = `https://t.me/${bond1xbot}?start=${data.referralCode}`;
                             refLinkInput.value = referralLink;
                             document.getElementById('ref-count').textContent = data.referralCount;
                             document.getElementById('ref-commissions').textContent = `$${data.totalCommissions.toFixed(2)}`;
