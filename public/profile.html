@@ -12,31 +12,52 @@
         .nav-link { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; text-decoration: none; color: #9ca3af; font-weight: 500; font-size: 0.8rem; transition: all 0.2s ease-in-out; padding: 4px 0; gap: 4px; }
         .nav-link svg { width: 24px; height: 24px; }
         .nav-link.active { color: #111827; font-weight: 700; background-color: #f59e0b; border-radius: 16px; padding: 8px 12px; margin: -4px 0; box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
+        .skeleton { background-color: #374151; border-radius: 0.25rem; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 50% { opacity: .5; } }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100">
 
     <script>
+        // Redirect if not logged in.
         if (!localStorage.getItem('authToken')) { window.location.href = '/login.html'; }
     </script>
 
     <div class="container mx-auto p-4 max-w-3xl">
 
-        <header class="bg-gray-800 p-6 rounded-xl shadow-lg mb-6 flex justify-between items-center">
-            <div class="flex items-center space-x-4">
-                <div id="avatar" class="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"></div>
-                <div>
-                    <h1 class="text-2xl font-bold text-white">Welcome, <span id="username-display" class="text-xl">...</span></h1>
-                    <p class="text-sm text-gray-400">Joined: <span id="joined-date-display">...</span></p>
-                </div>
+        <header class="bg-gray-800 p-6 rounded-xl shadow-lg mb-6 flex items-center">
+            <div id="avatar" class="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"></div>
+            <div class="ml-4 flex-grow">
+                <h1 class="text-2xl font-bold text-white">Welcome, <span id="username-display">...</span></h1>
+                <p class="text-sm text-gray-400">Joined: <span id="joined-date-display">...</span></p>
             </div>
             <div class="text-right">
-                <p class="text-lg font-semibold">Balance: <span id="balance-display" class="text-green-400">$0.00</span></p>
-                <button id="logout-button" class="mt-2 px-3 py-1 text-xs font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">Logout</button>
+                <p class="text-sm text-gray-400">Balance</p>
+                <p id="balance-display" class="text-xl font-semibold text-green-400">$0.00</p>
             </div>
         </header>
 
         <main class="space-y-6">
+            
+            <!-- NEW: Account Summary Card -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                <h2 class="text-xl font-semibold mb-4">Account Summary</h2>
+                <div id="summary-content" class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                    <div>
+                        <p class="text-sm text-gray-400">Total Deposited</p>
+                        <p id="total-deposited" class="text-2xl font-bold skeleton w-24 h-8 mx-auto mt-1"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Total Withdrawn</p>
+                        <p id="total-withdrawn" class="text-2xl font-bold skeleton w-24 h-8 mx-auto mt-1"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Lifetime Profit</p>
+                        <p id="lifetime-profit" class="text-2xl font-bold skeleton w-24 h-8 mx-auto mt-1"></p>
+                    </div>
+                </div>
+            </div>
+
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
                 <h2 class="text-xl font-semibold mb-4">Your Investment Plan</h2>
                 <div id="package-loading" class="text-center text-gray-400 py-4">Loading package status...</div>
@@ -50,43 +71,23 @@
                     <a href="/packages.html" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">View Packages</a>
                 </div>
             </div>
-
+            
+            <!-- NEW: Recent Activity Card -->
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
-                 <h2 class="text-xl font-semibold mb-4">Account Actions</h2>
-                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                     <button id="show-password-btn" class="w-full text-left p-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold">Change Password</button>
-                     <button id="show-referral-btn" class="w-full text-left p-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold">View Referral Program</button>
-                 </div>
+                <h2 class="text-xl font-semibold mb-4">Recent Activity</h2>
+                <div id="recent-activity-container" class="space-y-3">
+                    <p id="activity-loading" class="text-gray-400 text-center">Loading recent activity...</p>
+                </div>
             </div>
 
-            <div id="security-section" class="bg-gray-800 p-6 rounded-xl shadow-lg hidden">
-                <h2 class="text-xl font-semibold mb-4">Security</h2>
-                <form id="change-password-form" class="space-y-4 max-w-md">
-                    <div>
-                        <label for="current-password" class="block text-sm font-medium text-gray-300">Current Password</label>
-                        <input type="password" id="current-password" required class="mt-1 w-full bg-gray-700 border-gray-600 rounded-md p-2 text-white">
-                    </div>
-                    <div>
-                        <label for="new-password" class="block text-sm font-medium text-gray-300">New Password</label>
-                        <input type="password" id="new-password" required class="mt-1 w-full bg-gray-700 border-gray-600 rounded-md p-2 text-white">
-                    </div>
-                    <div>
-                        <label for="confirm-new-password" class="block text-sm font-medium text-gray-300">Confirm New Password</label>
-                        <input type="password" id="confirm-new-password" required class="mt-1 w-full bg-gray-700 border-gray-600 rounded-md p-2 text-white">
-                    </div>
-                    <button type="submit" id="password-submit-btn" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">Change Password</button>
-                </form>
-                <div id="password-message" class="mt-4 text-center text-sm"></div>
-            </div>
-
-            <div id="referral-section" class="bg-gray-800 p-6 rounded-xl shadow-lg hidden">
+            <div id="referral-section" class="bg-gray-800 p-6 rounded-xl shadow-lg">
                 <h2 class="text-xl font-semibold mb-4">Referral Program</h2>
                 <div id="ref-loading" class="text-center text-gray-400 py-8">Loading...</div>
                 <div id="ref-content" class="hidden space-y-4">
                     <div>
                         <label class="text-sm font-medium text-gray-300">Your Referral Link</label>
                         <div class="mt-1 flex rounded-md shadow-sm">
-                            <input type="text" id="ref-link-input" readonly class="flex-1 w-full rounded-none rounded-l-md bg-gray-700 p-3 text-gray-300">
+                            <input type="text" id="ref-link-input" readonly class="flex-1 w-full rounded-none rounded-l-md bg-gray-700 p-3 text-gray-300 border-gray-600">
                             <button id="copy-ref-link-btn" class="px-4 rounded-r-md bg-blue-600 hover:bg-blue-700">Copy</button>
                         </div>
                     </div>
@@ -94,14 +95,16 @@
                         <div class="bg-gray-700 p-4 rounded-lg"><p class="text-3xl font-bold" id="ref-count">-</p><p class="text-sm text-gray-400">Referred</p></div>
                         <div class="bg-gray-700 p-4 rounded-lg"><p class="text-3xl font-bold text-green-400" id="ref-commissions">$0.00</p><p class="text-sm text-gray-400">Commissions</p></div>
                     </div>
-                    
-                    <div id="referral-list-section" class="pt-4">
-                        <h3 class="text-lg font-semibold mb-2">Users You've Referred</h3>
-                        <div id="referral-list-container" class="space-y-2 max-h-48 overflow-y-auto">
-                            <p id="referral-list-loading" class="text-gray-400">Loading list...</p>
-                        </div>
-                    </div>
-                    </div>
+                </div>
+            </div>
+
+            <!-- NEW: Support & Community Card -->
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
+                 <h2 class="text-xl font-semibold mb-4">Support & Community</h2>
+                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <a href="https://t.me/YourSupportContact" target="_blank" class="block w-full text-center p-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold">Contact Support</a>
+                     <a href="https://t.me/YourCommunityChannel" target="_blank" class="block w-full text-center p-4 bg-gray-600 hover:bg-gray-700 rounded-lg font-semibold">Join Community Channel</a>
+                 </div>
             </div>
         </main>
     </div>
@@ -116,18 +119,19 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const navLink = document.getElementById('nav-profile');
-            if (navLink) navLink.classList.add('active');
+            document.getElementById('nav-profile').classList.add('active');
+
+            // IMPORTANT: Replace with your bot's username
+            const BOT_USERNAME = 'YourBotUsername'; 
 
             const token = localStorage.getItem('authToken');
             const headers = { 'x-auth-token': token };
-            const postHeaders = { 'Content-Type': 'application/json', 'x-auth-token': token };
 
+            // --- Element Selectors ---
             const usernameDisplay = document.getElementById('username-display');
             const joinedDateDisplay = document.getElementById('joined-date-display');
             const avatarDiv = document.getElementById('avatar');
             const balanceDisplay = document.getElementById('balance-display');
-            const logoutButton = document.getElementById('logout-button');
             const packageLoading = document.getElementById('package-loading');
             const packageContent = document.getElementById('package-content');
             const noPackageContent = document.getElementById('no-package-content');
@@ -137,25 +141,16 @@
             const refContent = document.getElementById('ref-content');
             const copyBtn = document.getElementById('copy-ref-link-btn');
             const refLinkInput = document.getElementById('ref-link-input');
-            const passwordForm = document.getElementById('change-password-form');
-            const passwordMessage = document.getElementById('password-message');
-            const passwordSubmitBtn = document.getElementById('password-submit-btn');
-            const showPasswordBtn = document.getElementById('show-password-btn');
-            const showReferralBtn = document.getElementById('show-referral-btn');
-            const securitySection = document.getElementById('security-section');
-            const referralSection = document.getElementById('referral-section');
-            
-            // NEW: Elements for the referral list
-            const referralListContainer = document.getElementById('referral-list-container');
-            const referralListLoading = document.getElementById('referral-list-loading');
+            const totalDepositedEl = document.getElementById('total-deposited');
+            const totalWithdrawnEl = document.getElementById('total-withdrawn');
+            const lifetimeProfitEl = document.getElementById('lifetime-profit');
+            const activityContainer = document.getElementById('recent-activity-container');
+            const activityLoading = document.getElementById('activity-loading');
 
-            // --- THIS IS YOUR ORIGINAL FUNCTION, RESTORED ---
             const generateColor = (str) => {
                 let hash = 0;
                 if (!str) return '#6b7280';
-                for (let i = 0; i < str.length; i++) {
-                    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-                }
+                for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
                 let color = '#';
                 for (let i = 0; i < 3; i++) {
                     let value = (hash >> (i * 8)) & 0xFF;
@@ -163,142 +158,116 @@
                 }
                 return color;
             };
-            // --------------------------------------------------
 
-            fetch('/api/user/info', { headers })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        const user = data.user;
-                        usernameDisplay.textContent = user.username;
-                        joinedDateDisplay.textContent = new Date(user.createdAt).toLocaleDateString();
-                        avatarDiv.textContent = user.username.charAt(0).toUpperCase();
-                        avatarDiv.style.backgroundColor = generateColor(user.username);
-                        balanceDisplay.textContent = `$${user.balance.toFixed(2)}`;
-
-                        packageLoading.style.display = 'none';
-                        if (user.active_package) {
-                            packageNameEl.textContent = user.active_package;
-                            packageExpiryEl.textContent = new Date(user.package_expiry_date).toLocaleDateString();
-                            packageContent.classList.remove('hidden');
-                        } else {
-                            noPackageContent.classList.remove('hidden');
-                        }
-                    }
-                });
+            // --- API Fetch Functions ---
             
-            fetch('/api/user/referral-info', { headers })
-                .then(res => res.json())
-                .then(data => {
-                    refLoading.style.display = 'none';
-                    if (data.success) {
-                        refContent.classList.remove('hidden');
-                        const referralLink = `${window.location.origin}/signup.html?ref=${data.referralCode}`;
-                        refLinkInput.value = referralLink;
-                        document.getElementById('ref-count').textContent = data.referralCount;
-                        document.getElementById('ref-commissions').textContent = `$${data.totalCommissions.toFixed(2)}`;
-                    } else {
-                        throw new Error(data.message || 'Could not load referral data.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching referral info:', error);
-                    refContent.innerHTML = `<p class="text-center text-red-400">${error.message}</p>`;
-                    refContent.classList.remove('hidden');
-                });
-
-            // --- NEW FUNCTION TO FETCH AND DISPLAY THE LIST OF REFERRED USERS ---
-            const fetchMyReferrals = () => {
-                fetch('/api/user/my-referrals', { headers })
+            // Fetches main user info (name, balance, package)
+            const fetchUserInfo = () => {
+                fetch('/api/user/info', { headers })
                     .then(res => res.json())
                     .then(data => {
-                        referralListLoading.style.display = 'none';
-                        if (data.success && data.referrals.length > 0) {
-                            referralListContainer.innerHTML = ''; // Clear the loading message
-                            data.referrals.forEach(ref => {
-                                const joinDate = new Date(ref.createdAt).toLocaleDateString();
-                                const referralEl = document.createElement('div');
-                                referralEl.className = 'flex justify-between items-center bg-gray-900 p-2 rounded';
-                                referralEl.innerHTML = `
-                                    <p class="text-sm font-medium text-white">${ref.username}</p>
-                                    <p class="text-xs text-gray-400">Joined: ${joinDate}</p>
-                                `;
-                                referralListContainer.appendChild(referralEl);
-                            });
-                        } else {
-                            referralListContainer.innerHTML = '<p class="text-sm text-gray-500 text-center">You have not referred any users yet.</p>';
+                        if (data.success) {
+                            const user = data.user;
+                            // CHANGED: Use firstName as primary display name
+                            const displayName = user.firstName || user.username;
+                            usernameDisplay.textContent = displayName;
+                            joinedDateDisplay.textContent = new Date(user.createdAt).toLocaleDateString();
+                            avatarDiv.textContent = displayName.charAt(0).toUpperCase();
+                            avatarDiv.style.backgroundColor = generateColor(displayName);
+                            balanceDisplay.textContent = `$${user.balance.toFixed(2)}`;
+
+                            packageLoading.style.display = 'none';
+                            if (user.active_package) {
+                                packageNameEl.textContent = user.active_package;
+                                packageExpiryEl.textContent = new Date(user.package_expiry_date).toLocaleDateString();
+                                packageContent.classList.remove('hidden');
+                            } else {
+                                noPackageContent.classList.remove('hidden');
+                            }
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching referral list:', error);
-                        referralListLoading.style.display = 'none';
-                        referralListContainer.innerHTML = '<p class="text-sm text-red-400 text-center">Could not load referral list.</p>';
                     });
             };
-            // -----------------------------------------------------------------------
 
-            // --- ALL YOUR ORIGINAL EVENT LISTENERS, RESTORED ---
+            // Fetches referral stats and generates the correct Telegram link
+            const fetchReferralInfo = () => {
+                fetch('/api/user/referral-info', { headers })
+                    .then(res => res.json())
+                    .then(data => {
+                        refLoading.style.display = 'none';
+                        if (data.success) {
+                            refContent.classList.remove('hidden');
+                            // CHANGED: Generate the correct t.me link
+                            const referralLink = `https://t.me/${BOT_USERNAME}?start=${data.referralCode}`;
+                            refLinkInput.value = referralLink;
+                            document.getElementById('ref-count').textContent = data.referralCount;
+                            document.getElementById('ref-commissions').textContent = `$${data.totalCommissions.toFixed(2)}`;
+                        }
+                    });
+            };
+
+            // NEW: Fetches the account financial summary
+            const fetchAccountSummary = () => {
+                fetch('/api/user/account-summary', { headers })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            totalDepositedEl.classList.remove('skeleton', 'h-8');
+                            totalWithdrawnEl.classList.remove('skeleton', 'h-8');
+                            lifetimeProfitEl.classList.remove('skeleton', 'h-8');
+                            
+                            totalDepositedEl.textContent = `$${data.summary.totalDeposits.toFixed(2)}`;
+                            totalWithdrawnEl.textContent = `$${data.summary.totalWithdrawals.toFixed(2)}`;
+                            
+                            const profit = data.summary.lifetimeProfit;
+                            lifetimeProfitEl.textContent = `$${profit.toFixed(2)}`;
+                            lifetimeProfitEl.classList.add(profit >= 0 ? 'text-green-400' : 'text-red-400');
+                        }
+                    });
+            };
+            
+            // NEW: Fetches the last few transactions
+            const fetchRecentActivity = () => {
+                 fetch('/api/user/recent-activity', { headers })
+                    .then(res => res.json())
+                    .then(data => {
+                        activityLoading.style.display = 'none';
+                        if (data.success && data.activities.length > 0) {
+                             data.activities.forEach(act => {
+                                const statusColors = { 'completed': 'text-green-400', 'pending': 'text-yellow-400', 'failed': 'text-red-400' };
+                                const activityEl = document.createElement('div');
+                                activityEl.className = 'flex justify-between items-center bg-gray-700 p-3 rounded-lg';
+                                activityEl.innerHTML = `
+                                    <div>
+                                        <p class="font-semibold capitalize">${act.type}</p>
+                                        <p class="text-xs text-gray-400">${new Date(act.date).toLocaleString()}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-bold text-lg">$${act.amount.toFixed(2)}</p>
+                                        <p class="text-xs font-semibold capitalize ${statusColors[act.status] || 'text-gray-400'}">${act.status.replace('_', ' ')}</p>
+                                    </div>
+                                `;
+                                activityContainer.appendChild(activityEl);
+                            });
+                        } else {
+                            activityContainer.innerHTML = '<p class="text-sm text-gray-500 text-center">No recent activity found.</p>';
+                        }
+                    });
+            };
+
+            // --- Event Listeners ---
             copyBtn.addEventListener('click', () => {
                 refLinkInput.select();
                 document.execCommand('copy');
                 copyBtn.textContent = 'Copied!';
                 setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2000);
             });
-
-            passwordForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                passwordSubmitBtn.disabled = true;
-                passwordSubmitBtn.textContent = 'Updating...';
-                passwordMessage.textContent = '';
-
-                const currentPassword = document.getElementById('current-password').value;
-                const newPassword = document.getElementById('new-password').value;
-                const confirmNewPassword = document.getElementById('confirm-new-password').value;
-
-                fetch('/api/user/change-password', {
-                    method: 'POST',
-                    headers: postHeaders,
-                    body: JSON.stringify({ currentPassword, newPassword, confirmNewPassword })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        passwordMessage.style.color = '#22c55e';
-                        passwordForm.reset();
-                    } else {
-                        throw new Error(data.message);
-                    }
-                    passwordMessage.textContent = data.message;
-                })
-                .catch(error => {
-                    passwordMessage.style.color = '#ef4444';
-                    passwordMessage.textContent = error.message;
-                })
-                .finally(() => {
-                    passwordSubmitBtn.disabled = false;
-                    passwordSubmitBtn.textContent = 'Change Password';
-                });
-            });
-
-            showPasswordBtn.addEventListener('click', () => {
-                securitySection.classList.toggle('hidden');
-                referralSection.classList.add('hidden');
-            });
-
-            showReferralBtn.addEventListener('click', () => {
-                referralSection.classList.toggle('hidden');
-                securitySection.classList.add('hidden');
-            });
-
-            logoutButton.addEventListener('click', () => {
-                localStorage.removeItem('authToken');
-                window.location.href = '/login.html';
-            });
-            // --------------------------------------------------
             
-            // --- CALL THE NEW FUNCTION WHEN THE PAGE LOADS ---
-            fetchMyReferrals();
+            // --- Initial Data Fetch Calls ---
+            fetchUserInfo();
+            fetchReferralInfo();
+            fetchAccountSummary();
+            fetchRecentActivity();
         });
     </script>
 </body>
-            </html>
+</html>
