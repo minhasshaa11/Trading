@@ -13,11 +13,10 @@ const adminAuth = (req, res, next) => {
 
 router.use(adminAuth);
 
-// GET all admin data (This was already correct)
+// GET all admin data (unchanged)
 router.get('/data', async (req, res) => {
     try {
         const searchQuery = req.query.search ? { username: new RegExp(req.query.search, 'i') } : {};
-        // This line correctly sends all transaction data, including the amount.
         const users = await User.find(searchQuery).populate('referredBy', 'username').sort({ createdAt: -1 });
         
         res.json({
@@ -31,12 +30,10 @@ router.get('/data', async (req, res) => {
 
 // --- DEPOSIT & WITHDRAWAL MANAGEMENT ---
 router.post('/approve-deposit', async (req, res) => {
-    // --- MODIFIED: We no longer need the amount from the request body ---
     const { userId, txid } = req.body;
     if (!userId || !txid) {
         return res.status(400).json({ success: false, message: "Missing required fields." });
     }
-    // -------------------------------------------------------------------
     try {
         const user = await User.findById(userId);
         if (!user) return res.status(404).json({ success: false, message: "User not found." });
@@ -46,18 +43,42 @@ router.post('/approve-deposit', async (req, res) => {
             return res.status(400).json({ success: false, message: "Transaction not found or already processed." });
         }
         
-        // --- MODIFIED: Use the amount from the transaction record for security ---
         const depositAmount = parseFloat(transaction.amount);
         if (isNaN(depositAmount)) {
             return res.status(400).json({ success: false, message: "Invalid transaction amount stored." });
         }
-        // -----------------------------------------------------------------------
+
+        // --- Check if this is the user's first deposit ---
+        const isFirstDeposit = (user.totalDeposits || 0) === 0;
+        // ---------------------------------------------------
 
         transaction.status = 'completed';
         user.balance += depositAmount;
-        user.totalDeposits = (user.totalDeposits || 0) + depositAmount;
+        user.totalDeposits += depositAmount;
         
         await user.save();
+
+        // --- NEW: AUTOMATIC 2% REFERRAL COMMISSION LOGIC ---
+        if (isFirstDeposit && user.referredBy) {
+            try {
+                const commissionRate = 0.02; // 2% commission
+                const commissionAmount = depositAmount * commissionRate;
+
+                // Find the referrer and award them the commission
+                await User.findByIdAndUpdate(user.referredBy, {
+                    $inc: { 
+                        balance: commissionAmount,
+                        referralCommissions: commissionAmount 
+                    }
+                });
+                console.log(`AWARDED: $${commissionAmount.toFixed(2)} (2%) commission to referrer ID: ${user.referredBy} for a $${depositAmount.toFixed(2)} deposit.`);
+            } catch (commissionError) {
+                console.error("Failed to award referral commission:", commissionError);
+                // We don't stop the main process, just log the error that it failed
+            }
+        }
+        // -------------------------------------------------
+        
         res.json({ success: true, message: `Deposit of $${depositAmount.toFixed(2)} approved. New balance: ${user.balance.toFixed(2)}` });
     } catch (error) {
         res.status(500).json({ success: false, message: "Server error during approval." });
@@ -81,7 +102,8 @@ router.post('/reject-deposit', async (req, res) => {
     }
 });
 
-// All other routes below are unchanged...
+// ... (The rest of your routes are unchanged)
+
 router.post('/approve-withdrawal', async (req, res) => {
     const { userId, txid } = req.body;
     try {
