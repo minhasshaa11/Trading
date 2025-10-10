@@ -18,6 +18,17 @@
         .nav-link svg { width: 24px; height: 24px; }
         .nav-link.active { color: #111827; font-weight: 700; background-color: #f59e0b; border-radius: 16px; padding: 8px 12px; margin: -4px 0; box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
         .card { background-color: rgba(31, 41, 55, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        
+        /* NEW: Styles for the confetti success animation */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100 flex flex-col items-center justify-center min-h-screen">
@@ -27,6 +38,9 @@
         const token = localStorage.getItem('authToken');
         if (!token) { window.location.href = '/login.html'; }
     </script>
+    
+    <!-- NEW: Canvas for the confetti animation -->
+    <canvas id="confetti-canvas"></canvas>
 
     <main class="w-full max-w-md p-4 text-center">
         <div id="earning-card" class="card p-8 rounded-2xl shadow-lg">
@@ -37,32 +51,16 @@
     </main>
 
     <nav class="bottom-nav">
-        <a href="dashboard.html" class="nav-link" id="nav-dashboard">
-             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-            <span>Dashboard</span>
-        </a>
-        <a href="packages.html" class="nav-link" id="nav-packages">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-            <span>Packages</span>
-        </a>
-        <a href="earning.html" class="nav-link" id="nav-earning">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            <span>Earn</span>
-        </a>
-        <a href="wallet.html" class="nav-link" id="nav-wallet">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-            <span>Wallet</span>
-        </a>
-        <a href="profile.html" class="nav-link" id="nav-profile">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-            <span>Profile</span>
-        </a>
+        <a href="dashboard.html" class="nav-link" id="nav-dashboard"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>Dashboard</span></a>
+        <a href="packages.html" class="nav-link" id="nav-packages"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg><span>Packages</span></a>
+        <a href="earning.html" class="nav-link" id="nav-earning"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg><span>Earn</span></a>
+        <a href="wallet.html" class="nav-link" id="nav-wallet"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg><span>Wallet</span></a>
+        <a href="profile.html" class="nav-link" id="nav-profile"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><span>Profile</span></a>
     </nav>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const navLink = document.getElementById('nav-earning');
-            if(navLink) navLink.classList.add('active');
+            document.getElementById('nav-earning').classList.add('active');
 
             const token = localStorage.getItem('authToken');
             const headers = { 'Content-Type': 'application/json', 'x-auth-token': token };
@@ -70,8 +68,12 @@
             const earningCard = document.getElementById('earning-card');
             let countdownInterval;
 
+            // --- PROFIT AND UPGRADE DATA ---
+            const profitMap = { "Bronze": 1, "Silver": 5.5, "Gold": 12, "Platinum": 32.5, "Diamond": 70 };
+            const packageOrder = ["Bronze", "Silver", "Gold", "Platinum", "Diamond"];
+
             // --- UI RENDERING FUNCTIONS ---
-            function showReadyToClaim(profitAmount) {
+            function showReadyToClaim(profitAmount, upgradeMessage) {
                 earningCard.innerHTML = `
                     <h1 class="text-2xl font-bold text-white mb-2">Claim Your Daily Profit</h1>
                     <p class="text-gray-400 mb-6">Your profit of <span class="font-bold text-yellow-400">$${profitAmount.toLocaleString()}</span> is ready.</p>
@@ -79,13 +81,14 @@
                         Claim Now
                     </button>
                     <p id="status-message" class="text-sm mt-4 min-h-[20px]"></p>
+                    ${upgradeMessage} 
                 `;
                 document.getElementById('claim-btn').addEventListener('click', handleClaim);
             }
 
             function showWaiting(nextClaimTime) {
                 earningCard.innerHTML = `
-                    <h1 class="text-2xl font-bold text-white mb-2">Profit Claimed</h1>
+                    <h1 class="text-2xl font-bold text-white mb-2">Profit Claimed Successfully</h1>
                     <p class="text-gray-400 mb-6">You can claim your next profit in:</p>
                     <div id="countdown" class="text-4xl font-bold text-yellow-400 font-mono">--:--:--</div>
                 `;
@@ -104,24 +107,17 @@
             function startCountdown(endTime) {
                 if (countdownInterval) clearInterval(countdownInterval);
                 const countdownElem = document.getElementById('countdown');
-
                 countdownInterval = setInterval(() => {
-                    const now = new Date().getTime();
-                    const distance = endTime - now;
-
+                    const distance = endTime - new Date().getTime();
                     if (distance < 0) {
                         clearInterval(countdownInterval);
-                        countdownElem.textContent = "00:00:00";
-                        location.reload(); // Reload the page when the timer finishes
+                        location.reload();
                         return;
                     }
-
                     const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                     const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-                    countdownElem.textContent = 
-                        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    countdownElem.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 }, 1000);
             }
 
@@ -133,14 +129,12 @@
                 claimBtn.textContent = 'Processing...';
 
                 try {
-                    const response = await fetch('/api/user/claim-earnings', {
-                        method: 'POST',
-                        headers: headers 
-                    });
+                    const response = await fetch('/api/user/claim-earnings', { method: 'POST', headers });
                     const result = await response.json();
 
                     if (result.success) {
-                        fetchUserStatus(); // Re-fetch status to show the countdown
+                        triggerConfetti();
+                        setTimeout(fetchUserStatus, 1500); // Re-fetch after a short delay for the animation
                     } else {
                         statusMessage.className = 'text-sm mt-4 min-h-[20px] text-red-400';
                         statusMessage.textContent = result.message;
@@ -157,38 +151,88 @@
             
             async function fetchUserStatus() {
                 try {
-                    const response = await fetch('/api/user/info', { headers });
+                    const response = await fetch('/api/user/info', { headers: {'x-auth-token': token} }); // Corrected headers
                     const result = await response.json();
                     
-                    if (!result.success) {
-                        showError("Could not verify your account status.");
-                        return;
-                    }
+                    if (!result.success) return showError("Could not verify your account status.");
                     
                     const user = result.user;
-                    if (!user.active_package) {
-                        showError("You do not have an active investment package.");
-                        return;
-                    }
-                    if (new Date() > new Date(user.package_expiry_date)) {
-                        showError("Your investment package has expired.");
-                        return;
-                    }
+                    if (!user.active_package) return showError("You do not have an active investment package.");
+                    if (new Date() > new Date(user.package_expiry_date)) return showError("Your investment package has expired.");
 
                     const todayReset = new Date();
-                    todayReset.setUTCHours(0, 0, 0, 0); // Midnight UTC (5 AM PKT)
+                    todayReset.setUTCHours(0, 0, 0, 0);
 
                     if (user.last_claim_timestamp && new Date(user.last_claim_timestamp) > todayReset) {
                         const tomorrowReset = new Date(todayReset.getTime() + 24 * 60 * 60 * 1000);
                         showWaiting(tomorrowReset.getTime());
                     } else {
-                        const profitMap = { "Bronze": 1, "Silver": 5.5, "Gold": 12, "Platinum": 32.5, "Diamond": 70 };
-                        const profit = profitMap[user.active_package] || 0;
-                        showReadyToClaim(profit);
+                        const currentPackageIndex = packageOrder.indexOf(user.active_package);
+                        let upgradeMsg = '';
+                        if (currentPackageIndex < packageOrder.length - 1) {
+                            const nextPackage = packageOrder[currentPackageIndex + 1];
+                            const nextProfit = profitMap[nextPackage];
+                            upgradeMsg = `
+                                <div class="mt-6 pt-4 border-t border-gray-700">
+                                    <p class="text-xs text-gray-400">${nextPackage} members are claiming <span class="font-bold text-yellow-400">$${nextProfit.toLocaleString()}</span> today.</p>
+                                    <a href="packages.html" class="text-xs text-blue-400 hover:underline">Upgrade Plan</a>
+                                </div>`;
+                        }
+                        showReadyToClaim(profitMap[user.active_package] || 0, upgradeMsg);
                     }
                 } catch (error) {
                     showError("Could not connect to the server.");
                 }
+            }
+
+            // --- NEW: CONFETTI ANIMATION LOGIC ---
+            function triggerConfetti() {
+                const canvas = document.getElementById('confetti-canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                let confetti = [];
+                const confettiCount = 200;
+                const gravity = 0.5;
+                const terminalVelocity = 5;
+                const drag = 0.075;
+                const colors = [
+                    { r: 255, g: 193, b: 7 }, { r: 52, g: 152, b: 219 }, { r: 39, g: 174, b: 96 },
+                    { r: 231, g: 76, b: 60 }, { r: 155, g: 89, b: 182 }
+                ];
+
+                const randomRange = (min, max) => Math.random() * (max - min) + min;
+
+                for (let i = 0; i < confettiCount; i++) {
+                    confetti.push({
+                        color: colors[Math.floor(randomRange(0, colors.length))],
+                        dimensions: { x: randomRange(5, 15), y: randomRange(8, 20) },
+                        position: { x: randomRange(0, canvas.width), y: -randomRange(20, canvas.height) },
+                        rotation: randomRange(0, 2 * Math.PI),
+                        scale: { x: 1, y: 1 },
+                        velocity: { x: randomRange(-25, 25), y: randomRange(0, -50) }
+                    });
+                }
+
+                function render() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    confetti.forEach((confetto, index) => {
+                        let width = confetto.dimensions.x * confetto.scale.x;
+                        let height = confetto.dimensions.y * confetto.scale.y;
+                        ctx.translate(confetto.position.x, confetto.position.y);
+                        ctx.rotate(confetto.rotation);
+                        confetto.velocity.x -= confetto.velocity.x * drag;
+                        confetto.velocity.y = Math.min(confetto.velocity.y + gravity, terminalVelocity);
+                        confetto.position.x += confetto.velocity.x;
+                        confetto.position.y += confetto.velocity.y;
+                        if (confetto.position.y >= canvas.height) confetti.splice(index, 1);
+                        ctx.fillStyle = `rgba(${confetto.color.r}, ${confetto.color.g}, ${confetto.color.b}, 1)`;
+                        ctx.fillRect(-width / 2, -height / 2, width, height);
+                        ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    });
+                    if (confetti.length > 0) requestAnimationFrame(render);
+                }
+                render();
             }
 
             // Initial load
@@ -197,3 +241,4 @@
     </script>
 </body>
 </html>
+
