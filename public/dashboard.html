@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { 
             font-family: 'Inter', sans-serif; 
@@ -77,113 +76,101 @@
     </div>
 
     <nav class="bottom-nav">
-        <a href="/dashboard.html" class="nav-link" id="nav-dashboard">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-            <span>Dashboard</span>
-        </a>
-        <a href="/packages.html" class="nav-link" id="nav-packages">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-            <span>Packages</span>
-        </a>
-        <a href="/earning.html" class="nav-link" id="nav-earning">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            <span>Earn</span>
-        </a>
-        <a href="/wallet.html" class="nav-link" id="nav-wallet">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-            <span>Wallet</span>
-        </a>
-        <a href="/profile.html" class="nav-link" id="nav-profile">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-            <span>Profile</span>
-        </a>
+        <a href="/dashboard.html" class="nav-link" id="nav-dashboard"><span>Dashboard</span></a>
+        <a href="/packages.html" class="nav-link" id="nav-packages"><span>Packages</span></a>
+        <a href="/earning.html" class="nav-link" id="nav-earning"><span>Earn</span></a>
+        <a href="/wallet.html" class="nav-link" id="nav-wallet"><span>Wallet</span></a>
+        <a href="/profile.html" class="nav-link" id="nav-profile"><span>Profile</span></a>
     </nav>
     
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        // Only run code after the entire page is loaded
-        window.addEventListener('load', () => {
-            document.getElementById('nav-dashboard').classList.add('active');
+        // No more DOMContentLoaded or window.load listeners are needed.
+        // The scripts are at the end, so the DOM is already ready.
 
-            const usernameDisplay = document.getElementById('username-display');
-            const balanceDisplay = document.getElementById('balance-display');
-            const packageDisplay = document.getElementById('package-display');
-            const balanceSkeleton = document.getElementById('balance-skeleton');
-            const packageSkeleton = document.getElementById('package-skeleton');
-            const dynamicActionSection = document.getElementById('dynamic-action-section');
+        document.getElementById('nav-dashboard').classList.add('active');
 
-            const initializeDashboard = (token) => {
-                const socket = io({ auth: { token } });
-                socket.on('connect', () => {
-                    console.log('Connected to server, requesting dashboard data...');
-                    socket.emit('request_dashboard_data');
-                });
-                socket.on('dashboard_data', (response) => {
-                    if (response && response.success) {
-                        renderData(response.data);
-                    } else {
-                        document.querySelector('main').innerHTML = `<div class="text-center py-10 card rounded-2xl p-6 text-red-400">Could not load dashboard data. Please try again later.</div>`;
-                    }
-                });
-                socket.on('disconnect', () => console.log('Disconnected from server.'));
-            };
+        const usernameDisplay = document.getElementById('username-display');
+        const balanceDisplay = document.getElementById('balance-display');
+        const packageDisplay = document.getElementById('package-display');
+        const balanceSkeleton = document.getElementById('balance-skeleton');
+        const packageSkeleton = document.getElementById('package-skeleton');
+        const dynamicActionSection = document.getElementById('dynamic-action-section');
 
-            const renderData = (data) => {
-                usernameDisplay.textContent = data.username;
-                balanceDisplay.textContent = `$${data.balance.toFixed(2)}`;
-                packageDisplay.textContent = data.activePackage || 'None';
-                balanceSkeleton.style.display = 'none';
-                packageSkeleton.style.display = 'none';
-                balanceDisplay.style.display = 'block';
-                packageDisplay.style.display = 'block';
-                if (data.activePackage) {
-                    const expiry = new Date(data.packageExpiry).toLocaleDateString();
-                    dynamicActionSection.innerHTML = `
-                        <h2 class="text-xl font-semibold text-white">Your Daily Task is Ready</h2>
-                        <p class="text-gray-400 mt-2 mb-4">Click the button below to claim your daily profit. Your package expires on ${expiry}.</p>
-                        <a href="/earning.html" class="inline-block bg-gradient-to-br from-green-500 to-teal-600 text-white font-bold py-3 px-8 rounded-lg">Go to Earning Page</a>`;
+        const initializeDashboard = (token) => {
+            const socket = io({ auth: { token } });
+            socket.on('connect', () => {
+                console.log('Connected to server, requesting dashboard data...');
+                socket.emit('request_dashboard_data');
+            });
+            socket.on('dashboard_data', (response) => {
+                if (response && response.success) {
+                    renderData(response.data);
                 } else {
-                    dynamicActionSection.innerHTML = `
-                        <h2 class="text-xl font-semibold text-white">Start Earning Today</h2>
-                        <p class="text-gray-400 mt-2 mb-4">You don't have an active investment package. Purchase a package to start earning daily profits.</p>
-                        <a href="/packages.html" class="inline-block bg-gradient-to-br from-yellow-500 to-orange-600 text-white font-bold py-3 px-8 rounded-lg">View Packages</a>`;
+                    document.querySelector('main').innerHTML = `<div class="text-center py-10 card rounded-2xl p-6 text-red-400">Could not load dashboard data. Please try again later.</div>`;
                 }
-            };
-            
-            const authenticate = async (tg) => {
-                if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
-                    document.querySelector('main').innerHTML = `<div class="text-center py-10 card rounded-2xl p-6 text-red-400">Please open this app through the Telegram bot.</div>`;
-                    return;
-                }
-                try {
-                    const response = await fetch('/api/auth/telegram-login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            telegramStartParam: tg.initDataUnsafe.start_param, 
-                            telegramUser: tg.initDataUnsafe.user
-                        })
-                    });
-                    const data = await response.json();
-                    if (data && data.token) {
-                        localStorage.setItem('authToken', data.token);
-                        initializeDashboard(data.token);
-                    } else {
-                        throw new Error(data.message || 'Authentication failed.');
-                    }
-                } catch (error) {
-                    console.error('Authentication error:', error);
-                    document.querySelector('main').innerHTML = `<div class="text-center py-10 card rounded-2xl p-6 text-red-400">Authentication Error: ${error.message}</div>`;
-                }
-            };
-            
-            // --- MAIN EXECUTION ---
-            if (window.Telegram && window.Telegram.WebApp) {
-                const tg = window.Telegram.WebApp;
-                tg.ready(() => authenticate(tg));
+            });
+            socket.on('disconnect', () => console.log('Disconnected from server.'));
+        };
+
+        const renderData = (data) => {
+            usernameDisplay.textContent = data.username;
+            balanceDisplay.textContent = `$${data.balance.toFixed(2)}`;
+            packageDisplay.textContent = data.activePackage || 'None';
+            balanceSkeleton.style.display = 'none';
+            packageSkeleton.style.display = 'none';
+            balanceDisplay.style.display = 'block';
+            packageDisplay.style.display = 'block';
+            if (data.activePackage) {
+                const expiry = new Date(data.packageExpiry).toLocaleDateString();
+                dynamicActionSection.innerHTML = `
+                    <h2 class="text-xl font-semibold text-white">Your Daily Task is Ready</h2>
+                    <p class="text-gray-400 mt-2 mb-4">Click below to claim your daily profit. Your package expires on ${expiry}.</p>
+                    <a href="/earning.html" class="inline-block bg-gradient-to-br from-green-500 to-teal-600 text-white font-bold py-3 px-8 rounded-lg">Go to Earning Page</a>`;
             } else {
-                 document.querySelector('main').innerHTML = `<div class="text-center py-10 card rounded-2xl p-6 text-red-400">Telegram script not loaded. Please try again.</div>`;
+                dynamicActionSection.innerHTML = `
+                    <h2 class="text-xl font-semibold text-white">Start Earning Today</h2>
+                    <p class="text-gray-400 mt-2 mb-4">Purchase a package to start earning daily profits.</p>
+                    <a href="/packages.html" class="inline-block bg-gradient-to-br from-yellow-500 to-orange-600 text-white font-bold py-3 px-8 rounded-lg">View Packages</a>`;
             }
-        });
+        };
+        
+        const authenticate = async (tg) => {
+            if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+                document.querySelector('main').innerHTML = `<div class="text-center py-10 card rounded-2xl p-6 text-red-400">Please open this app through the Telegram bot.</div>`;
+                return;
+            }
+            try {
+                const response = await fetch('/api/auth/telegram-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegramStartParam: tg.initDataUnsafe.start_param, 
+                        telegramUser: tg.initDataUnsafe.user
+                    })
+                });
+                const data = await response.json();
+                if (data && data.token) {
+                    localStorage.setItem('authToken', data.token);
+                    initializeDashboard(data.token);
+                } else {
+                    throw new Error(data.message || 'Authentication failed.');
+                }
+            } catch (error) {
+                console.error('Authentication error:', error);
+                document.querySelector('main').innerHTML = `<div class="text-center py-10 card rounded-2xl p-6 text-red-400">Authentication Error: ${error.message}</div>`;
+            }
+        };
+        
+        // --- FINAL MAIN EXECUTION ---
+        try {
+            const tg = window.Telegram.WebApp;
+            tg.ready(() => {
+                authenticate(tg);
+            });
+        } catch (error) {
+             document.querySelector('main').innerHTML = `<div class="text-center py-10 card rounded-2xl p-6 text-red-400">Telegram script not loaded. Please restart the app.</div>`;
+        }
     </script>
 </body>
 </html>
