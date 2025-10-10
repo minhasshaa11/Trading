@@ -39,7 +39,6 @@
 
         <main class="space-y-6">
             
-            <!-- NEW: Account Summary Card -->
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
                 <h2 class="text-xl font-semibold mb-4">Account Summary</h2>
                 <div id="summary-content" class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
@@ -72,7 +71,6 @@
                 </div>
             </div>
             
-            <!-- NEW: Recent Activity Card -->
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
                 <h2 class="text-xl font-semibold mb-4">Recent Activity</h2>
                 <div id="recent-activity-container" class="space-y-3">
@@ -98,7 +96,6 @@
                 </div>
             </div>
 
-            <!-- NEW: Support & Community Card -->
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg">
                  <h2 class="text-xl font-semibold mb-4">Support & Community</h2>
                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -121,8 +118,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('nav-profile').classList.add('active');
 
-            // IMPORTANT: Replace with your bot's username
-            const BOT_USERNAME = 'YourBotUsername'; 
+            // --- FIXED: Using your actual bot username ---
+            const BOT_USERNAME = 'bond1xbot'; 
 
             const token = localStorage.getItem('authToken');
             const headers = { 'x-auth-token': token };
@@ -168,7 +165,6 @@
                     .then(data => {
                         if (data.success) {
                             const user = data.user;
-                            // CHANGED: Use firstName as primary display name
                             const displayName = user.firstName || user.username;
                             usernameDisplay.textContent = displayName;
                             joinedDateDisplay.textContent = new Date(user.createdAt).toLocaleDateString();
@@ -196,8 +192,7 @@
                         refLoading.style.display = 'none';
                         if (data.success) {
                             refContent.classList.remove('hidden');
-                            // CHANGED: Generate the correct t.me link
-                            const referralLink = `https://t.me/${bond1xbot}?start=${data.referralCode}`;
+                            const referralLink = `https://t.me/${BOT_USERNAME}?start=${data.referralCode}`;
                             refLinkInput.value = referralLink;
                             document.getElementById('ref-count').textContent = data.referralCount;
                             document.getElementById('ref-commissions').textContent = `$${data.totalCommissions.toFixed(2)}`;
@@ -233,7 +228,7 @@
                         activityLoading.style.display = 'none';
                         if (data.success && data.activities.length > 0) {
                              data.activities.forEach(act => {
-                                const statusColors = { 'completed': 'text-green-400', 'pending': 'text-yellow-400', 'failed': 'text-red-400' };
+                                const statusColors = { 'completed': 'text-green-400', 'pending_review': 'text-yellow-400', 'failed': 'text-red-400' };
                                 const activityEl = document.createElement('div');
                                 activityEl.className = 'flex justify-between items-center bg-gray-700 p-3 rounded-lg';
                                 activityEl.innerHTML = `
