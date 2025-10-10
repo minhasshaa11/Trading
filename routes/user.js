@@ -17,7 +17,6 @@ const PACKAGES = {
 // GET api/user/info - Provides basic user info
 router.get('/info', authMiddleware, async (req, res) => {
     try {
-        // CHANGED: Added firstName to the selection for better display on the profile
         const user = await User.findById(req.user.id).select('-password');
         if (!user) { return res.status(404).json({ success: false, message: 'User not found.' }); }
         res.json({ success: true, user: user });
@@ -117,30 +116,19 @@ router.post('/claim-earnings', authMiddleware, async (req, res) => {
     }
 });
 
-// ====================================================================
 // --- NEW ROUTES FOR THE UPDATED PROFILE PAGE ---
-// ====================================================================
 
-/**
- * @route   GET api/user/account-summary
- * @desc    Get user's financial summary (deposits, withdrawals, profit)
- * @access  Private
- */
+// GET api/user/account-summary
 router.get('/account-summary', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
-
-        // Calculate total withdrawals from transaction history
         const totalWithdrawals = user.transactions
             .filter(tx => tx.type === 'withdrawal' && tx.status === 'completed')
             .reduce((sum, tx) => sum + (tx.amount || 0), 0);
-
-        // Calculate lifetime profit
         const lifetimeProfit = (user.balance + totalWithdrawals) - user.totalDeposits;
-
         res.json({
             success: true,
             summary: {
@@ -149,46 +137,43 @@ router.get('/account-summary', authMiddleware, async (req, res) => {
                 lifetimeProfit: lifetimeProfit
             }
         });
-
     } catch (err) {
         console.error('Error fetching account summary:', err.message);
         res.status(500).send('Server Error');
     }
 });
 
-/**
- * @route   GET api/user/recent-activity
- * @desc    Get user's last 5 transactions
- * @access  Private
- */
+// GET api/user/recent-activity
 router.get('/recent-activity', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
-        
-        // Get all transactions, sort them by date (newest first), and take the last 5
         const recentActivities = user.transactions
             .sort((a, b) => new Date(b.date) - new Date(a.date))
             .slice(0, 5)
-            .map(tx => ({
-                date: tx.date,
-                type: tx.type,
-                amount: tx.amount,
-                status: tx.status
-            }));
-
-        res.json({
-            success: true,
-            activities: recentActivities
-        });
-
+            .map(tx => ({ date: tx.date, type: tx.type, amount: tx.amount, status: tx.status }));
+        res.json({ success: true, activities: recentActivities });
     } catch (err) {
         console.error('Error fetching recent activity:', err.message);
         res.status(500).send('Server Error');
     }
 });
 
+// --- RESTORED: ROUTE TO GET A USER'S REFERRALS LIST ---
+router.get('/my-referrals', authMiddleware, async (req, res) => {
+    try {
+        // Use the primary display name (firstName or username) for the list
+        const referrals = await User.find({ referredBy: req.user.id })
+                                    .select('username firstName createdAt') 
+                                    .sort({ createdAt: -1 });
+
+        res.json({ success: true, referrals: referrals });
+    } catch (error) {
+        console.error("Error fetching referrals:", error);
+        res.status(500).json({ success: false, message: 'Server error.' });
+    }
+});
 
 module.exports = router;
