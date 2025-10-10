@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile - Bond 1x</title>
+    <title>Profile - Investment App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -94,7 +94,14 @@
                         <div class="bg-gray-700 p-4 rounded-lg"><p class="text-3xl font-bold" id="ref-count">-</p><p class="text-sm text-gray-400">Referred</p></div>
                         <div class="bg-gray-700 p-4 rounded-lg"><p class="text-3xl font-bold text-green-400" id="ref-commissions">$0.00</p><p class="text-sm text-gray-400">Commissions</p></div>
                     </div>
-                </div>
+                    
+                    <div id="referral-list-section" class="pt-4">
+                        <h3 class="text-lg font-semibold mb-2">Users You've Referred</h3>
+                        <div id="referral-list-container" class="space-y-2 max-h-48 overflow-y-auto">
+                            <p id="referral-list-loading" class="text-gray-400">Loading list...</p>
+                        </div>
+                    </div>
+                    </div>
             </div>
         </main>
     </div>
@@ -137,7 +144,12 @@
             const showReferralBtn = document.getElementById('show-referral-btn');
             const securitySection = document.getElementById('security-section');
             const referralSection = document.getElementById('referral-section');
+            
+            // NEW: Elements for the referral list
+            const referralListContainer = document.getElementById('referral-list-container');
+            const referralListLoading = document.getElementById('referral-list-loading');
 
+            // --- THIS IS YOUR ORIGINAL FUNCTION, RESTORED ---
             const generateColor = (str) => {
                 let hash = 0;
                 if (!str) return '#6b7280';
@@ -151,6 +163,7 @@
                 }
                 return color;
             };
+            // --------------------------------------------------
 
             fetch('/api/user/info', { headers })
                 .then(res => res.json())
@@ -180,10 +193,7 @@
                     refLoading.style.display = 'none';
                     if (data.success) {
                         refContent.classList.remove('hidden');
-
-                        const botUsername = "bond1xbot"; // IMPORTANT: Make sure this is your bot's correct username
-                        const referralLink = `https://t.me/${botUsername}?start=${data.referralCode}`;
-                        
+                        const referralLink = `${window.location.origin}/signup.html?ref=${data.referralCode}`;
                         refLinkInput.value = referralLink;
                         document.getElementById('ref-count').textContent = data.referralCount;
                         document.getElementById('ref-commissions').textContent = `$${data.totalCommissions.toFixed(2)}`;
@@ -197,6 +207,37 @@
                     refContent.classList.remove('hidden');
                 });
 
+            // --- NEW FUNCTION TO FETCH AND DISPLAY THE LIST OF REFERRED USERS ---
+            const fetchMyReferrals = () => {
+                fetch('/api/user/my-referrals', { headers })
+                    .then(res => res.json())
+                    .then(data => {
+                        referralListLoading.style.display = 'none';
+                        if (data.success && data.referrals.length > 0) {
+                            referralListContainer.innerHTML = ''; // Clear the loading message
+                            data.referrals.forEach(ref => {
+                                const joinDate = new Date(ref.createdAt).toLocaleDateString();
+                                const referralEl = document.createElement('div');
+                                referralEl.className = 'flex justify-between items-center bg-gray-900 p-2 rounded';
+                                referralEl.innerHTML = `
+                                    <p class="text-sm font-medium text-white">${ref.username}</p>
+                                    <p class="text-xs text-gray-400">Joined: ${joinDate}</p>
+                                `;
+                                referralListContainer.appendChild(referralEl);
+                            });
+                        } else {
+                            referralListContainer.innerHTML = '<p class="text-sm text-gray-500 text-center">You have not referred any users yet.</p>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching referral list:', error);
+                        referralListLoading.style.display = 'none';
+                        referralListContainer.innerHTML = '<p class="text-sm text-red-400 text-center">Could not load referral list.</p>';
+                    });
+            };
+            // -----------------------------------------------------------------------
+
+            // --- ALL YOUR ORIGINAL EVENT LISTENERS, RESTORED ---
             copyBtn.addEventListener('click', () => {
                 refLinkInput.select();
                 document.execCommand('copy');
@@ -253,7 +294,11 @@
                 localStorage.removeItem('authToken');
                 window.location.href = '/login.html';
             });
+            // --------------------------------------------------
+            
+            // --- CALL THE NEW FUNCTION WHEN THE PAGE LOADS ---
+            fetchMyReferrals();
         });
     </script>
 </body>
-</html>
+            </html>
