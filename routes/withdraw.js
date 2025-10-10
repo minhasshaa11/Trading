@@ -14,13 +14,12 @@ router.post('/request', async (req, res) => {
     const { amount, address } = req.body;
     const withdrawalAmount = parseFloat(amount);
 
-    // --- RULE 1: VALIDATION CHECKS ---
+    // --- RULE 1: CHECK FOR VALID INPUT AND MINIMUM AMOUNT ---
     if (!amount || isNaN(withdrawalAmount) || withdrawalAmount < MINIMUM_WITHDRAWAL) {
         return res.status(400).json({ success: false, message: `Minimum withdrawal amount is $${MINIMUM_WITHDRAWAL}.` });
     }
-    // --- ADDED: Specific ERC-20 address validation for user safety ---
-    if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
-        return res.status(400).json({ success: false, message: 'Please enter a valid ERC-20 wallet address.' });
+    if (!address || typeof address !== 'string' || address.length < 26) {
+        return res.status(400).json({ success: false, message: 'Please enter a valid withdrawal address.' });
     }
     // --------------------------------------------------------
 
@@ -30,7 +29,7 @@ router.post('/request', async (req, res) => {
             return res.status(404).json({ success: false, message: 'User not found.' });
         }
         
-        // --- RULE 2: REFERRAL AND WITHDRAWAL COUNT (This rule is preserved as requested) ---
+        // --- RULE 2: CHECK REFERRAL AND WITHDRAWAL COUNT ---
         if (user.withdrawalCount >= WITHDRAWALS_ALLOWED_WITHOUT_REFERRAL && user.referralCount === 0) {
             return res.status(403).json({ 
                 success: false, 
@@ -43,9 +42,13 @@ router.post('/request', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Insufficient balance.' });
         }
 
-        // --- REMOVED: The entire trading volume and 50% tax logic has been deleted. ---
-        
-        // --- SIMPLIFIED: The process is now direct. ---
+        // --- REMOVED: Trading Volume and Tax Logic ---
+        // The conditional check for trade volume and the 50% tax have been removed.
+        const taxAmount = 0; // Tax is now always 0.
+        const finalAmount = withdrawalAmount; // Final amount is always the full withdrawal amount.
+        const responseMessage = 'Withdrawal request submitted successfully. It will be processed shortly.';
+        // --- END OF REMOVAL ---
+
         user.balance -= withdrawalAmount;
         
         user.transactions.push({
@@ -53,13 +56,13 @@ router.post('/request', async (req, res) => {
             type: 'withdrawal',
             amount: withdrawalAmount,
             address: address,
-            status: 'pending_review', // Changed to a more descriptive status
+            status: 'pending_processing',
             date: new Date(),
-            tax: 0, // Tax is now always 0
-            finalAmount: withdrawalAmount // Final amount is always the full amount
+            tax: taxAmount,
+            finalAmount: finalAmount
         });
 
-        // --- INCREMENT THE WITHDRAWAL COUNTER (Preserved) ---
+        // --- INCREMENT THE WITHDRAWAL COUNTER ---
         user.withdrawalCount += 1;
         // ----------------------------------------
 
@@ -67,8 +70,7 @@ router.post('/request', async (req, res) => {
 
         res.json({
             success: true,
-            // --- SIMPLIFIED: The response message is now always the same. ---
-            message: 'Withdrawal request submitted successfully. It will be reviewed by an admin.',
+            message: responseMessage,
             newBalance: user.balance
         });
 
@@ -78,7 +80,6 @@ router.post('/request', async (req, res) => {
     }
 });
 
-// This history route is unchanged and remains correct.
 router.get('/history', async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('transactions');
