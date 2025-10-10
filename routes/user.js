@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
 
-// --- PACKAGE DEFINITIONS ---
+// --- PACKAGE DEFINITIONS (Unchanged) ---
 const PACKAGES = {
     "Bronze": { price: 20, dailyProfit: 1, durationDays: 30 },
     "Silver": { price: 100, dailyProfit: 5.5, durationDays: 30 },
@@ -14,7 +14,7 @@ const PACKAGES = {
 };
 // -----------------------------------
 
-// This route provides basic user info (balance, package, etc.)
+// This route provides basic user info (Unchanged)
 router.get('/info', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
@@ -26,7 +26,7 @@ router.get('/info', authMiddleware, async (req, res) => {
     }
 });
 
-// This route provides the user's referral data
+// This route provides the user's referral data (Unchanged)
 router.get('/referral-info', authMiddleware, async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.user.id);
@@ -47,7 +47,7 @@ router.get('/referral-info', authMiddleware, async (req, res) => {
     }
 });
 
-// This route handles changing the user's password
+// This route handles changing the user's password (Unchanged)
 router.post('/change-password', authMiddleware, async (req, res) => {
     const { currentPassword, newPassword, confirmNewPassword } = req.body;
     if (!currentPassword || !newPassword || !confirmNewPassword) { return res.status(400).json({ success: false, message: 'All fields are required.' }); }
@@ -68,7 +68,7 @@ router.post('/change-password', authMiddleware, async (req, res) => {
     }
 });
 
-// This route handles purchasing an investment package
+// This route handles purchasing an investment package (Unchanged)
 router.post('/purchase-package', authMiddleware, async (req, res) => {
     const { packageName } = req.body;
     const selectedPackage = PACKAGES[packageName];
@@ -101,7 +101,7 @@ router.post('/purchase-package', authMiddleware, async (req, res) => {
     }
 });
 
-// This route handles claiming daily earnings with the 5 AM reset
+// This route handles claiming daily earnings (Unchanged)
 router.post('/claim-earnings', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
@@ -115,10 +115,9 @@ router.post('/claim-earnings', authMiddleware, async (req, res) => {
             return res.status(400).json({ success: false, message: "Your package has expired." });
         }
 
-        // 5 AM PKT Reset Logic (PKT is UTC+5, so 5 AM PKT is Midnight 00:00 UTC)
         const now = new Date();
         const todayReset = new Date();
-        todayReset.setUTCHours(0, 0, 0, 0); // Set to midnight UTC of the current day
+        todayReset.setUTCHours(0, 0, 0, 0); 
 
         if (user.last_claim_timestamp && user.last_claim_timestamp > todayReset) {
             return res.status(400).json({ success: false, message: "You have already claimed your profit for today." });
@@ -137,5 +136,19 @@ router.post('/claim-earnings', authMiddleware, async (req, res) => {
     }
 });
 
+// --- NEW ROUTE TO GET A USER'S REFERRALS ---
+router.get('/my-referrals', authMiddleware, async (req, res) => {
+    try {
+        const referrals = await User.find({ referredBy: req.user.id })
+                                    .select('username createdAt') // Only get the username and join date
+                                    .sort({ createdAt: -1 }); // Show the newest first
+
+        res.json({ success: true, referrals: referrals });
+    } catch (error) {
+        console.error("Error fetching referrals:", error);
+        res.status(500).json({ success: false, message: 'Server error.' });
+    }
+});
+// ---------------------------------------------
 
 module.exports = router;
