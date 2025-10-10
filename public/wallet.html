@@ -17,6 +17,12 @@
         .tab-button.active { color: #f59e0b; border-bottom-color: #f59e0b; background-color: #374151; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+
+        /* NEW: Styles for the confirmation modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); z-index: 2000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content { background-color: #1f2937; padding: 24px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; transform: scale(0.9); transition: transform 0.3s ease; }
+        .modal-overlay.active .modal-content { transform: scale(1); }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100">
@@ -25,6 +31,20 @@
         const token = localStorage.getItem('authToken');
         if (!token) { window.location.href = '/login.html'; }
     </script>
+
+    <!-- NEW: Withdrawal Confirmation Modal -->
+    <div id="confirmation-modal" class="modal-overlay">
+        <div class="modal-content space-y-4">
+            <h2 class="text-xl font-bold text-white">Confirm Withdrawal</h2>
+            <p class="text-gray-300">Please confirm you want to withdraw <strong id="modal-amount" class="text-yellow-400"></strong> to the address:</p>
+            <code id="modal-address" class="block bg-gray-800 text-gray-400 p-2 rounded-lg text-xs break-all"></code>
+            <p class="text-xs text-red-400 font-semibold">This action cannot be undone.</p>
+            <div class="flex gap-4 pt-2">
+                <button id="cancel-btn" class="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-700 rounded-lg font-semibold">Cancel</button>
+                <button id="confirm-btn" class="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold">Confirm & Proceed</button>
+            </div>
+        </div>
+    </div>
 
     <div class="container mx-auto p-4 max-w-lg">
         <header class="mb-6">
@@ -93,11 +113,14 @@
                         <div class="mb-4">
                             <label for="amount-input-withdraw" class="block text-sm font-medium text-gray-300 mb-1">Amount (USD)</label>
                             <input type="number" id="amount-input-withdraw" step="0.01" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm" placeholder="e.g., 100" required>
-                            <p class="text-xs text-gray-400 mt-1">Minimum withdrawal: $10.00</p>
+                            <!-- NEW: Fee clarity note -->
+                            <p class="text-xs text-gray-400 mt-1">Minimum: $10. A small network fee may be deducted by the blockchain.</p>
                         </div>
                         <div class="mb-4">
                             <label for="address-input-withdraw" class="block text-sm font-medium text-gray-300 mb-1">Your ERC-20 Wallet Address</label>
                             <input type="text" id="address-input-withdraw" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm" placeholder="0x..." required>
+                            <!-- NEW: Address validation message area -->
+                            <p id="address-validation-msg" class="text-xs text-red-400 mt-1 min-h-[16px]"></p>
                         </div>
                         <button type="submit" id="submit-button-withdraw" class="w-full mt-2 px-4 py-3 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
                             Submit Withdrawal Request
@@ -128,7 +151,7 @@
             const token = localStorage.getItem('authToken');
             const headers = { 'Content-Type': 'application/json', 'x-auth-token': token };
 
-            // --- Tab Switching Logic (Unchanged) ---
+            // --- Tab Switching Logic ---
             const depositTabBtn = document.getElementById('deposit-tab-btn');
             const withdrawTabBtn = document.getElementById('withdraw-tab-btn');
             const depositContent = document.getElementById('deposit-content');
@@ -171,18 +194,23 @@
             const withdrawForm_w = document.getElementById('withdraw-form');
             const amountInput_w = document.getElementById('amount-input-withdraw');
             const addressInput_w = document.getElementById('address-input-withdraw');
+            const addressValidationMsg = document.getElementById('address-validation-msg');
             const submitButton_w = document.getElementById('submit-button-withdraw');
             const formMessage_w = document.getElementById('form-message-withdraw');
             const historyContainer_w = document.getElementById('history-container-withdraw');
             const historyLoading_w = document.getElementById('history-loading-withdraw');
+            const confirmationModal = document.getElementById('confirmation-modal');
+            const modalAmount = document.getElementById('modal-amount');
+            const modalAddress = document.getElementById('modal-address');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const confirmBtn = document.getElementById('confirm-btn');
             
-            // Define the minimum withdrawal amount to match the backend
             const MINIMUM_WITHDRAWAL = 10;
 
-            // --- RESTORED DEPOSIT LOGIC ---
+            // --- DEPOSIT LOGIC (Your original code) ---
             const fetchDepositAddress = async () => {
                 try {
-                    const response = await fetch('/api/deposit/address', { headers });
+                    const response = await fetch('/api/wallet/deposit/address', { headers: {'x-auth-token': token} });
                     const data = await response.json();
                     loadingSpinner_d.classList.add('hidden');
                     if (data.success) {
@@ -197,7 +225,7 @@
             };
             const fetchDepositHistory = async () => {
                 try {
-                    const response = await fetch('/api/deposit/history', { headers });
+                    const response = await fetch('/api/wallet/deposit/history', { headers: {'x-auth-token': token} });
                     const data = await response.json();
                     historyLoading_d.classList.add('hidden');
                     if (data.success && data.history.length > 0) {
@@ -225,7 +253,7 @@
                 submitTxidButton_d.disabled = true;
                 submitTxidButton_d.textContent = 'Submitting...';
                 try {
-                    const response = await fetch('/api/deposit/verify', {
+                    const response = await fetch('/api/wallet/deposit/verify', {
                         method: 'POST', headers: headers,
                         body: JSON.stringify({ txid: txidInput_d.value.trim(), amount: parseFloat(amountInput_d.value) })
                     });
@@ -243,22 +271,20 @@
                     submitTxidButton_d.textContent = 'Submit for Verification';
                 }
             });
-            // --- END OF RESTORED LOGIC ---
 
-            // --- WITHDRAWAL LOGIC ---
+            // --- WITHDRAWAL LOGIC (UPDATED) ---
             const fetchUserData_w = async () => {
                 try {
-                    const response = await fetch('/api/user/info', { headers });
+                    const response = await fetch('/api/user/info', { headers: {'x-auth-token': token} });
                     const data = await response.json();
                     if (data.success) {
                         balanceDisplay_w.textContent = `$${data.user.balance.toFixed(2)}`;
                     }
                 } catch (error) { console.error("Could not fetch user balance for withdrawal tab."); }
             };
-
             const fetchWithdrawalHistory_w = async () => {
                 try {
-                    const response = await fetch('/api/withdraw/history', { headers });
+                    const response = await fetch('/api/wallet/withdraw/history', { headers: {'x-auth-token': token} });
                     const data = await response.json();
                     historyLoading_w.classList.add('hidden');
                     if (data.success && data.history.length > 0) {
@@ -276,34 +302,25 @@
                 }
             };
             
-            // UPDATED Withdrawal Form Submission Logic
-            withdrawForm_w.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                // --- NEW VALIDATION CHECK ---
-                const amount = parseFloat(amountInput_w.value);
-                if (isNaN(amount) || amount < MINIMUM_WITHDRAWAL) {
-                    // Changed to use the form message element instead of alert()
-                    formMessage_w.className = 'mt-4 text-center text-sm text-red-400';
-                    formMessage_w.textContent = `Minimum withdrawal amount is $${MINIMUM_WITHDRAWAL}.`;
-                    return; // Stop the function here
+            addressInput_w.addEventListener('input', () => {
+                const address = addressInput_w.value;
+                if (address && (!address.startsWith('0x') || address.length !== 42)) {
+                    addressValidationMsg.textContent = 'Warning: This does not look like a valid ERC-20 address.';
+                } else {
+                    addressValidationMsg.textContent = '';
                 }
-                // ----------------------------
+            });
 
-                submitButton_w.disabled = true;
-                submitButton_w.textContent = 'Submitting...';
-                formMessage_w.textContent = ''; // Clear previous messages
-                
+            const processWithdrawal = async () => {
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = 'Processing...';
                 try {
-                    const response = await fetch('/api/withdraw/request', {
+                    const response = await fetch('/api/wallet/withdraw/request', {
                         method: 'POST', headers: headers,
-                        body: JSON.stringify({ amount: amountInput_w.value, address: addressInput_w.value })
+                        body: JSON.stringify({ amount: parseFloat(amountInput_w.value), address: addressInput_w.value })
                     });
                     const result = await response.json();
-                    if (!result.success) {
-                        // This will catch errors from the server, including the referral limit
-                        throw new Error(result.message);
-                    }
+                    if (!result.success) throw new Error(result.message);
                     formMessage_w.className = 'mt-4 text-center text-sm text-green-400';
                     formMessage_w.textContent = result.message;
                     withdrawForm_w.reset();
@@ -313,10 +330,44 @@
                     formMessage_w.className = 'mt-4 text-center text-sm text-red-400';
                     formMessage_w.textContent = error.message;
                 } finally {
+                    confirmationModal.classList.remove('active');
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = 'Confirm & Proceed';
                     submitButton_w.disabled = false;
                     submitButton_w.textContent = 'Submit Withdrawal Request';
                 }
+            };
+
+            withdrawForm_w.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const amount = parseFloat(amountInput_w.value);
+                const address = addressInput_w.value;
+                
+                formMessage_w.textContent = '';
+                if (isNaN(amount) || amount < MINIMUM_WITHDRAWAL) {
+                    formMessage_w.className = 'mt-4 text-center text-sm text-red-400';
+                    formMessage_w.textContent = `Minimum withdrawal amount is $${MINIMUM_WITHDRAWAL}.`;
+                    return;
+                }
+                if (!address.startsWith('0x') || address.length !== 42) {
+                    formMessage_w.className = 'mt-4 text-center text-sm text-red-400';
+                    formMessage_w.textContent = 'Please enter a valid ERC-20 address.';
+                    return;
+                }
+
+                submitButton_w.disabled = true;
+                submitButton_w.textContent = 'Waiting for confirmation...';
+                modalAmount.textContent = `$${amount.toFixed(2)}`;
+                modalAddress.textContent = address;
+                confirmationModal.classList.add('active');
             });
+
+            cancelBtn.addEventListener('click', () => {
+                confirmationModal.classList.remove('active');
+                submitButton_w.disabled = false;
+                submitButton_w.textContent = 'Submit Withdrawal Request';
+            });
+            confirmBtn.addEventListener('click', processWithdrawal);
 
             // Initial data fetch
             fetchDepositAddress();
