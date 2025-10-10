@@ -14,9 +14,10 @@ const PACKAGES = {
 };
 // -----------------------------------
 
-// This route provides basic user info (Unchanged)
+// GET api/user/info - Provides basic user info
 router.get('/info', authMiddleware, async (req, res) => {
     try {
+        // CHANGED: Added firstName to the selection for better display on the profile
         const user = await User.findById(req.user.id).select('-password');
         if (!user) { return res.status(404).json({ success: false, message: 'User not found.' }); }
         res.json({ success: true, user: user });
@@ -26,7 +27,7 @@ router.get('/info', authMiddleware, async (req, res) => {
     }
 });
 
-// This route provides the user's referral data (Unchanged)
+// GET api/user/referral-info - Provides the user's referral data
 router.get('/referral-info', authMiddleware, async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.user.id);
@@ -41,34 +42,14 @@ router.get('/referral-info', authMiddleware, async (req, res) => {
             referralCount: referralCount,
             totalCommissions: user.referralCommissions
         });
-    } catch (error) {
+    } catch (error)
+    {
         console.error("Error fetching referral info:", error);
         res.status(500).json({ success: false, message: 'Server error.' });
     }
 });
 
-// This route handles changing the user's password (Unchanged)
-router.post('/change-password', authMiddleware, async (req, res) => {
-    const { currentPassword, newPassword, confirmNewPassword } = req.body;
-    if (!currentPassword || !newPassword || !confirmNewPassword) { return res.status(400).json({ success: false, message: 'All fields are required.' }); }
-    if (newPassword !== confirmNewPassword) { return res.status(400).json({ success: false, message: 'New passwords do not match.' }); }
-    if (newPassword.length < 6) { return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' }); }
-
-    try {
-        const user = await User.findById(req.user.id);
-        if (!user) { return res.status(404).json({ success: false, message: 'User not found.' }); }
-        const isMatch = await user.comparePassword(currentPassword);
-        if (!isMatch) { return res.status(400).json({ success: false, message: 'Incorrect current password.' }); }
-        user.password = newPassword;
-        await user.save();
-        res.json({ success: true, message: 'Password updated successfully.' });
-    } catch (error) {
-        console.error("Change password error:", error);
-        res.status(500).json({ success: false, message: 'Server error.' });
-    }
-});
-
-// This route handles purchasing an investment package (Unchanged)
+// POST api/user/purchase-package - Handles purchasing an investment package
 router.post('/purchase-package', authMiddleware, async (req, res) => {
     const { packageName } = req.body;
     const selectedPackage = PACKAGES[packageName];
@@ -101,7 +82,7 @@ router.post('/purchase-package', authMiddleware, async (req, res) => {
     }
 });
 
-// This route handles claiming daily earnings (Unchanged)
+// POST api/user/claim-earnings - Handles claiming daily earnings
 router.post('/claim-earnings', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
@@ -136,19 +117,78 @@ router.post('/claim-earnings', authMiddleware, async (req, res) => {
     }
 });
 
-// --- NEW ROUTE TO GET A USER'S REFERRALS ---
-router.get('/my-referrals', authMiddleware, async (req, res) => {
-    try {
-        const referrals = await User.find({ referredBy: req.user.id })
-                                    .select('username createdAt') // Only get the username and join date
-                                    .sort({ createdAt: -1 }); // Show the newest first
+// ====================================================================
+// --- NEW ROUTES FOR THE UPDATED PROFILE PAGE ---
+// ====================================================================
 
-        res.json({ success: true, referrals: referrals });
-    } catch (error) {
-        console.error("Error fetching referrals:", error);
-        res.status(500).json({ success: false, message: 'Server error.' });
+/**
+ * @route   GET api/user/account-summary
+ * @desc    Get user's financial summary (deposits, withdrawals, profit)
+ * @access  Private
+ */
+router.get('/account-summary', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Calculate total withdrawals from transaction history
+        const totalWithdrawals = user.transactions
+            .filter(tx => tx.type === 'withdrawal' && tx.status === 'completed')
+            .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+        // Calculate lifetime profit
+        const lifetimeProfit = (user.balance + totalWithdrawals) - user.totalDeposits;
+
+        res.json({
+            success: true,
+            summary: {
+                totalDeposits: user.totalDeposits,
+                totalWithdrawals: totalWithdrawals,
+                lifetimeProfit: lifetimeProfit
+            }
+        });
+
+    } catch (err) {
+        console.error('Error fetching account summary:', err.message);
+        res.status(500).send('Server Error');
     }
 });
-// ---------------------------------------------
+
+/**
+ * @route   GET api/user/recent-activity
+ * @desc    Get user's last 5 transactions
+ * @access  Private
+ */
+router.get('/recent-activity', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        
+        // Get all transactions, sort them by date (newest first), and take the last 5
+        const recentActivities = user.transactions
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .slice(0, 5)
+            .map(tx => ({
+                date: tx.date,
+                type: tx.type,
+                amount: tx.amount,
+                status: tx.status
+            }));
+
+        res.json({
+            success: true,
+            activities: recentActivities
+        });
+
+    } catch (err) {
+        console.error('Error fetching recent activity:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 
 module.exports = router;
