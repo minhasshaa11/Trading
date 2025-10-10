@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
-// MODIFIED: Added tax and finalAmount to record withdrawal details
 const transactionSchema = new mongoose.Schema({
     txid: { type: String, required: true },
     status: { type: String, default: 'pending_review' },
@@ -14,6 +13,20 @@ const transactionSchema = new mongoose.Schema({
 });
 
 const userSchema = new mongoose.Schema({
+  // --- NEW FIELDS FOR TELEGRAM LOGIN ---
+  telegramId: {
+    type: String,
+    unique: true,
+    sparse: true // Allows multiple users to exist without a telegramId
+  },
+  firstName: {
+    type: String
+  },
+  lastName: {
+    type: String
+  },
+  // ------------------------------------
+
   username: {
     type: String,
     required: true,
@@ -22,7 +35,7 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
+    // No longer required, to allow for passwordless Telegram users
   },
   balance: {
     type: Number,
@@ -54,8 +67,6 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-
-  // --- NEW FIELDS FOR WITHDRAWAL RULES ---
   withdrawalCount: {
     type: Number,
     default: 0
@@ -64,9 +75,6 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  // ---------------------------------------
-
-  // ADDED: Fields for trading volume requirement
   totalDeposits: {
     type: Number,
     required: true,
@@ -77,8 +85,6 @@ const userSchema = new mongoose.Schema({
     required: true,
     default: 0
   },
-
-  // --- ADDED: Fields for Investment Packages ---
   active_package: {
     type: String,
     default: null
@@ -91,8 +97,6 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   }
-  // ---------------------------------------------
-
 }, {
   timestamps: true
 });
@@ -100,6 +104,8 @@ const userSchema = new mongoose.Schema({
 // Your original password hashing middleware (unchanged)
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
+  // Ensure password is not empty before hashing
+  if (!this.password) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
@@ -107,6 +113,7 @@ userSchema.pre('save', async function (next) {
 
 // Your original password comparison method (unchanged)
 userSchema.methods.comparePassword = async function (enteredPassword) {
+  if (!this.password) return false;
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
