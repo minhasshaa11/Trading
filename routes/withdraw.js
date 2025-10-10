@@ -42,18 +42,12 @@ router.post('/request', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Insufficient balance.' });
         }
 
-        // --- TRADING VOLUME REQUIREMENT LOGIC (Unchanged) ---
-        const volumeRequirement = user.totalDeposits * 1.10;
-        let taxAmount = 0;
-        let finalAmount = withdrawalAmount;
-        let responseMessage = 'Withdrawal request submitted successfully. It will be processed shortly.';
-
-        if (user.totalTradeVolume < volumeRequirement) {
-            taxAmount = withdrawalAmount * 0.50;
-            finalAmount = withdrawalAmount - taxAmount;
-            responseMessage = `A 50% tax of $${taxAmount.toFixed(2)} was applied for not meeting the trading volume requirement. Your request has been submitted.`;
-        }
-        // --- END OF LOGIC ---
+        // --- REMOVED: Trading Volume and Tax Logic ---
+        // The conditional check for trade volume and the 50% tax have been removed.
+        const taxAmount = 0; // Tax is now always 0.
+        const finalAmount = withdrawalAmount; // Final amount is always the full withdrawal amount.
+        const responseMessage = 'Withdrawal request submitted successfully. It will be processed shortly.';
+        // --- END OF REMOVAL ---
 
         user.balance -= withdrawalAmount;
         
