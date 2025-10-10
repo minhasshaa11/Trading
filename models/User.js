@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema({
   telegramId: {
     type: String,
     unique: true,
-    sparse: true // Allows multiple users to exist without a telegramId
+    sparse: true // Allows multiple users to exist without a telegramId (for old email/pass users)
   },
   firstName: {
     type: String
@@ -101,19 +101,18 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Your original password hashing middleware (unchanged)
+// Password hashing middleware (unchanged)
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  // Ensure password is not empty before hashing
-  if (!this.password) return next();
+  if (!this.password) return next(); // Do not hash if password is not present
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
-// Your original password comparison method (unchanged)
+// Password comparison method (unchanged)
 userSchema.methods.comparePassword = async function (enteredPassword) {
-  if (!this.password) return false;
+  if (!this.password) return false; // Cannot compare if no password is set
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
