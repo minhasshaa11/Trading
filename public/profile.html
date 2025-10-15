@@ -93,6 +93,7 @@
                         <div class="bg-gray-700 p-4 rounded-lg"><p class="text-3xl font-bold text-green-400" id="ref-commissions">$0.00</p><p class="text-sm text-gray-400">Commissions</p></div>
                     </div>
                     
+                    <!-- RESTORED: Section for the list of referred users -->
                     <div id="referral-list-section" class="pt-4">
                         <h3 class="text-lg font-semibold mb-2">Users You've Referred</h3>
                         <div id="referral-list-container" class="space-y-2 max-h-48 overflow-y-auto">
@@ -125,15 +126,9 @@
             document.getElementById('nav-profile').classList.add('active');
             const BOT_USERNAME = 'bond1xbot'; 
             const token = localStorage.getItem('authToken');
+            const headers = { 'x-auth-token': token };
 
-            // --- FIX: Correct header format for authentication ---
-            const headers = { 
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json' 
-            };
-            // ---------------------------------------------------
-
-            // --- Element Selectors (Unchanged) ---
+            // --- Element Selectors ---
             const usernameDisplay = document.getElementById('username-display');
             const joinedDateDisplay = document.getElementById('joined-date-display');
             const avatarDiv = document.getElementById('avatar');
@@ -152,6 +147,7 @@
             const lifetimeProfitEl = document.getElementById('lifetime-profit');
             const activityContainer = document.getElementById('recent-activity-container');
             const activityLoading = document.getElementById('activity-loading');
+            // RESTORED: Elements for the referral list
             const referralListContainer = document.getElementById('referral-list-container');
             const referralListLoading = document.getElementById('referral-list-loading');
 
@@ -166,7 +162,7 @@
                 return color;
             };
 
-            // --- API Fetch Functions (Unchanged) ---
+            // --- API Fetch Functions ---
             const fetchUserInfo = () => {
                 fetch('/api/user/info', { headers }).then(res => res.json()).then(data => {
                     if (data.success) {
@@ -234,6 +230,7 @@
                 });
             };
 
+            // RESTORED: Function to fetch and display the list of referred users
             const fetchMyReferrals = () => {
                 fetch('/api/user/my-referrals', { headers }).then(res => res.json()).then(data => {
                     referralListLoading.style.display = 'none';
@@ -243,7 +240,7 @@
                             const joinDate = new Date(ref.createdAt).toLocaleDateString();
                             const referralEl = document.createElement('div');
                             referralEl.className = 'flex justify-between items-center bg-gray-900 p-2 rounded';
-                            const displayName = ref.firstName || ref.username;
+                            const displayName = ref.firstName || ref.username; // Use firstName if available
                             referralEl.innerHTML = `<p class="text-sm font-medium text-white">${displayName}</p><p class="text-xs text-gray-400">Joined: ${joinDate}</p>`;
                             referralListContainer.appendChild(referralEl);
                         });
@@ -253,7 +250,7 @@
                 });
             };
 
-            // --- Event Listeners (Unchanged) ---
+            // --- Event Listeners ---
             copyBtn.addEventListener('click', () => {
                 refLinkInput.select();
                 document.execCommand('copy');
@@ -261,12 +258,12 @@
                 setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2000);
             });
             
-            // --- Initial Data Fetch Calls (Unchanged) ---
+            // --- Initial Data Fetch Calls ---
             fetchUserInfo();
             fetchReferralInfo();
             fetchAccountSummary();
             fetchRecentActivity();
-            fetchMyReferrals();
+            fetchMyReferrals(); // RESTORED: Call the function to load the list
         });
     </script>
 </body>
