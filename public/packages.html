@@ -3,9 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Packages - Trading App</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Confetti Library for purchase celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; padding-bottom: 80px; background-color: #0c1021; }
@@ -13,7 +15,9 @@
         .nav-link { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; text-decoration: none; color: #9ca3af; font-weight: 500; font-size: 0.8rem; transition: all 0.2s ease-in-out; padding: 4px 0; gap: 4px; }
         .nav-link svg { width: 24px; height: 24px; }
         .nav-link.active { color: #111827; font-weight: 700; background-color: #f59e0b; border-radius: 16px; padding: 8px 12px; margin: -4px 0; box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
-        .card { background-color: rgba(31, 41, 55, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .card { background-color: rgba(31, 41, 55, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; }
+        /* New hover effect for interactive cards */
+        .card.interactive:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.7); display: none; align-items: center; justify-content: center; z-index: 2000; }
         .modal-box { background-color: #1f2937; border-radius: 1rem; padding: 2rem; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #374151; }
     </style>
@@ -28,21 +32,21 @@
         <header class="flex justify-between items-center mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-white">Investment Packages</h1>
-                <p class="text-gray-400">Select a package to start earning daily profits.</p>
+                <p class="text-gray-400">Select a package to start earning.</p>
             </div>
             <div>
                 <p class="text-lg">Balance: <span id="balance-display" class="font-bold text-green-400">$0.00</span></p>
             </div>
         </header>
 
-        <main id="packages-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></main>
+        <main id="packages-container" class="grid grid-cols-1 sm:grid-cols-2 gap-6"></main>
         <div id="status-message" class="text-center mt-6 min-h-[24px] font-semibold"></div>
     </div>
 
     <div id="custom-confirm-modal" class="modal-overlay">
         <div class="modal-box text-center">
             <h2 id="modal-title" class="text-xl font-bold text-white mb-4">Confirm Purchase</h2>
-            <p id="modal-text" class="text-gray-300 mb-6">Are you sure you want to purchase this package?</p>
+            <p id="modal-text" class="text-gray-300 mb-6">Are you sure?</p>
             <div class="flex justify-center gap-4">
                 <button id="modal-cancel-btn" class="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-700 rounded-lg font-semibold">Cancel</button>
                 <button id="modal-confirm-btn" class="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold">Confirm</button>
@@ -60,11 +64,9 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const navLink = document.getElementById('nav-packages');
-            if (navLink) navLink.classList.add('active');
-
+            document.getElementById('nav-packages').classList.add('active');
             const token = localStorage.getItem('authToken');
-            const headers = { 'Content-Type': 'application/json', 'x-auth-token': token };
+            const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 
             const balanceDisplay = document.getElementById('balance-display');
             const packagesContainer = document.getElementById('packages-container');
@@ -77,13 +79,14 @@
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
             let activeUserPackage = null;
+            let userBalance = 0;
 
             const packages = {
-                "Bronze": { price: 20, dailyProfit: 1, durationDays: 30 },
-                "Silver": { price: 100, dailyProfit: 5.5, durationDays: 30 },
-                "Gold": { price: 200, dailyProfit: 12, durationDays: 30 },
-                "Platinum": { price: 500, dailyProfit: 32.5, durationDays: 30 },
-                "Diamond": { price: 1000, dailyProfit: 70, durationDays: 30 },
+                "Bronze":   { price: 20,   dailyProfit: 1,    durationDays: 30, color: 'border-yellow-700' },
+                "Silver":   { price: 100,  dailyProfit: 5.5,  durationDays: 30, color: 'border-gray-400' },
+                "Gold":     { price: 200,  dailyProfit: 12,   durationDays: 30, color: 'border-yellow-500' },
+                "Platinum": { price: 500,  dailyProfit: 32.5, durationDays: 30, color: 'border-blue-400' },
+                "Diamond":  { price: 1000, dailyProfit: 70,   durationDays: 30, color: 'border-purple-400' },
             };
 
             function showCustomConfirm(packageName, onConfirm) {
@@ -91,18 +94,10 @@
                 modalText.textContent = `Are you sure you want to purchase the ${packageName} Plan?`;
                 modal.style.display = 'flex';
 
-                const confirmHandler = () => {
-                    onConfirm();
-                    modal.style.display = 'none';
-                    cleanup();
-                };
-
-                const cancelHandler = () => {
-                    modal.style.display = 'none';
-                    cleanup();
-                };
-
+                const confirmHandler = () => { onConfirm(); cleanup(); };
+                const cancelHandler = () => { cleanup(); };
                 const cleanup = () => {
+                    modal.style.display = 'none';
                     modalConfirmBtn.removeEventListener('click', confirmHandler);
                     modalCancelBtn.removeEventListener('click', cancelHandler);
                 };
@@ -121,14 +116,13 @@
                     const response = await fetch('/api/user/info', { headers });
                     const result = await response.json();
                     if (result.success) {
-                        balanceDisplay.textContent = `$${result.user.balance.toFixed(2)}`;
+                        userBalance = result.user.balance;
+                        balanceDisplay.textContent = `$${userBalance.toFixed(2)}`;
                         activeUserPackage = result.user.active_package;
                         renderPackages();
-                    } else {
-                        console.error('Failed to fetch user status:', result.message);
-                    }
-                } catch (error) {
-                    console.error('Error fetching user status:', error);
+                    } else { throw new Error(result.message); }
+                } catch (error) { 
+                    showStatus('Could not load user data. Please try again.', true);
                 }
             }
 
@@ -139,11 +133,13 @@
                         const response = await fetch('/api/user/purchase-package', {
                             method: 'POST',
                             headers: headers,
-                            body: JSON.stringify({ packageName: packageName })
+                            body: JSON.stringify({ packageName })
                         });
                         const result = await response.json();
                         if (result.success) {
                             showStatus(result.message, false);
+                            // Launch confetti on successful purchase
+                            confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
                             fetchUserStatus();
                         } else {
                             showStatus(result.message, true);
@@ -157,31 +153,34 @@
             function renderPackages() {
                 packagesContainer.innerHTML = '';
                 for (const [name, details] of Object.entries(packages)) {
-                    const totalProfit = details.dailyProfit * details.durationDays;
+                    const isAffordable = userBalance >= details.price;
+                    const isCurrentPlan = activeUserPackage === name;
+                    const canInteract = !isCurrentPlan && isAffordable;
+
                     const card = document.createElement('div');
-                    card.className = 'card p-6 rounded-xl shadow-lg flex flex-col';
+                    card.className = `card p-6 rounded-xl shadow-lg flex flex-col relative border-t-4 ${details.color} ${!isAffordable && !isCurrentPlan ? 'opacity-60' : ''} ${canInteract ? 'interactive' : ''}`;
 
                     let buttonHtml = '';
-                    if (activeUserPackage === name) {
-                        buttonHtml = `<button disabled class="mt-6 w-full py-3 font-bold text-white bg-green-600 rounded-lg cursor-default">Plan Activated</button>`;
+                    if (isCurrentPlan) {
+                        buttonHtml = `<button disabled class="mt-auto w-full py-3 font-bold text-white bg-green-600 rounded-lg cursor-default">Plan Activated</button>`;
+                    } else if (!isAffordable) {
+                        buttonHtml = `<button disabled class="mt-auto w-full py-3 font-bold text-gray-400 bg-gray-700 rounded-lg cursor-not-allowed">Insufficient Balance</button>`;
                     } else {
-                        buttonHtml = `<button class="purchase-btn mt-6 w-full py-3 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg">Activate Plan</button>`;
+                        buttonHtml = `<button class="purchase-btn mt-auto w-full py-3 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg">Activate Plan</button>`;
                     }
 
                     card.innerHTML = `
                         <h2 class="text-xl font-bold text-white mb-2">${name} Plan</h2>
                         <p class="text-3xl font-bold text-yellow-400 mb-4">$${details.price.toLocaleString()}</p>
-                        <ul class="text-gray-300 space-y-2 flex-grow">
+                        <ul class="text-gray-300 space-y-2 mb-6">
+                            <!-- Simplified Details -->
                             <li><strong>Daily Profit:</strong> $${details.dailyProfit.toLocaleString()}</li>
-                            <li><strong>Duration:</strong> ${details.durationDays} Days</li>
-                            <li><strong>Total Profit:</strong> $${totalProfit.toLocaleString()}</li>
                         </ul>
                         ${buttonHtml}
                     `;
                     
-                    const purchaseBtn = card.querySelector('.purchase-btn');
-                    if (purchaseBtn) {
-                        purchaseBtn.addEventListener('click', () => purchasePackage(name));
+                    if (canInteract) {
+                        card.querySelector('.purchase-btn').addEventListener('click', () => purchasePackage(name));
                     }
                     
                     packagesContainer.appendChild(card);
@@ -193,3 +192,5 @@
     </script>
 </body>
 </html>
+
+
