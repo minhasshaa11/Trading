@@ -190,7 +190,7 @@
                     refLoading.style.display = 'none';
                     if (data.success) {
                         refContent.classList.remove('hidden');
-                        const referralLink = `https://t.me/${BOT_USERNAME}?start=${data.referralCode}`;
+                        const referralLink = `https://t.me/${BOT_USERNAME}/bondearn?start=${data.referralCode}`;
                         refLinkInput.value = referralLink;
                         document.getElementById('ref-count').textContent = data.referralCount;
                         document.getElementById('ref-commissions').textContent = `$${data.totalCommissions.toFixed(2)}`;
