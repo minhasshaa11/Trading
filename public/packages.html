@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Packages - Trading App</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Confetti Library for purchase celebration -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -16,7 +15,6 @@
         .nav-link svg { width: 24px; height: 24px; }
         .nav-link.active { color: #111827; font-weight: 700; background-color: #f59e0b; border-radius: 16px; padding: 8px 12px; margin: -4px 0; box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
         .card { background-color: rgba(31, 41, 55, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; }
-        /* New hover effect for interactive cards */
         .card.interactive:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.7); display: none; align-items: center; justify-content: center; z-index: 2000; }
         .modal-box { background-color: #1f2937; border-radius: 1rem; padding: 2rem; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #374151; }
@@ -66,7 +64,13 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('nav-packages').classList.add('active');
             const token = localStorage.getItem('authToken');
-            const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+            
+            // --- ✅ CORRECTED: Using your original, working header ---
+            const headers = { 
+                'Content-Type': 'application/json', 
+                'x-auth-token': token 
+            };
+            // --------------------------------------------------------
 
             const balanceDisplay = document.getElementById('balance-display');
             const packagesContainer = document.getElementById('packages-container');
@@ -113,7 +117,7 @@
 
             async function fetchUserStatus() {
                 try {
-                    const response = await fetch('/api/user/info', { headers });
+                    const response = await fetch('/api/user/info', { headers: headers });
                     const result = await response.json();
                     if (result.success) {
                         userBalance = result.user.balance;
@@ -138,7 +142,6 @@
                         const result = await response.json();
                         if (result.success) {
                             showStatus(result.message, false);
-                            // Launch confetti on successful purchase
                             confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
                             fetchUserStatus();
                         } else {
@@ -173,7 +176,6 @@
                         <h2 class="text-xl font-bold text-white mb-2">${name} Plan</h2>
                         <p class="text-3xl font-bold text-yellow-400 mb-4">$${details.price.toLocaleString()}</p>
                         <ul class="text-gray-300 space-y-2 mb-6">
-                            <!-- Simplified Details -->
                             <li><strong>Daily Profit:</strong> $${details.dailyProfit.toLocaleString()}</li>
                         </ul>
                         ${buttonHtml}
