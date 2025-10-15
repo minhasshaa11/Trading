@@ -3,10 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Packages - Trading App</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; padding-bottom: 80px; background-color: #0c1021; }
@@ -14,12 +13,9 @@
         .nav-link { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; text-decoration: none; color: #9ca3af; font-weight: 500; font-size: 0.8rem; transition: all 0.2s ease-in-out; padding: 4px 0; gap: 4px; }
         .nav-link svg { width: 24px; height: 24px; }
         .nav-link.active { color: #111827; font-weight: 700; background-color: #f59e0b; border-radius: 16px; padding: 8px 12px; margin: -4px 0; box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
-        .card { background-color: rgba(31, 41, 55, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; overflow: hidden; }
-        .card.interactive:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.4); }
+        .card { background-color: rgba(31, 41, 55, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0, 0, 0, 0.7); display: none; align-items: center; justify-content: center; z-index: 2000; }
         .modal-box { background-color: #1f2937; border-radius: 1rem; padding: 2rem; width: 90%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #374151; }
-        .ribbon-wrapper { width: 120px; height: 120px; position: absolute; top: -10px; right: -10px; overflow: hidden; }
-        .ribbon { position: absolute; top: 30px; right: -30px; transform: rotate(45deg); background-color: #e53e3e; color: white; padding: 8px 0; width: 160px; text-align: center; font-weight: bold; font-size: 0.75rem; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; gap: 4px; }
     </style>
 </head>
 
@@ -32,21 +28,21 @@
         <header class="flex justify-between items-center mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-white">Investment Packages</h1>
-                <p class="text-gray-400">Select a package to start earning.</p>
+                <p class="text-gray-400">Select a package to start earning daily profits.</p>
             </div>
             <div>
                 <p class="text-lg">Balance: <span id="balance-display" class="font-bold text-green-400">$0.00</span></p>
             </div>
         </header>
 
-        <main id="packages-container" class="grid grid-cols-1 sm:grid-cols-2 gap-6"></main>
+        <main id="packages-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></main>
         <div id="status-message" class="text-center mt-6 min-h-[24px] font-semibold"></div>
     </div>
 
     <div id="custom-confirm-modal" class="modal-overlay">
         <div class="modal-box text-center">
             <h2 id="modal-title" class="text-xl font-bold text-white mb-4">Confirm Purchase</h2>
-            <p id="modal-text" class="text-gray-300 mb-6">Are you sure?</p>
+            <p id="modal-text" class="text-gray-300 mb-6">Are you sure you want to purchase this package?</p>
             <div class="flex justify-center gap-4">
                 <button id="modal-cancel-btn" class="flex-1 py-2 px-4 bg-gray-600 hover:bg-gray-700 rounded-lg font-semibold">Cancel</button>
                 <button id="modal-confirm-btn" class="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold">Confirm</button>
@@ -64,16 +60,11 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('nav-packages').classList.add('active');
+            const navLink = document.getElementById('nav-packages');
+            if (navLink) navLink.classList.add('active');
+
             const token = localStorage.getItem('authToken');
-            
-            // --- ✅ THE FIX IS HERE ---
-            // Using the correct 'Authorization' header format that your server expects.
-            const headers = { 
-                'Content-Type': 'application/json', 
-                'Authorization': `Bearer ${token}` 
-            };
-            // -------------------------
+            const headers = { 'Content-Type': 'application/json', 'x-auth-token': token };
 
             const balanceDisplay = document.getElementById('balance-display');
             const packagesContainer = document.getElementById('packages-container');
@@ -86,14 +77,13 @@
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
             let activeUserPackage = null;
-            let userBalance = 0;
 
             const packages = {
-                "Bronze":   { price: 20,   dailyProfit: 1,    durationDays: 30, color: 'border-yellow-700' },
-                "Silver":   { price: 100,  dailyProfit: 5.5,  durationDays: 30, color: 'border-gray-400' },
-                "Gold":     { price: 200,  dailyProfit: 12,   durationDays: 30, color: 'border-yellow-500', popular: true },
-                "Platinum": { price: 500,  dailyProfit: 32.5, durationDays: 30, color: 'border-blue-400' },
-                "Diamond":  { price: 1000, dailyProfit: 70,   durationDays: 30, color: 'border-purple-400' },
+                "Bronze": { price: 20, dailyProfit: 1, durationDays: 30 },
+                "Silver": { price: 100, dailyProfit: 5.5, durationDays: 30 },
+                "Gold": { price: 200, dailyProfit: 12, durationDays: 30 },
+                "Platinum": { price: 500, dailyProfit: 32.5, durationDays: 30 },
+                "Diamond": { price: 1000, dailyProfit: 70, durationDays: 30 },
             };
 
             function showCustomConfirm(packageName, onConfirm) {
@@ -101,10 +91,18 @@
                 modalText.textContent = `Are you sure you want to purchase the ${packageName} Plan?`;
                 modal.style.display = 'flex';
 
-                const confirmHandler = () => { onConfirm(); cleanup(); };
-                const cancelHandler = () => { cleanup(); };
-                const cleanup = () => {
+                const confirmHandler = () => {
+                    onConfirm();
                     modal.style.display = 'none';
+                    cleanup();
+                };
+
+                const cancelHandler = () => {
+                    modal.style.display = 'none';
+                    cleanup();
+                };
+
+                const cleanup = () => {
                     modalConfirmBtn.removeEventListener('click', confirmHandler);
                     modalCancelBtn.removeEventListener('click', cancelHandler);
                 };
@@ -120,17 +118,17 @@
 
             async function fetchUserStatus() {
                 try {
-                    // This fetch will now succeed because the header is correct
-                    const response = await fetch('/api/user/info', { headers: headers });
+                    const response = await fetch('/api/user/info', { headers });
                     const result = await response.json();
                     if (result.success) {
-                        userBalance = result.user.balance;
-                        balanceDisplay.textContent = `$${userBalance.toFixed(2)}`;
+                        balanceDisplay.textContent = `$${result.user.balance.toFixed(2)}`;
                         activeUserPackage = result.user.active_package;
                         renderPackages();
-                    } else { throw new Error(result.message); }
-                } catch (error) { 
-                    showStatus('Could not load user data. Please try again.', true);
+                    } else {
+                        console.error('Failed to fetch user status:', result.message);
+                    }
+                } catch (error) {
+                    console.error('Error fetching user status:', error);
                 }
             }
 
@@ -141,12 +139,11 @@
                         const response = await fetch('/api/user/purchase-package', {
                             method: 'POST',
                             headers: headers,
-                            body: JSON.stringify({ packageName })
+                            body: JSON.stringify({ packageName: packageName })
                         });
                         const result = await response.json();
                         if (result.success) {
                             showStatus(result.message, false);
-                            confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
                             fetchUserStatus();
                         } else {
                             showStatus(result.message, true);
@@ -161,44 +158,30 @@
                 packagesContainer.innerHTML = '';
                 for (const [name, details] of Object.entries(packages)) {
                     const totalProfit = details.dailyProfit * details.durationDays;
-                    const roi = (totalProfit / details.price) * 100;
-                    const isAffordable = userBalance >= details.price;
-                    const isCurrentPlan = activeUserPackage === name;
-                    const canInteract = !isCurrentPlan && isAffordable;
-
                     const card = document.createElement('div');
-                    card.className = `card p-6 rounded-xl shadow-lg flex flex-col relative border-t-4 ${details.color} ${!isAffordable && !isCurrentPlan ? 'opacity-60' : ''} ${canInteract ? 'interactive' : ''}`;
+                    card.className = 'card p-6 rounded-xl shadow-lg flex flex-col';
 
                     let buttonHtml = '';
-                    if (isCurrentPlan) {
-                        buttonHtml = `<button disabled class="mt-auto w-full py-3 font-bold text-white bg-green-600 rounded-lg cursor-default">Plan Activated</button>`;
-                    } else if (!isAffordable) {
-                        buttonHtml = `<button disabled class="mt-auto w-full py-3 font-bold text-gray-400 bg-gray-700 rounded-lg cursor-not-allowed">Insufficient Balance</button>`;
+                    if (activeUserPackage === name) {
+                        buttonHtml = `<button disabled class="mt-6 w-full py-3 font-bold text-white bg-green-600 rounded-lg cursor-default">Plan Activated</button>`;
                     } else {
-                        buttonHtml = `<button class="purchase-btn mt-auto w-full py-3 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg">Activate Plan</button>`;
+                        buttonHtml = `<button class="purchase-btn mt-6 w-full py-3 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg">Activate Plan</button>`;
                     }
 
-                    const badgeHtml = details.popular ? `
-                        <div class="ribbon-wrapper">
-                            <div class="ribbon">
-                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                <span>POPULAR</span>
-                            </div>
-                        </div>` : '';
-
                     card.innerHTML = `
-                        ${badgeHtml}
                         <h2 class="text-xl font-bold text-white mb-2">${name} Plan</h2>
                         <p class="text-3xl font-bold text-yellow-400 mb-4">$${details.price.toLocaleString()}</p>
-                        <ul class="text-gray-300 space-y-2 mb-6">
+                        <ul class="text-gray-300 space-y-2 flex-grow">
                             <li><strong>Daily Profit:</strong> $${details.dailyProfit.toLocaleString()}</li>
-                            <li><strong>Return (ROI):</strong> <span class="font-bold text-green-400">${roi.toFixed(0)}%</span></li>
+                            <li><strong>Duration:</strong> ${details.durationDays} Days</li>
+                            <li><strong>Total Profit:</strong> $${totalProfit.toLocaleString()}</li>
                         </ul>
                         ${buttonHtml}
                     `;
                     
-                    if (canInteract) {
-                        card.querySelector('.purchase-btn').addEventListener('click', () => purchasePackage(name));
+                    const purchaseBtn = card.querySelector('.purchase-btn');
+                    if (purchaseBtn) {
+                        purchaseBtn.addEventListener('click', () => purchasePackage(name));
                     }
                     
                     packagesContainer.appendChild(card);
@@ -210,5 +193,3 @@
     </script>
 </body>
 </html>
-
-
