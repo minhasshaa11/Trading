@@ -61,7 +61,7 @@ router.post('/approve-deposit', async (req, res) => {
         // --- NEW: AUTOMATIC 2% REFERRAL COMMISSION LOGIC ---
         if (isFirstDeposit && user.referredBy) {
             try {
-                const commissionRate = 0.02; // 2% commission
+                const commissionRate = 0.07; // 7% commission
                 const commissionAmount = depositAmount * commissionRate;
 
                 // Find the referrer and award them the commission
