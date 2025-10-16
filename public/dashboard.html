@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     
+    <!-- Using defer to ensure this script loads before the main script runs -->
     <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -19,15 +20,15 @@
         .skeleton { background-color: #374151; border-radius: 0.25rem; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 50% { opacity: .5; } }
         .card { background-color: rgba(31, 41, 55, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .status-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; z-index: 2000; background-color: #0c1021; }
+        .status-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; align-items: center; justify-content: center; text-align: center; z-index: 2000; background-color: #0c1021; }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100">
 
-<div id="auth-status-overlay" class="status-overlay">
+<div id="auth-status-overlay" class="status-overlay" style="display: flex;">
     <div>
-        <h1 id="auth-status-title" class="text-2xl font-bold text-white">Authenticating...</h1>
-        <p id="auth-status-message" class="text-gray-400 mt-2">Please wait while we log you in securely.</p>
+        <h1 id="auth-status-title" class="text-2xl font-bold text-white">Initializing...</h1>
+        <p id="auth-status-message" class="text-gray-400 mt-2">Please wait.</p>
     </div>
 </div>
 
@@ -61,8 +62,8 @@
             </div>
         </div>
         <div class="grid grid-cols-3 gap-4 sm:gap-6">
-            <a href="deposit.html" class="flex flex-col items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-700 aspect-square rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1"><svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg><span class="font-semibold text-sm sm:text-base">Deposit</span></a>
-            <a href="withdraw.html" class="flex flex-col items-center justify-center bg-gradient-to-br from-gray-600 to-gray-800 aspect-square rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1"><svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg><span class="font-semibold text-sm sm:text-base">Withdraw</span></a>
+            <a href="wallet.html" class="flex flex-col items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-700 aspect-square rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1"><svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg><span class="font-semibold text-sm sm:text-base">Wallet</span></a>
+            <a href="earning.html" class="flex flex-col items-center justify-center bg-gradient-to-br from-green-500 to-teal-600 aspect-square rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1"><svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg><span class="font-semibold text-sm sm:text-base">Earn</span></a>
             <a href="packages.html" class="flex flex-col items-center justify-center bg-gradient-to-br from-yellow-500 to-orange-600 aspect-square rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1"><svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg><span class="font-semibold text-sm sm:text-base">Packages</span></a>
         </div>
         <div id="dynamic-action-section" class="card p-6 rounded-2xl shadow-lg text-center"></div>
@@ -77,46 +78,11 @@
     <a href="profile.html" class="nav-link" id="nav-profile"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><span>Profile</span></a>
 </nav>
 
+<!-- ========================================================= -->
+<!-- ============= NEW, REFACTORED SCRIPT BLOCK ============= -->
+<!-- ========================================================= -->
 <script>
-    // This is the function for the full, first-time authentication flow
-    async function performFullAuthentication() {
-        const authOverlay = document.getElementById('auth-status-overlay');
-        const authTitle = document.getElementById('auth-status-title');
-        const authMessage = document.getElementById('auth-status-message');
-        
-        const showAuthStatus = (title, message) => {
-            authTitle.textContent = title;
-            authMessage.textContent = message;
-            authOverlay.style.display = 'flex';
-        };
-
-        try {
-            const WebApp = window.Telegram.WebApp;
-            WebApp.ready();
-            WebApp.expand();
-            const initData = WebApp.initData;
-            if (!initData) throw new Error("Telegram data not found.");
-
-            const response = await fetch('/api/auth/telegram-login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ initData: initData }),
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || `Server error: ${response.status}`);
-            }
-            const { token, user } = await response.json();
-            localStorage.setItem('authToken', token);
-            initializeDashboard(token, user); // Pass user data to avoid an extra network call
-            authOverlay.style.display = 'none';
-        } catch (error) {
-            console.error('Full authentication failed:', error);
-            showAuthStatus('Authentication Failed', error.message);
-        }
-    }
-
-    // This function initializes the dashboard with a token
+    // This function initializes the dashboard with a token and user data
     function initializeDashboard(token, initialUserData = null) {
         document.getElementById('dashboard-content').style.display = 'block';
         document.getElementById('nav-dashboard').classList.add('active');
@@ -130,6 +96,7 @@
         const dynamicActionSection = document.getElementById('dynamic-action-section');
 
         const renderData = (data) => {
+            if (!data) return;
             usernameDisplay.textContent = data.username || 'User';
             balanceDisplay.textContent = `$${data.balance.toFixed(2)}`;
             packageDisplay.textContent = data.activePackage || 'None';
@@ -139,20 +106,18 @@
             packageDisplay.style.display = 'block';
             if (data.activePackage) {
                 const expiry = new Date(data.packageExpiry).toLocaleDateString();
-                dynamicActionSection.innerHTML = `<h2 class="text-xl font-semibold text-white">Your Daily Task is Ready</h2><p class="text-gray-400 mt-2 mb-4">Click the button below to claim your daily profit. Your package expires on ${expiry}.</p><a href="earning.html" class="inline-block bg-gradient-to-br from-green-500 to-teal-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">Go to Earning Page</a>`;
+                dynamicActionSection.innerHTML = `<h2 class="text-xl font-semibold text-white">Your Daily Task is Ready</h2><p class="text-gray-400 mt-2 mb-4">Your package expires on ${expiry}.</p><a href="earning.html" class="inline-block bg-gradient-to-br from-green-500 to-teal-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg">Go to Earning Page</a>`;
             } else {
-                dynamicActionSection.innerHTML = `<h2 class="text-xl font-semibold text-white">Start Earning Today</h2><p class="text-gray-400 mt-2 mb-4">You don't have an active investment package. Purchase a package to start earning daily profits.</p><a href="packages.html" class="inline-block bg-gradient-to-br from-yellow-500 to-orange-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">View Packages</a>`;
+                dynamicActionSection.innerHTML = `<h2 class="text-xl font-semibold text-white">Start Earning Today</h2><p class="text-gray-400 mt-2 mb-4">You don't have an active package.</p><a href="packages.html" class="inline-block bg-gradient-to-br from-yellow-500 to-orange-600 text-white font-bold py-3 px-8 rounded-lg">View Packages</a>`;
             }
         };
 
-        // If we got user data from the login, render it immediately to prevent flickering
         if (initialUserData) {
             renderData(initialUserData);
         }
         
         socket.on('connect', () => {
-            console.log('Connected to server, requesting dashboard data...');
-            // Always request fresh data on connect to keep it updated
+            console.log('Connected to server. Requesting fresh data.');
             socket.emit('request_dashboard_data');
         });
 
@@ -160,27 +125,82 @@
             if (response && response.success) {
                 renderData(response.data);
             } else {
-                console.error('Could not load dashboard data from socket.');
+                console.error('Could not load real-time dashboard data.');
             }
         });
         socket.on('disconnect', () => console.log('Disconnected from server.'));
+        socket.on('connect_error', () => {
+            localStorage.removeItem('authToken');
+            window.location.reload();
+        });
     }
 
-    // MAIN ENTRY POINT
-    window.onload = () => {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            // FAST PATH: User is already logged in
-            console.log("Token found. Loading dashboard instantly.");
-            document.getElementById('auth-status-overlay').style.display = 'none';
-            initializeDashboard(token);
-        } else {
-            // SLOW PATH: First-time user, must authenticate
-            console.log("No token found. Starting full authentication.");
-            performFullAuthentication();
+    // MAIN APP INITIALIZATION LOGIC
+    document.addEventListener('DOMContentLoaded', async () => {
+        const authOverlay = document.getElementById('auth-status-overlay');
+        const authTitle = document.getElementById('auth-status-title');
+        const authMessage = document.getElementById('auth-status-message');
+    
+        const showAuthStatus = (title, message) => {
+            authTitle.textContent = title;
+            authMessage.textContent = message;
+            authOverlay.style.display = 'flex';
+        };
+
+        try {
+            // Explicitly check if the Telegram script has loaded before using it.
+            if (typeof window.Telegram === 'undefined' || typeof window.Telegram.WebApp === 'undefined') {
+                throw new Error("Telegram script failed to load. Check your network or VPN and restart the app.");
+            }
+            
+            const WebApp = window.Telegram.WebApp;
+            WebApp.ready();
+            WebApp.expand();
+
+            // Referral link logic: clear old session if it's a new user
+            const params = new URLSearchParams(WebApp.initData);
+            if (params.has('start_param')) {
+                localStorage.removeItem('authToken');
+            }
+
+            let token = localStorage.getItem('authToken');
+
+            if (token) {
+                // User has a token, initialize the dashboard immediately.
+                authOverlay.style.display = 'none';
+                initializeDashboard(token);
+            } else {
+                // This is a new user, must authenticate with the backend.
+                showAuthStatus('Authenticating...', 'Please wait while we log you in securely.');
+                const initData = WebApp.initData;
+                if (!initData) {
+                    throw new Error("Telegram data not found. Please launch the app from your bot.");
+                }
+
+                const response = await fetch('/api/auth/telegram-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ initData: initData }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `Server error: ${response.status}`);
+                }
+
+                const { token: newToken, user } = await response.json();
+                localStorage.setItem('authToken', newToken);
+                authOverlay.style.display = 'none';
+                initializeDashboard(newToken, user);
+            }
+        } catch (error) {
+            console.error('App initialization failed:', error);
+            showAuthStatus('Authentication Failed', error.message);
         }
-    };
+    });
 </script>
 
 </body>
 </html>
+
+
