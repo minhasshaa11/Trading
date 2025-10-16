@@ -1,179 +1,142 @@
-const express = require('express');
+Const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const authMiddleware = require('../middleware/auth');
+const crypto = require('crypto');
 
-// --- PACKAGE DEFINITIONS (Unchanged) ---
-const PACKAGES = {
-    "Bronze": { price: 30, dailyProfit: 1, durationDays: 30 },
-    "Silver": { price: 100, dailyProfit: 4, durationDays: 30 },
-    "Gold": { price: 200, dailyProfit: 9, durationDays: 30 },
-    "Platinum": { price: 500, dailyProfit: 23, durationDays: 30 },
-    "Diamond": { price: 1000, dailyProfit: 50, durationDays: 30 },
-};
-// -----------------------------------
+// =================================================================================
+// --- NEW: TELEGRAM LOGIN & REGISTRATION ROUTE ---
+// This single endpoint handles both login and registration for Telegram users.
+// =================================================================================
+router.post('/telegram-login', async (req, res) => {
+    const { initData } = req.body;
 
-// GET api/user/info - Provides basic user info
-router.get('/info', authMiddleware, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id).select('-password');
-        if (!user) { return res.status(404).json({ success: false, message: 'User not found.' }); }
-        res.json({ success: true, user: user });
-    } catch (error) {
-        console.error("Error fetching user info:", error);
-        res.status(500).json({ success: false, message: 'Server error.' });
+    if (!initData) {
+        return res.status(400).json({ message: 'Telegram initData is required.' });
     }
-});
 
-// GET api/user/referral-info - Provides the user's referral data
-router.get('/referral-info', authMiddleware, async (req, res) => {
     try {
-        const userId = new mongoose.Types.ObjectId(req.user.id);
-        const user = await User.findById(userId).select('referralCode referralCommissions');
-        if (!user) { return res.status(404).json({ success: false, message: 'User not found.' }); }
-        
-        const referralCount = await User.countDocuments({ referredBy: userId });
-        
+        // --- 1. Validate Telegram Data (Critical for Security) ---
+        if (!validateTelegramData(initData)) {
+            return res.status(401).json({ message: 'Invalid or tampered Telegram data.' });
+        }
+
+        // --- 2. Parse User Data & Referral Code ---
+        const params = new URLSearchParams(initData);
+        const user = JSON.parse(params.get('user'));
+        const startParam = params.get('start_param'); // This is the referral code from the bot link
+
+        if (!user || !user.id) {
+            return res.status(400).json({ message: 'User data not found in initData.' });
+        }
+
+        // --- 3. Find Existing User or Prepare to Create a New One ---
+        let dbUser = await User.findOne({ telegramId: user.id.toString() });
+
+        // If the user does not exist, create them
+        if (!dbUser) {
+            let referredBy = null;
+            let referrer = null;
+
+            // Use the start_param from Telegram as the referral code
+            if (startParam) {
+                referrer = await User.findOne({ referralCode: startParam });
+                if (referrer) {
+                    referredBy = referrer._id;
+                }
+            }
+
+            // Generate a unique referral code for the new user
+            let isUnique = false;
+            let newReferralCode = '';
+            while (!isUnique) {
+                newReferralCode = `REF-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+                const existingUser = await User.findOne({ referralCode: newReferralCode });
+                if (!existingUser) {
+                    isUnique = true;
+                }
+            }
+
+            dbUser = new User({
+                telegramId: user.id.toString(),
+                firstName: user.first_name,
+                lastName: user.last_name || '',
+                username: user.username, // Can be undefined, which is fine
+                referredBy: referredBy,
+                referralCode: newReferralCode
+            });
+
+            await dbUser.save();
+
+            // If there was a referrer, update their count
+            if (referrer) {
+                referrer.referralCount += 1;
+                await referrer.save();
+            }
+        }
+
+        // --- 4. Create and Sign JWT Token ---
+        const payload = {
+            id: dbUser._id,
+            telegramId: dbUser.telegramId
+        };
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+        // --- 5. Send Token and User Data to Frontend ---
         res.json({
-            success: true,
-            referralCode: user.referralCode,
-            referralCount: referralCount,
-            totalCommissions: user.referralCommissions
-        });
-    } catch (error)
-    {
-        console.error("Error fetching referral info:", error);
-        res.status(500).json({ success: false, message: 'Server error.' });
-    }
-});
-
-// POST api/user/purchase-package - Handles purchasing an investment package
-router.post('/purchase-package', authMiddleware, async (req, res) => {
-    const { packageName } = req.body;
-    const selectedPackage = PACKAGES[packageName];
-
-    if (!selectedPackage) {
-        return res.status(404).json({ success: false, message: "Package not found." });
-    }
-    
-    try {
-        const user = await User.findById(req.user.id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: "User not found." });
-        }
-        if (user.balance < selectedPackage.price) {
-            return res.status(400).json({ success: false, message: "Insufficient balance to purchase this package." });
-        }
-
-        user.balance -= selectedPackage.price;
-        user.active_package = packageName;
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + selectedPackage.durationDays);
-        user.package_expiry_date = expiryDate;
-        
-        await user.save();
-        res.json({ success: true, message: `${packageName} package purchased successfully!`, newBalance: user.balance });
-
-    } catch (error) {
-        console.error("Purchase package error:", error);
-        res.status(500).json({ success: false, message: 'Server error.' });
-    }
-});
-
-// POST api/user/claim-earnings - Handles claiming daily earnings
-router.post('/claim-earnings', authMiddleware, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: "User not found." });
-        }
-        if (!user.active_package) {
-            return res.status(400).json({ success: false, message: "You do not have an active package." });
-        }
-        if (new Date() > user.package_expiry_date) {
-            return res.status(400).json({ success: false, message: "Your package has expired." });
-        }
-
-        const now = new Date();
-        const todayReset = new Date();
-        todayReset.setUTCHours(0, 0, 0, 0); 
-
-        if (user.last_claim_timestamp && user.last_claim_timestamp > todayReset) {
-            return res.status(400).json({ success: false, message: "You have already claimed your profit for today." });
-        }
-
-        const dailyProfit = PACKAGES[user.active_package].dailyProfit;
-        user.balance += dailyProfit;
-        user.last_claim_timestamp = now;
-        
-        await user.save();
-        res.json({ success: true, message: `Successfully claimed ${dailyProfit} PKR!`, newBalance: user.balance });
-
-    } catch (error) {
-        console.error("Claim earnings error:", error);
-        res.status(500).json({ success: false, message: 'Server error.' });
-    }
-});
-
-// --- NEW ROUTES FOR THE UPDATED PROFILE PAGE ---
-
-// GET api/user/account-summary
-router.get('/account-summary', authMiddleware, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-        const totalWithdrawals = user.transactions
-            .filter(tx => tx.type === 'withdrawal' && tx.status === 'completed')
-            .reduce((sum, tx) => sum + (tx.amount || 0), 0);
-        const lifetimeProfit = (user.balance + totalWithdrawals) - user.totalDeposits;
-        res.json({
-            success: true,
-            summary: {
-                totalDeposits: user.totalDeposits,
-                totalWithdrawals: totalWithdrawals,
-                lifetimeProfit: lifetimeProfit
+            message: "Logged in successfully.",
+            token,
+            user: {
+                id: dbUser._id,
+                username: dbUser.username || dbUser.firstName, // Fallback to firstName if no username
+                balance: dbUser.balance,
+                activePackage: dbUser.active_package,
+                packageExpiry: dbUser.package_expiry_date
             }
         });
-    } catch (err) {
-        console.error('Error fetching account summary:', err.message);
-        res.status(500).send('Server Error');
-    }
-});
 
-// GET api/user/recent-activity
-router.get('/recent-activity', authMiddleware, async (req, res) => {
-    try {
-        const user = await User.findById(req.user.id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-        const recentActivities = user.transactions
-            .sort((a, b) => new Date(b.date) - new Date(a.date))
-            .slice(0, 5)
-            .map(tx => ({ date: tx.date, type: tx.type, amount: tx.amount, status: tx.status }));
-        res.json({ success: true, activities: recentActivities });
-    } catch (err) {
-        console.error('Error fetching recent activity:', err.message);
-        res.status(500).send('Server Error');
-    }
-});
-
-// --- RESTORED: ROUTE TO GET A USER'S REFERRALS LIST ---
-router.get('/my-referrals', authMiddleware, async (req, res) => {
-    try {
-        // Use the primary display name (firstName or username) for the list
-        const referrals = await User.find({ referredBy: req.user.id })
-                                    .select('username firstName createdAt') 
-                                    .sort({ createdAt: -1 });
-
-        res.json({ success: true, referrals: referrals });
     } catch (error) {
-        console.error("Error fetching referrals:", error);
-        res.status(500).json({ success: false, message: 'Server error.' });
+        console.error("Telegram Login Error:", error);
+        res.status(500).json({ message: "Server error during authentication." });
     }
 });
+
+
+/**
+ * NEW: Helper function to validate initData against your bot token.
+ * This ensures the request is authentic and came from Telegram.
+ * @param {string} initData The string from Telegram.WebApp.initData
+ * @returns {boolean}
+ */
+function validateTelegramData(initData) {
+    const BOT_TOKEN = process.env.BOT_TOKEN;
+    if (!BOT_TOKEN) {
+        console.error("FATAL: BOT_TOKEN environment variable is not set!");
+        return false;
+    }
+
+    const params = new URLSearchParams(initData);
+    const hash = params.get('hash');
+    params.delete('hash');
+
+    const dataCheckString = Array.from(params.keys())
+        .sort()
+        .map(key => `${key}=${params.get(key)}`)
+        .join('\n');
+
+    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest();
+    const hmac = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+
+    return hmac === hash;
+}
+
+
+// =================================================================================
+// --- OLD ROUTES ---
+// You can now delete your old '/register' and '/login' routes if you are
+// moving completely to the Telegram Mini App login flow.
+// =================================================================================
+
 
 module.exports = router;
