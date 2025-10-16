@@ -7,7 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     
-    <script src="https://telegram.org/js/telegram-web-app.js" defer></script>
+    <!-- The defer attribute has been removed from this line to prioritize its loading -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -163,8 +164,6 @@
         });
         socket.on('disconnect', () => console.log('Disconnected from server.'));
     }
-    
-    // --- START OF THE PERMANENT FIX ---
 
     function startApp() {
         const token = localStorage.getItem('authToken');
@@ -193,11 +192,10 @@
         }
     }
 
-    // The new main entry point, replacing window.onload
+    // The main entry point, replacing window.onload
     window.addEventListener('load', () => {
         waitForTelegram();
     });
-    // --- END OF THE PERMANENT FIX ---
 </script>
 
 </body>
