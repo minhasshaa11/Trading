@@ -51,7 +51,7 @@
             </div>
              <div class="card p-6 rounded-2xl shadow-lg flex items-center space-x-4">
                 <div class="bg-yellow-500/20 p-3 rounded-full">
-                    <svg class="w-6 h-6 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+                    <svg class="w-6 h-6 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 S0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
                 </div>
                 <div>
                     <p class="text-gray-400 text-sm">Active Package</p>
@@ -78,18 +78,18 @@
 </nav>
 
 <script>
+    const authOverlay = document.getElementById('auth-status-overlay');
+    const authTitle = document.getElementById('auth-status-title');
+    const authMessage = document.getElementById('auth-status-message');
+    
+    const showAuthStatus = (title, message) => {
+        authTitle.textContent = title;
+        authMessage.textContent = message;
+        authOverlay.style.display = 'flex';
+    };
+
     // This is the function for the full, first-time authentication flow
     async function performFullAuthentication() {
-        const authOverlay = document.getElementById('auth-status-overlay');
-        const authTitle = document.getElementById('auth-status-title');
-        const authMessage = document.getElementById('auth-status-message');
-        
-        const showAuthStatus = (title, message) => {
-            authTitle.textContent = title;
-            authMessage.textContent = message;
-            authOverlay.style.display = 'flex';
-        };
-
         try {
             const WebApp = window.Telegram.WebApp;
             WebApp.ready();
@@ -145,14 +145,12 @@
             }
         };
 
-        // If we got user data from the login, render it immediately to prevent flickering
         if (initialUserData) {
             renderData(initialUserData);
         }
         
         socket.on('connect', () => {
             console.log('Connected to server, requesting dashboard data...');
-            // Always request fresh data on connect to keep it updated
             socket.emit('request_dashboard_data');
         });
 
@@ -165,22 +163,44 @@
         });
         socket.on('disconnect', () => console.log('Disconnected from server.'));
     }
+    
+    // --- START OF THE PERMANENT FIX ---
 
-    // MAIN ENTRY POINT
-    window.onload = () => {
+    function startApp() {
         const token = localStorage.getItem('authToken');
         if (token) {
             // FAST PATH: User is already logged in
             console.log("Token found. Loading dashboard instantly.");
-            document.getElementById('auth-status-overlay').style.display = 'none';
+            authOverlay.style.display = 'none';
             initializeDashboard(token);
         } else {
             // SLOW PATH: First-time user, must authenticate
             console.log("No token found. Starting full authentication.");
             performFullAuthentication();
         }
-    };
+    }
+
+    function waitForTelegram(attempts = 0) {
+        if (window.Telegram && window.Telegram.WebApp) {
+            console.log("Telegram WebApp is ready.");
+            startApp();
+        } else if (attempts < 100) { // Try for 10 seconds (100 attempts * 100ms)
+            console.log(`Telegram not ready, retrying... (Attempt ${attempts + 1})`);
+            setTimeout(() => waitForTelegram(attempts + 1), 100);
+        } else {
+            console.error("Telegram WebApp failed to load after 10 seconds.");
+            showAuthStatus('Initialization Failed', 'Could not connect to Telegram. Please try closing and reopening the app.');
+        }
+    }
+
+    // The new main entry point, replacing window.onload
+    window.addEventListener('load', () => {
+        waitForTelegram();
+    });
+    // --- END OF THE PERMANENT FIX ---
 </script>
 
 </body>
 </html>
+
+
