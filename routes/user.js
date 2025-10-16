@@ -7,10 +7,10 @@ const authMiddleware = require('../middleware/auth');
 // --- PACKAGE DEFINITIONS (Unchanged) ---
 const PACKAGES = {
     "Bronze": { price: 30, dailyProfit: 1, durationDays: 30 },
-    "Silver": { price: 100, dailyProfit: 4.5, durationDays: 30 },
-    "Gold": { price: 200, dailyProfit: 10, durationDays: 30 },
-    "Platinum": { price: 500, dailyProfit: 25.5, durationDays: 30 },
-    "Diamond": { price: 1000, dailyProfit: 55, durationDays: 30 },
+    "Silver": { price: 100, dailyProfit: 4, durationDays: 30 },
+    "Gold": { price: 200, dailyProfit: 9, durationDays: 30 },
+    "Platinum": { price: 500, dailyProfit: 23, durationDays: 30 },
+    "Diamond": { price: 1000, dailyProfit: 50, durationDays: 30 },
 };
 // -----------------------------------
 
