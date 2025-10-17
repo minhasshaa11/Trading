@@ -6,7 +6,7 @@ const authMiddleware = require('../middleware/auth');
 router.use(authMiddleware);
 
 // --- DEFINE YOUR WITHDRAWAL RULES HERE ---
-const MINIMUM_WITHDRAWAL = 10;
+const MINIMUM_WITHDRAWAL = 5;
 const WITHDRAWALS_ALLOWED_WITHOUT_REFERRAL = 2;
 // -----------------------------------------
 
