@@ -5,33 +5,137 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Earning - Investment Platform</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- NEW: Added the professional confetti library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            padding-bottom: 80px; 
-            background-color: #0c1021;
-            background-image: radial-gradient(circle at top, rgba(31, 41, 55, 0.5) 0%, #0c1021 50%);
+        :root {
+            --bg-dark-navy: #0A0D14;
+            --text-off-white: #F0F0F0;
+            --accent-magenta: #BE38F3;
+            --accent-magenta-rgb: 190, 56, 243;
+            --accent-teal: #00F5D4;
         }
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; display: flex; justify-content: space-around; z-index: 1000; background-color: #111827; border-top: 1px solid #374151; padding: 8px 0; }
-        .nav-link { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; text-decoration: none; color: #9ca3af; font-weight: 500; font-size: 0.8rem; transition: all 0.2s ease-in-out; padding: 4px 0; gap: 4px; }
-        .nav-link svg { width: 24px; height: 24px; }
-        .nav-link.active { color: #111827; font-weight: 700; background-color: #f59e0b; border-radius: 16px; padding: 8px 12px; margin: -4px 0; box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
-        .card { background-color: rgba(31, 41, 55, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark-navy);
+            color: var(--text-off-white);
+            padding-bottom: 100px;
+            overflow-x: hidden;
+        }
+
+        .aurora-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .aurora-background::before,
+        .aurora-background::after {
+            content: '';
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            border-radius: 50%;
+            opacity: 0.2;
+            mix-blend-mode: screen;
+            filter: blur(100px);
+            will-change: transform;
+        }
+
+        .aurora-background::before {
+            background: radial-gradient(circle, var(--accent-magenta), transparent 60%);
+            top: -20%;
+            left: -20%;
+            animation: moveGradientOne 25s ease-in-out infinite alternate;
+        }
+
+        .aurora-background::after {
+            background: radial-gradient(circle, var(--accent-teal), transparent 60%);
+            bottom: -20%;
+            right: -20%;
+            animation: moveGradientTwo 30s ease-in-out infinite alternate;
+        }
+
+        @keyframes moveGradientOne {
+            from { transform: translate(-20%, -20%) rotate(0deg); }
+            to { transform: translate(20%, 20%) rotate(180deg); }
+        }
+
+        @keyframes moveGradientTwo {
+            from { transform: translate(20%, 20%) rotate(0deg); }
+            to { transform: translate(-20%, -20%) rotate(360deg); }
+        }
+
+        .card {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 400px;
+            display: flex;
+            justify-content: space-around;
+            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 12px 0;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.2);
+        }
+
+        .nav-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            text-decoration: none;
+            color: #A0A0A0;
+            font-weight: 500;
+            font-size: 0.75rem;
+            transition: all 0.2s ease-in-out;
+            gap: 4px;
+        }
+        
+        .nav-link svg {
+             width: 24px; height: 24px;
+        }
+
+        .nav-link.active {
+            color: var(--accent-magenta);
+            font-weight: 700;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 flex flex-col items-center justify-center min-h-screen">
+<body class="flex flex-col items-center justify-center min-h-screen">
 
     <script>
         const token = localStorage.getItem('authToken');
         if (!token) { window.location.href = '/login.html'; }
     </script>
-    
-    <!-- REMOVED: The old canvas is no longer needed -->
 
-    <main class="w-full max-w-md p-4 text-center">
+    <div class="aurora-background"></div>
+
+    <main class="w-full max-w-md p-4 text-center relative z-10">
         <div id="earning-card" class="card p-8 rounded-2xl shadow-lg">
             <div id="loader">
                 <p class="text-gray-400">Loading your earning status...</p>
@@ -40,7 +144,7 @@
     </main>
 
     <nav class="bottom-nav">
-        <a href="dashboard.html" class="nav-link" id="nav-dashboard"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 A0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>Dashboard</span></a>
+        <a href="dashboard.html" class="nav-link" id="nav-dashboard"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>Dashboard</span></a>
         <a href="packages.html" class="nav-link" id="nav-packages"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg><span>Packages</span></a>
         <a href="earning.html" class="nav-link" id="nav-earning"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg><span>Earn</span></a>
         <a href="wallet.html" class="nav-link" id="nav-wallet"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg><span>Wallet</span></a>
@@ -50,11 +154,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('nav-earning').classList.add('active');
-
             const token = localStorage.getItem('authToken');
-            // Using your original, working header format
             const headers = { 'Content-Type': 'application/json', 'x-auth-token': token };
-            
+
             const earningCard = document.getElementById('earning-card');
             let countdownInterval;
 
@@ -64,8 +166,8 @@
             function showReadyToClaim(profitAmount, upgradeMessage) {
                 earningCard.innerHTML = `
                     <h1 class="text-2xl font-bold text-white mb-2">Claim Your Daily Profit</h1>
-                    <p class="text-gray-400 mb-6">Your profit of <span class="font-bold text-yellow-400">$${profitAmount.toLocaleString()}</span> is ready.</p>
-                    <button id="claim-btn" class="w-full bg-gradient-to-br from-green-500 to-teal-600 text-white font-bold py-4 rounded-lg shadow-lg transition-transform transform hover:scale-105">
+                    <p class="text-gray-400 mb-6">Your profit of <span class="font-bold" style="color: var(--accent-teal);">$${profitAmount.toLocaleString()}</span> is ready.</p>
+                    <button id="claim-btn" class="w-full text-white font-bold py-4 rounded-lg shadow-lg transition-transform transform hover:scale-105" style="background: linear-gradient(90deg, var(--accent-magenta), var(--accent-teal)); text-shadow: 0 0 10px rgba(0,0,0,0.5);">
                         Claim Now
                     </button>
                     <p id="status-message" class="text-sm mt-4 min-h-[20px]"></p>
@@ -76,9 +178,9 @@
 
             function showWaiting(nextClaimTime) {
                 earningCard.innerHTML = `
-                    <h1 class="text-2xl font-bold text-white mb-2">Profit Claimed Successfully</h1>
-                    <p class="text-gray-400 mb-6">You can claim your next profit in:</p>
-                    <div id="countdown" class="text-4xl font-bold text-yellow-400 font-mono">--:--:--</div>
+                    <h1 class="text-2xl font-bold text-white mb-2">Profit Claimed</h1>
+                    <p class="text-gray-400 mb-6">Your next claim will be available in:</p>
+                    <div id="countdown" class="text-4xl font-bold font-mono" style="color: var(--accent-magenta); text-shadow: 0 0 15px rgba(var(--accent-magenta-rgb), 0.5);">--:--:--</div>
                 `;
                 startCountdown(nextClaimTime);
             }
@@ -87,7 +189,7 @@
                 earningCard.innerHTML = `
                     <h1 class="text-xl font-bold text-red-400 mb-2">Unable to Claim</h1>
                     <p class="text-gray-400 mb-6">${message}</p>
-                    <a href="packages.html" class="text-blue-400 hover:underline">View Packages</a>
+                    <a href="packages.html" class="font-semibold" style="color: var(--accent-magenta);">View Packages</a>
                 `;
             }
 
@@ -119,8 +221,7 @@
                     const result = await response.json();
 
                     if (result.success) {
-                        // --- ✅ NEW: Trigger the good confetti ---
-                        confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+                        confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ['#BE38F3', '#00F5D4', '#FFFFFF']});
                         setTimeout(fetchUserStatus, 1500);
                     } else {
                         statusMessage.className = 'text-sm mt-4 min-h-[20px] text-red-400';
@@ -135,14 +236,14 @@
                     claimBtn.textContent = 'Claim Now';
                 }
             }
-            
+
             async function fetchUserStatus() {
                 try {
                     const response = await fetch('/api/user/info', { headers });
                     const result = await response.json();
-                    
+
                     if (!result.success) return showError("Could not verify your account status.");
-                    
+
                     const user = result.user;
                     if (!user.active_package) return showError("You do not have an active investment package.");
                     if (new Date() > new Date(user.package_expiry_date)) return showError("Your investment package has expired.");
@@ -160,9 +261,9 @@
                             const nextPackage = packageOrder[currentPackageIndex + 1];
                             const nextProfit = profitMap[nextPackage];
                             upgradeMsg = `
-                                <div class="mt-6 pt-4 border-t border-gray-700">
-                                    <p class="text-xs text-gray-400">${nextPackage} members are claiming <span class="font-bold text-yellow-400">$${nextProfit.toLocaleString()}</span> today.</p>
-                                    <a href="packages.html" class="text-xs text-blue-400 hover:underline">Upgrade Plan</a>
+                                <div class="mt-6 pt-4 border-t border-white/10">
+                                    <p class="text-xs text-gray-400">${nextPackage} members are claiming <span class="font-bold" style="color: var(--accent-teal);">$${nextProfit.toLocaleString()}</span> today.</p>
+                                    <a href="packages.html" class="text-xs font-semibold" style="color: var(--accent-magenta);">Upgrade Plan</a>
                                 </div>`;
                         }
                         showReadyToClaim(profitMap[user.active_package] || 0, upgradeMsg);
@@ -171,8 +272,6 @@
                     showError("Could not connect to the server.");
                 }
             }
-
-            // --- REMOVED: The old, boring confetti logic is gone ---
 
             fetchUserStatus();
         });
