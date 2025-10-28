@@ -21,11 +21,10 @@
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-dark-navy);
             color: var(--text-off-white);
-            padding-bottom: 80px; /* Space for the input field */
+            padding-bottom: 100px;
             overflow-x: hidden;
         }
         
-        /* Reusing your card styles */
         .card {
             background-color: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(20px);
@@ -35,15 +34,13 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
 
-        /* Specific styles for the chat interface */
         .chat-container {
-            max-height: calc(100vh - 180px); /* Adjust based on header and input height */
+            max-height: calc(100vh - 180px);
             overflow-y: auto;
             display: flex;
-            flex-direction: column-reverse; /* Start chat at the bottom */
+            flex-direction: column-reverse;
         }
         
-        /* Message bubble styles */
         .message {
             max-width: 80%;
             padding: 10px 14px;
@@ -54,17 +51,16 @@
 
         .user-message {
             align-self: flex-end;
-            background-color: rgba(var(--accent-magenta-rgb), 0.3); /* Magenta tint for user */
+            background-color: rgba(var(--accent-magenta-rgb), 0.3);
             margin-left: auto;
         }
 
         .admin-message {
             align-self: flex-start;
-            background-color: rgba(255, 255, 255, 0.1); /* Lighter gray for admin */
+            background-color: rgba(255, 255, 255, 0.1);
             margin-right: auto;
         }
 
-        /* Fixed input bar at the bottom */
         .chat-input-bar {
             position: fixed;
             bottom: 0;
@@ -118,14 +114,12 @@
             const messageInput = document.getElementById('message-input');
             const sendBtn = document.getElementById('send-btn');
             
-            let chatId = null; // Will be determined after creating/fetching the thread
+            let chatId = null;
 
-            // Utility function to scroll to the bottom of the chat
             const scrollToBottom = () => {
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             };
 
-            // Function to render a single message
             const renderMessage = (message) => {
                 const isUser = message.sender === 'user';
                 const messageEl = document.createElement('div');
@@ -134,44 +128,58 @@
                     <p>${message.content}</p>
                     <span class="block text-xs mt-1 opacity-60">${new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                 `;
-                // Add new messages to the bottom, but prepend to the container
-                // because of the `flex-direction: column-reverse`
+                // Prepend to maintain reverse-order structure
                 chatContainer.prepend(messageEl); 
             };
             
-            // --- API Call Functions ---
-
-            // 1. Initialize or Fetch Chat Thread
+            // --- UPDATED INITIALIZE FUNCTION FOR ROBUST ERROR HANDLING ---
             const initializeChat = async () => {
                 chatStatus.textContent = 'Initializing chat thread...';
+                sendBtn.disabled = true;
+
                 try {
-                    // API Endpoint: Your server needs to check if a thread exists for the user. 
-                    // If it does, return the thread ID and messages. If not, create a new one.
-                    const res = await fetch('/api/support/initialize-chat', { headers }); 
+                    const res = await fetch('/api/user/support/initialize-chat', { headers });
+
+                    if (!res.ok) {
+                        // Handle non-200 responses (401, 500, etc.)
+                        let errorDetails = await res.text();
+                        try {
+                            // Try to parse JSON if the server sent an error object
+                            const errorJson = JSON.parse(errorDetails);
+                            errorDetails = errorJson.message || errorDetails;
+                        } catch (e) {
+                            // If parsing failed, use the raw text
+                        }
+                        
+                        chatStatus.textContent = `Server Error (${res.status}): ${errorDetails}`;
+                        return; 
+                    }
+
                     const data = await res.json();
                     
                     if (data.success && data.chatId) {
+                        // SUCCESS PATH: Thread loaded
                         chatId = data.chatId;
                         chatStatus.style.display = 'none';
-                        // Reverse the array to display older messages first, before column-reverse handles the final order
                         data.messages.reverse().forEach(renderMessage); 
                         scrollToBottom();
-                    } else if (data.success && !data.chatId) {
-                        // New chat created, no messages yet
+                        sendBtn.disabled = false;
+                    } else if (data.success) {
+                        // NEW CHAT PATH: New thread created
+                        chatId = data.newChatId || data.chatId; 
                         chatStatus.textContent = 'New chat started. Send your first message!';
-                        chatId = data.newChatId; // Assuming your API returns a newChatId
+                        sendBtn.disabled = false;
                     } else {
-                        chatStatus.textContent = 'Error: Could not initialize chat.';
-                        sendBtn.disabled = true;
+                        // FALLBACK: Status 200, but success: false in JSON body
+                        chatStatus.textContent = data.message || 'Error: Could not initialize chat.';
                     }
+
                 } catch (error) {
                     console.error('Chat initialization failed:', error);
-                    chatStatus.textContent = 'Connection error. Please try again.';
-                    sendBtn.disabled = true;
+                    chatStatus.textContent = 'A critical error occurred. Check your network or server console.';
                 }
             };
             
-            // 2. Send Message
             const sendMessage = async () => {
                 const content = messageInput.value.trim();
                 if (!content || !chatId) return;
@@ -185,17 +193,14 @@
                 scrollToBottom();
 
                 try {
-                    const res = await fetch('/api/support/send-message', {
+                    const res = await fetch('/api/user/support/send-message', {
                         method: 'POST',
                         headers,
                         body: JSON.stringify({ chatId, content })
                     });
-                    const data = await res.json();
-
-                    if (!data.success) {
-                         // Rollback or notify if send failed
-                        alert('Message failed to send. Please try refreshing.');
-                        // In a real app, you might re-enable the send button and put the message back.
+                    
+                    if (!res.ok) {
+                         alert('Message failed to send. Please try refreshing.');
                     }
                 } catch (error) {
                     alert('Network error while sending message.');
@@ -213,16 +218,6 @@
 
             // Start the process
             initializeChat();
-            
-            // OPTIONAL: Polling to check for new admin replies
-            // You would typically use WebSockets for real-time chat, but polling is a simpler start.
-            // const startPolling = () => {
-            //     setInterval(async () => {
-            //         // Fetch new messages since the last fetch/message
-            //         // Your API would need to handle this efficiently
-            //     }, 5000); // Poll every 5 seconds
-            // };
-            // startPolling();
         });
     </script>
 </body>
