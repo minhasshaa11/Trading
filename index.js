@@ -10,8 +10,8 @@ const path = require("path");
 const jwt = require('jsonwebtoken');
 
 // ------------------ MODELS & ROUTES ------------------
-// REMOVED: Trade and Candle models are no longer needed
-const User = require("./models/User");
+// FIX: Use './models/User' because index.js and models are in the same directory.
+const User = require("./models/User"); 
 
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
@@ -46,6 +46,8 @@ app.use("/api/withdraw", withdrawRoutes);
 
 // A simpler function to get the data our new dashboard needs
 async function getDashboardData(userId) {
+    // Note: The fields active_package and package_expiry_date might not exist in your current User model
+    // unless you have added them manually. Ensure your User model is up-to-date.
     const user = await User.findById(userId).select('username balance active_package package_expiry_date');
     if (!user) {
         throw new Error('User not found.');
