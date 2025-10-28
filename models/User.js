@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const bcryptjs = require('bcryptjs');
 
 const transactionSchema = new mongoose.Schema({
     txid: { type: String, required: true },
