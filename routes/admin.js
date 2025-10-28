@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const ChatThread = require('../models/Chat'); // <--- NEW REQUIREMENT
 
 // Admin security middleware (unchanged)
 const adminAuth = (req, res, next) => {
     const adminKey = req.headers['x-admin-key'];
+    // IMPORTANT: Make sure the ADMIN_KEY is set in your .env file
     if (!adminKey || adminKey !== process.env.ADMIN_KEY) {
         return res.status(403).json({ success: false, message: "Forbidden: Invalid Admin Key" });
     }
@@ -12,6 +14,92 @@ const adminAuth = (req, res, next) => {
 };
 
 router.use(adminAuth);
+
+// --- NEW ROUTES FOR SUPPORT CHAT ---
+
+// GET api/admin/support/tickets - Get a list of open and pending threads
+router.get('/support/tickets', async (req, res) => {
+    try {
+        // Fetch threads that are not explicitly marked as 'closed'
+        const tickets = await ChatThread.find({ status: { $ne: 'closed' } })
+            .populate('userId', 'username firstName') // Populate user info for display
+            .sort({ lastUpdated: -1 }) // Sort by most recent activity
+
+        // Map data to include the last message content for quick view
+        const formattedTickets = tickets.map(ticket => ({
+            _id: ticket._id,
+            user: {
+                username: ticket.userId.username,
+                firstName: ticket.userId.firstName,
+                _id: ticket.userId._id
+            },
+            status: ticket.status,
+            lastUpdated: ticket.lastUpdated,
+            // Extract the last message if it exists
+            lastMessage: ticket.messages.length > 0 ? ticket.messages[ticket.messages.length - 1] : null
+        }));
+        
+        res.json({ success: true, tickets: formattedTickets });
+    } catch (error) {
+        console.error("Error fetching support tickets:", error);
+        res.status(500).json({ success: false, message: "Server error fetching tickets." });
+    }
+});
+
+// GET api/admin/support/messages/:chatId - Get all messages for a specific thread
+router.get('/support/messages/:chatId', async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        
+        const thread = await ChatThread.findById(chatId).select('messages userId');
+        
+        if (!thread) {
+            return res.status(404).json({ success: false, message: "Chat thread not found." });
+        }
+        
+        res.json({ success: true, messages: thread.messages });
+    } catch (error) {
+        console.error("Error fetching chat messages:", error);
+        res.status(500).json({ success: false, message: "Server error fetching messages." });
+    }
+});
+
+// POST api/admin/support/send-reply - Send a message from the admin
+router.post('/support/send-reply', async (req, res) => {
+    const { chatId, content } = req.body;
+
+    if (!content || content.trim() === "") {
+        return res.status(400).json({ success: false, message: "Reply content cannot be empty." });
+    }
+    
+    try {
+        const thread = await ChatThread.findById(chatId);
+
+        if (!thread) {
+            return res.status(404).json({ success: false, message: "Chat thread not found." });
+        }
+
+        const newMessage = {
+            sender: 'admin',
+            content: content.trim(),
+            timestamp: new Date()
+        };
+        
+        thread.messages.push(newMessage);
+        thread.status = 'open'; // Mark back to 'open' after admin replies
+        thread.lastUpdated = new Date();
+        
+        await thread.save();
+
+        res.json({ success: true, message: "Reply sent.", newMessage });
+
+    } catch (err) {
+        console.error('Error sending admin reply:', err.message);
+        res.status(500).json({ success: false, message: 'Server error during reply send.' });
+    }
+});
+
+// --- ORIGINAL ROUTES CONTINUED ---
 
 // GET all admin data (unchanged)
 router.get('/data', async (req, res) => {
@@ -58,7 +146,7 @@ router.post('/approve-deposit', async (req, res) => {
         
         await user.save();
 
-        // --- NEW: AUTOMATIC 2% REFERRAL COMMISSION LOGIC ---
+        // --- NEW: AUTOMATIC 7% REFERRAL COMMISSION LOGIC ---
         if (isFirstDeposit && user.referredBy) {
             try {
                 const commissionRate = 0.07; // 7% commission
@@ -71,7 +159,7 @@ router.post('/approve-deposit', async (req, res) => {
                         referralCommissions: commissionAmount 
                     }
                 });
-                console.log(`AWARDED: $${commissionAmount.toFixed(2)} (2%) commission to referrer ID: ${user.referredBy} for a $${depositAmount.toFixed(2)} deposit.`);
+                console.log(`AWARDED: $${commissionAmount.toFixed(2)} (7%) commission to referrer ID: ${user.referredBy} for a $${depositAmount.toFixed(2)} deposit.`);
             } catch (commissionError) {
                 console.error("Failed to award referral commission:", commissionError);
                 // We don't stop the main process, just log the error that it failed
@@ -101,8 +189,6 @@ router.post('/reject-deposit', async (req, res) => {
         res.status(500).json({ success: false, message: "Server error during rejection." });
     }
 });
-
-// ... (The rest of your routes are unchanged)
 
 router.post('/approve-withdrawal', async (req, res) => {
     const { userId, txid } = req.body;
