@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const ChatThread = require('../models/Chat'); // <--- NEW REQUIREMENT
 const authMiddleware = require('../middleware/auth');
 
 // --- PACKAGE DEFINITIONS (Unchanged) ---
@@ -116,7 +117,75 @@ router.post('/claim-earnings', authMiddleware, async (req, res) => {
     }
 });
 
-// --- NEW ROUTES FOR THE UPDATED PROFILE PAGE ---
+// --- NEW ROUTES FOR CUSTOMER SUPPORT CHAT ---
+
+// GET api/user/support/initialize-chat
+router.get('/support/initialize-chat', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // Find existing thread or create a new one
+        let thread = await ChatThread.findOne({ userId });
+
+        if (!thread) {
+            thread = new ChatThread({ userId, status: 'open' });
+            await thread.save();
+            return res.json({ success: true, chatId: thread._id, messages: [], message: "New chat thread created." });
+        }
+
+        // Return existing thread details
+        res.json({ 
+            success: true, 
+            chatId: thread._id, 
+            messages: thread.messages,
+            message: "Existing chat thread loaded."
+        });
+
+    } catch (err) {
+        console.error('Error initializing user chat:', err.message);
+        res.status(500).json({ success: false, message: 'Server error during chat initialization.' });
+    }
+});
+
+// POST api/user/support/send-message
+router.post('/support/send-message', authMiddleware, async (req, res) => {
+    const { chatId, content } = req.body;
+
+    if (!content || content.trim() === "") {
+        return res.status(400).json({ success: false, message: "Message content cannot be empty." });
+    }
+    
+    try {
+        const userId = req.user.id;
+        
+        // Find the thread and ensure it belongs to the user
+        const thread = await ChatThread.findOne({ _id: chatId, userId });
+
+        if (!thread) {
+            return res.status(404).json({ success: false, message: "Chat thread not found or access denied." });
+        }
+
+        const newMessage = {
+            sender: 'user',
+            content: content.trim(),
+            timestamp: new Date()
+        };
+        
+        thread.messages.push(newMessage);
+        thread.status = 'pending_admin_reply'; // Mark for admin attention
+        thread.lastUpdated = new Date();
+        
+        await thread.save();
+
+        res.json({ success: true, message: "Message sent.", newMessage });
+
+    } catch (err) {
+        console.error('Error sending user message:', err.message);
+        res.status(500).json({ success: false, message: 'Server error during message send.' });
+    }
+});
+
+// --- ORIGINAL ROUTES CONTINUED ---
 
 // GET api/user/account-summary
 router.get('/account-summary', authMiddleware, async (req, res) => {
