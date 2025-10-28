@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Chat - Investment App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark-navy: #0A0D14;
+            --text-off-white: #F0F0F0;
+            --accent-magenta: #BE38F3;
+            --accent-magenta-rgb: 190, 56, 243;
+            --accent-teal: #00F5D4;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark-navy);
+            color: var(--text-off-white);
+            padding-bottom: 80px; /* Space for the input field */
+            overflow-x: hidden;
+        }
+        
+        /* Reusing your card styles */
+        .card {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Specific styles for the chat interface */
+        .chat-container {
+            max-height: calc(100vh - 180px); /* Adjust based on header and input height */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column-reverse; /* Start chat at the bottom */
+        }
+        
+        /* Message bubble styles */
+        .message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: rgba(var(--accent-magenta-rgb), 0.3); /* Magenta tint for user */
+            margin-left: auto;
+        }
+
+        .admin-message {
+            align-self: flex-start;
+            background-color: rgba(255, 255, 255, 0.1); /* Lighter gray for admin */
+            margin-right: auto;
+        }
+
+        /* Fixed input bar at the bottom */
+        .chat-input-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 16px;
+            background-color: var(--bg-dark-navy);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container mx-auto p-4 max-w-3xl relative z-10">
+
+        <header class="flex items-center justify-between mb-4">
+            <h1 class="text-2xl font-bold">Customer Support Chat</h1>
+            <a href="/profile.html" class="text-sm font-medium text-gray-400 hover:text-white transition-colors">&larr; Back to Profile</a>
+        </header>
+
+        <div class="card p-4">
+            <div id="chat-container" class="chat-container space-y-4">
+                <p id="chat-status" class="text-center text-gray-400 py-4">Loading chat history...</p>
+                </div>
+        </div>
+
+    </div>
+
+    <div class="chat-input-bar">
+        <div class="container mx-auto max-w-3xl flex space-x-3">
+            <input type="text" id="message-input" placeholder="Type your message..." 
+                   class="flex-1 rounded-lg bg-black/20 p-3 text-gray-300 border border-white/10 focus:ring-2 focus:ring-offset-2 focus:ring-offset-bg-dark-navy focus:ring-blue-500 focus:outline-none"
+                   style="transition: all 0.2s ease-in-out;">
+            <button id="send-btn" 
+                    class="px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                Send
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('authToken')) { window.location.href = '/login.html'; }
+
+            const token = localStorage.getItem('authToken');
+            const headers = { 'x-auth-token': token, 'Content-Type': 'application/json' };
+            
+            const chatContainer = document.getElementById('chat-container');
+            const chatStatus = document.getElementById('chat-status');
+            const messageInput = document.getElementById('message-input');
+            const sendBtn = document.getElementById('send-btn');
+            
+            let chatId = null; // Will be determined after creating/fetching the thread
+
+            // Utility function to scroll to the bottom of the chat
+            const scrollToBottom = () => {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            };
+
+            // Function to render a single message
+            const renderMessage = (message) => {
+                const isUser = message.sender === 'user';
+                const messageEl = document.createElement('div');
+                messageEl.className = `message ${isUser ? 'user-message' : 'admin-message'} text-sm`;
+                messageEl.innerHTML = `
+                    <p>${message.content}</p>
+                    <span class="block text-xs mt-1 opacity-60">${new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                `;
+                // Add new messages to the bottom, but prepend to the container
+                // because of the `flex-direction: column-reverse`
+                chatContainer.prepend(messageEl); 
+            };
+            
+            // --- API Call Functions ---
+
+            // 1. Initialize or Fetch Chat Thread
+            const initializeChat = async () => {
+                chatStatus.textContent = 'Initializing chat thread...';
+                try {
+                    // API Endpoint: Your server needs to check if a thread exists for the user. 
+                    // If it does, return the thread ID and messages. If not, create a new one.
+                    const res = await fetch('/api/support/initialize-chat', { headers }); 
+                    const data = await res.json();
+                    
+                    if (data.success && data.chatId) {
+                        chatId = data.chatId;
+                        chatStatus.style.display = 'none';
+                        // Reverse the array to display older messages first, before column-reverse handles the final order
+                        data.messages.reverse().forEach(renderMessage); 
+                        scrollToBottom();
+                    } else if (data.success && !data.chatId) {
+                        // New chat created, no messages yet
+                        chatStatus.textContent = 'New chat started. Send your first message!';
+                        chatId = data.newChatId; // Assuming your API returns a newChatId
+                    } else {
+                        chatStatus.textContent = 'Error: Could not initialize chat.';
+                        sendBtn.disabled = true;
+                    }
+                } catch (error) {
+                    console.error('Chat initialization failed:', error);
+                    chatStatus.textContent = 'Connection error. Please try again.';
+                    sendBtn.disabled = true;
+                }
+            };
+            
+            // 2. Send Message
+            const sendMessage = async () => {
+                const content = messageInput.value.trim();
+                if (!content || !chatId) return;
+
+                messageInput.value = '';
+                sendBtn.disabled = true;
+
+                // Optimistically render the message (assume success)
+                const tempMessage = { content, sender: 'user', timestamp: new Date() };
+                renderMessage(tempMessage);
+                scrollToBottom();
+
+                try {
+                    const res = await fetch('/api/support/send-message', {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify({ chatId, content })
+                    });
+                    const data = await res.json();
+
+                    if (!data.success) {
+                         // Rollback or notify if send failed
+                        alert('Message failed to send. Please try refreshing.');
+                        // In a real app, you might re-enable the send button and put the message back.
+                    }
+                } catch (error) {
+                    alert('Network error while sending message.');
+                } finally {
+                    sendBtn.disabled = false;
+                    messageInput.focus();
+                }
+            };
+
+            // Event Listeners
+            sendBtn.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+
+            // Start the process
+            initializeChat();
+            
+            // OPTIONAL: Polling to check for new admin replies
+            // You would typically use WebSockets for real-time chat, but polling is a simpler start.
+            // const startPolling = () => {
+            //     setInterval(async () => {
+            //         // Fetch new messages since the last fetch/message
+            //         // Your API would need to handle this efficiently
+            //     }, 5000); // Poll every 5 seconds
+            // };
+            // startPolling();
+        });
+    </script>
+</body>
+</html>
