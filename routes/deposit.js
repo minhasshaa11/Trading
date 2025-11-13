@@ -33,23 +33,18 @@ router.post("/create_deposit", authMiddleware, async (req, res) => {
         if (!user) return res.status(404).json({ message: "User not found" });
 
         // --- THE FIX: CALCULATE AMOUNT WITH SERVICE FEE ---
-        // If user wants $30, we ask for $30 + 1% service fee to cover our buffer.
         const originalAmount = parseFloat(amount);
-        
-        // Formula: Amount + (Amount * Service Fee)
         const amountToPay = originalAmount + (originalAmount * SERVICE_FEE_PERCENT);
 
         // A. Ask NowPayments to create invoice for the HIGHER amount
         const response = await axios.post(`${NOWPAYMENTS_URL}/payment`, {
-            price_amount: amountToPay, // User pays $30.30 (Service Fee Included)
+            price_amount: amountToPay, 
             price_currency: 'usd',
             pay_currency: currency,
             order_id: user.id,
             order_description: `Deposit for ${user.username}`,
             
-            // 💥 CRITICAL FIX: Transfer all network fees to the customer 💥
-            // This ensures all fixed network fees (the $8-$10 cost) are added to the invoice
-            // so the merchant (you) receives the full amount.
+            // CRITICAL FIX: Transfer all network fees to the customer 
             is_fee_paid_by_user: true 
             
         }, { headers: apiHeaders });
@@ -57,10 +52,9 @@ router.post("/create_deposit", authMiddleware, async (req, res) => {
         const { payment_id, pay_address, pay_amount } = response.data;
 
         // B. Save the ORIGINAL amount ($30) to DB
-        // We credit the user what they ASKED for, not what they paid in fees.
         user.transactions.push({
             txid: payment_id,
-            amount: originalAmount, // Credit them $30
+            amount: originalAmount, 
             currency: currency,
             status: 'pending',
             date: new Date()
@@ -73,13 +67,27 @@ router.post("/create_deposit", authMiddleware, async (req, res) => {
             success: true,
             payment_id: payment_id,
             deposit_address: pay_address,
-            amount_expected: pay_amount // This will show the crypto equivalent of $30.30 + Network Fees
+            amount_expected: pay_amount
         });
 
     } catch (error) {
-        // Log the specific NowPayments error data to help troubleshoot the Polygon failure
-        console.error("NowPayments API Error:", error.response?.data);
-        res.status(500).json({ success: false, message: "Failed to generate deposit address. Check server logs." });
+        // 💥 IMPROVED ERROR HANDLING 💥
+        let errorMessage = "Failed to generate deposit address.";
+        
+        if (error.response) {
+            // API returned a specific error (e.g., "Invalid API Key," "Bad Currency")
+            errorMessage = error.response.data.message || `API Error: ${error.response.status}`;
+            console.error("NowPayments API Response Error:", error.response.data);
+        } else if (error.code) {
+             // Axios/Network error (e.g., ENOTFOUND, ETIMEDOUT)
+            errorMessage = `Network Error: Could not connect to the payment gateway. (${error.code})`;
+            console.error("Axios Network Error:", error.message);
+        } else {
+            // Generic error
+            console.error("Unknown Error:", error.message);
+        }
+
+        res.status(500).json({ success: false, message: errorMessage });
     }
 });
 
@@ -116,16 +124,12 @@ router.post("/verify", authMiddleware, async (req, res) => {
         console.log(`Payment ${payment_id} status: ${status}`);
 
         // B. If Success, update DB
-        // Note: 'sending' means NowPayments got the money and is sending it to you.
-        // We count 'sending' as success so the user doesn't wait too long.
         if (status === 'finished' || status === 'confirmed' || status === 'sending') {
             
             // 1. Update status
             transaction.status = 'completed';
             
             // 2. Add ORIGINAL Balance ($30) to User
-            // Ensure we don't add it twice if they click button multiple times rapidly
-            // (The status check above handles this, but safety first)
             if (transaction.status !== 'completed_logged') {
                  user.balance = (user.balance || 0) + transaction.amount;
                  transaction.status = 'completed'; // Mark strictly
