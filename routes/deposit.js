@@ -17,8 +17,6 @@ const apiHeaders = {
 // ==========================================
 // 1. CREATE DEPOSIT (Generates Unique Address)
 // ==========================================
-// Frontend sends: { "amount": 100, "currency": "usdttrc20" }
-// "currency" options examples: 'eth', 'btc', 'usdttrc20', 'usdterc20', 'bnb'
 router.post("/create_deposit", authMiddleware, async (req, res) => {
     const { amount, currency } = req.body;
 
@@ -34,7 +32,7 @@ router.post("/create_deposit", authMiddleware, async (req, res) => {
         const response = await axios.post(`${NOWPAYMENTS_URL}/payment`, {
             price_amount: amount,      // The Dollar amount user wants to deposit
             price_currency: 'usd',     // We calculate value based on USD
-            pay_currency: currency,    // The crypto they are paying with (e.g., usdttrc20)
+            pay_currency: currency,    // The crypto they are paying with
             order_id: user.id,         // Tracking tag
             order_description: `Deposit for ${user.username}`
         }, { headers: apiHeaders });
@@ -42,13 +40,11 @@ router.post("/create_deposit", authMiddleware, async (req, res) => {
         const { payment_id, pay_address, pay_amount } = response.data;
 
         // B. Save this "Pending" transaction to your DB
-        // We use the existing 'transactions' array. 
-        // We map 'payment_id' to 'txid' so you don't have to change your DB Schema.
         user.transactions.push({
-            txid: payment_id,         // Storing Payment ID here temporarily
+            txid: payment_id,         // Store Payment ID as txid temporarily
             amount: parseFloat(amount),
             currency: currency,
-            status: 'pending',        // You might need to add this field to your User model
+            status: 'pending',
             date: new Date()
         });
 
@@ -57,9 +53,9 @@ router.post("/create_deposit", authMiddleware, async (req, res) => {
         // C. Send the Address to the User
         res.json({
             success: true,
-            payment_id: payment_id,    // User needs this to verify later
+            payment_id: payment_id,
             deposit_address: pay_address,
-            amount_expected: pay_amount // Exact crypto amount they must send
+            amount_expected: pay_amount
         });
 
     } catch (error) {
@@ -71,7 +67,6 @@ router.post("/create_deposit", authMiddleware, async (req, res) => {
 // ==========================================
 // 2. VERIFY STATUS (Check if paid)
 // ==========================================
-// Frontend sends: { "payment_id": "123456..." }
 router.post("/verify", authMiddleware, async (req, res) => {
     const { payment_id } = req.body;
 
@@ -101,8 +96,6 @@ router.post("/verify", authMiddleware, async (req, res) => {
         });
 
         const status = response.data.payment_status; 
-        // Possible statuses: 'waiting', 'confirming', 'confirmed', 'sending', 'finished', 'failed'
-
         console.log(`Payment ${payment_id} status: ${status}`);
 
         // B. If Success, update DB
@@ -110,8 +103,8 @@ router.post("/verify", authMiddleware, async (req, res) => {
             // 1. Update transaction status
             transaction.status = 'completed';
             
-            // 2. Add Balance to User (Uncomment and adjust field name below)
-            // user.walletBalance = (user.walletBalance || 0) + transaction.amount;
+            // 2. Add Balance to User (FIXED: using 'balance' instead of 'walletBalance')
+            user.balance = (user.balance || 0) + transaction.amount;
             
             await user.save();
             
@@ -140,7 +133,7 @@ router.post("/verify", authMiddleware, async (req, res) => {
 });
 
 // ==========================================
-// 3. GET HISTORY (Same as before)
+// 3. GET HISTORY
 // ==========================================
 router.get("/history", authMiddleware, async (req, res) => {
     try {
