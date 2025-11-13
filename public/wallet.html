@@ -173,15 +173,15 @@
                     <form id="deposit-create-form" class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-1">Amount (USD)</label>
-                            <input type="number" id="deposit-amount" class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-purple-500 outline-none" placeholder="e.g. 100" required min="10">
+                            <input type="number" id="deposit-amount" class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-purple-500 outline-none" placeholder="e.g. 100" required min="5">
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-1">Select Currency</label>
                             <select id="deposit-currency" class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-purple-500 outline-none">
-                                <option value="usdttrc20">USDT (TRC20) - Lowest Fees</option>
+                                <option value="usdttrc20">USDT (TRC20) - Recommended</option>
                                 <option value="usdtbsc">USDT (BEP20/BSC) - Low Fees</option>
-                                <option value="usdterc20">USDT (ERC20) - High Fees</option>
+                                <option value="usdterc20">USDT (ERC20)</option>
                             </select>
                         </div>
 
@@ -251,7 +251,7 @@
                 </div>
             </div>
 
-            <!-- WITHDRAW SECTION (Kept mostly same, just cleaned up) -->
+            <!-- WITHDRAW SECTION -->
             <div id="withdraw-content" class="tab-content card p-6 space-y-6">
                 <div class="flex justify-between items-center bg-black/20 p-4 rounded-xl border border-white/5">
                     <span class="text-gray-400">Available Balance</span>
@@ -451,13 +451,42 @@
                 } catch (e) { list.innerHTML = '<p class="text-red-500 text-xs">Failed to load history</p>'; }
             }
 
-            // --- WITHDRAW LOGIC (Kept Simple) ---
+            // --- WITHDRAW LOGIC ---
             async function loadUserBalance() {
                 try {
                     const res = await fetch('/api/user/info', { headers });
                     const data = await res.json();
                     if(data.success) {
                         document.getElementById('withdraw-balance').innerText = `$${data.user.balance.toFixed(2)}`;
+                    }
+                } catch(e) {}
+            }
+
+            // Load withdrawal history (Added function)
+            async function loadWithdrawHistory() {
+                const list = document.getElementById('withdraw-history-list');
+                try {
+                    const res = await fetch('/api/withdraw/history', { headers });
+                    const data = await res.json();
+                    
+                    if (data.history && data.history.length > 0) {
+                        list.innerHTML = data.history.map(tx => `
+                            <div class="bg-black/20 p-3 rounded-lg flex justify-between items-center border border-white/5">
+                                <div>
+                                    <p class="text-white font-medium text-sm">$${tx.amount.toFixed(2)}</p>
+                                    <p class="text-xs text-gray-500">${new Date(tx.date).toLocaleDateString()}</p>
+                                </div>
+                                <div class="text-xs font-bold px-2 py-1 rounded ${
+                                    tx.status === 'completed' ? 'bg-green-900 text-green-300' :
+                                    tx.status === 'rejected' ? 'bg-red-900 text-red-300' :
+                                    'bg-yellow-900 text-yellow-300'
+                                }">
+                                    ${tx.status ? tx.status.toUpperCase() : 'PENDING'}
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        list.innerHTML = '<p class="text-center text-gray-500 text-xs">No withdrawals yet.</p>';
                     }
                 } catch(e) {}
             }
@@ -487,6 +516,7 @@
                     withdrawMsg.innerText = data.message;
                     withdrawForm.reset();
                     loadUserBalance(); // Refresh balance
+                    loadWithdrawHistory(); // Refresh history
                 } catch(err) {
                     withdrawMsg.style.color = '#F87171';
                     withdrawMsg.innerText = err.message;
@@ -499,6 +529,7 @@
             // INIT LOADS
             loadDepositHistory();
             loadUserBalance();
+            loadWithdrawHistory();
         });
     </script>
 </body>
