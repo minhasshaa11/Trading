@@ -173,10 +173,8 @@
         </div>
 
         <main>
-            <!-- DEPOSIT SECTION -->
             <div id="deposit-content" class="tab-content active card p-6 space-y-6">
                 
-                <!-- PHASE 1: INPUT FORM -->
                 <div id="deposit-phase-1">
                     <h2 class="text-xl font-semibold mb-4">Create New Deposit</h2>
                     <form id="deposit-create-form" class="space-y-4">
@@ -188,10 +186,12 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-300 mb-1">Select Currency</label>
                             <select id="deposit-currency" class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-purple-500 outline-none">
-                                <option value="usdttrc20">USDT (TRC20) - Recommended</option>
-                                <option value="usdtbsc">USDT (BEP20/BSC) - Low Fees</option>
-                                <option value="usdterc20">USDT (ERC20)</option>
-                            </select>
+                                
+                                <option value="usdtbsc" selected>USDT (BEP20/BSC) - Recommended (Low Fees)</option>
+                                <option value="usdcpol">USDC (Polygon) - Very Low Fees</option>
+                                <option value="usdttrc20">USDT (TRC20) - Moderate Fees</option>
+                                <option value="usdterc20">USDT (ERC20) - High Fees</option>
+                                </select>
                         </div>
 
                         <button type="submit" id="btn-create-deposit" class="w-full py-3 font-bold text-white bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg hover:opacity-90 transition-all shadow-lg">
@@ -201,11 +201,9 @@
                     <p id="create-error" class="text-red-400 text-sm text-center mt-2 hidden"></p>
                 </div>
 
-                <!-- PHASE 2: INVOICE DISPLAY (Hidden initially) -->
                 <div id="deposit-phase-2" class="hidden">
                     <div class="text-center mb-4">
                         <div class="inline-block p-2 bg-white rounded-lg mb-2">
-                            <!-- QR Code Image Placeholder -->
                             <img id="qr-code-img" src="" alt="QR Code" class="w-32 h-32 object-contain">
                         </div>
                         <p class="text-gray-400 text-sm">Scan to pay</p>
@@ -251,7 +249,6 @@
                     <p id="status-result" class="text-center text-sm font-bold mt-3 h-5"></p>
                 </div>
 
-                <!-- HISTORY SECTION -->
                 <div class="mt-8 border-t border-white/10 pt-6">
                     <h3 class="text-lg font-semibold mb-3">Recent Deposits</h3>
                     <div id="deposit-history-list" class="space-y-2 max-h-60 overflow-y-auto">
@@ -260,7 +257,6 @@
                 </div>
             </div>
 
-            <!-- WITHDRAW SECTION -->
             <div id="withdraw-content" class="tab-content card p-6 space-y-6">
                 <div class="flex justify-between items-center bg-black/20 p-4 rounded-xl border border-white/5">
                     <span class="text-gray-400">Available Balance</span>
@@ -292,7 +288,6 @@
         </main>
     </div>
 
-    <!-- Bottom Navigation (Restored Original) -->
     <nav class="bottom-nav">
         <a href="/dashboard.html" class="nav-link" id="nav-dashboard"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>Dashboard</span></a>
         <a href="/packages.html" class="nav-link" id="nav-packages"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg><span>Packages</span></a>
@@ -544,5 +539,3 @@
     </script>
 </body>
 </html>
-
-
