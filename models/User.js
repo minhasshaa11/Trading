@@ -2,12 +2,23 @@ const mongoose = require('mongoose');
 const bcryptjs = require('bcryptjs');
 
 const transactionSchema = new mongoose.Schema({
+    // In the new system, we initially store the NowPayments 'payment_id' here.
+    // Once confirmed, you could optionally update it to the real blockchain Hash.
     txid: { type: String, required: true },
-    status: { type: String, default: 'pending_review' },
+    
+    // Added 'currency' so you know if they paid in 'usdttrc20', 'btc', etc.
+    currency: { type: String }, 
+
+    // NowPayments statuses: 'waiting', 'confirming', 'confirmed', 'sending', 'finished', 'failed'
+    status: { type: String, default: 'pending' },
+    
     date: { type: Date, default: Date.now },
     type: { type: String, enum: ['deposit', 'withdrawal'], default: 'deposit' },
     amount: { type: Number },
-    address: { type: String },
+    
+    // This will store the UNIQUE deposit address generated for this specific transaction
+    address: { type: String }, 
+    
     tax: { type: Number, default: 0 },
     finalAmount: { type: Number }
 });
@@ -17,7 +28,7 @@ const userSchema = new mongoose.Schema({
     telegramId: {
         type: String,
         unique: true,
-        sparse: true // Allows multiple users to exist without a telegramId
+        sparse: true 
     },
     firstName: {
         type: String
@@ -29,20 +40,20 @@ const userSchema = new mongoose.Schema({
 
     username: {
         type: String,
-        // CHANGED: Removed 'required: true' as Telegram login is now primary
-        // and some Telegram users may not have a username.
         unique: true,
         trim: true,
-        sparse: true // Added to ensure uniqueness only for documents that have this field.
+        sparse: true
     },
     password: {
         type: String,
-        // No longer required, to allow for passwordless Telegram users
     },
     balance: {
         type: Number,
         default: 0.00,
     },
+    
+    // These fields are less important now that we generate unique addresses per transaction,
+    // but we keep them to avoid breaking any old logic.
     depositAddress: {
         type: String,
         unique: true,
@@ -53,6 +64,7 @@ const userSchema = new mongoose.Schema({
         default: null,
         sparse: true,
     },
+    
     transactions: [transactionSchema],
 
     referralCode: {
@@ -103,7 +115,7 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Your original password hashing middleware (unchanged)
+// Password hashing middleware
 userSchema.pre('save', async function (next) {
     if (!this.isModified('password') || !this.password) return next();
     const salt = await bcrypt.genSalt(10);
@@ -111,7 +123,7 @@ userSchema.pre('save', async function (next) {
     next();
 });
 
-// Your original password comparison method (unchanged)
+// Password comparison method
 userSchema.methods.comparePassword = async function (enteredPassword) {
     if (!this.password) return false;
     return await bcrypt.compare(enteredPassword, this.password);
