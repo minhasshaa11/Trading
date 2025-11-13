@@ -1,3 +1,6 @@
+/body>
+</html>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,7 +16,6 @@
             --bg-dark-navy: #0A0D14;
             --text-off-white: #F0F0F0;
             --accent-magenta: #BE38F3;
-            --accent-magenta-rgb: 190, 56, 243;
             --accent-teal: #00F5D4;
         }
 
@@ -45,7 +47,6 @@
             opacity: 0.2;
             mix-blend-mode: screen;
             filter: blur(100px);
-            will-change: transform;
         }
 
         .aurora-background::before {
@@ -91,13 +92,11 @@
             display: flex;
             justify-content: space-around;
             z-index: 1000;
-            background-color: rgba(0, 0, 0, 0.3);
+            background-color: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 24px;
             padding: 12px 0;
-            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.2);
         }
 
         .nav-link {
@@ -108,28 +107,19 @@
             flex-grow: 1;
             text-decoration: none;
             color: #A0A0A0;
-            font-weight: 500;
             font-size: 0.75rem;
-            transition: all 0.2s ease-in-out;
-            gap: 4px;
+            transition: all 0.2s;
         }
         
-        .nav-link svg {
-             width: 24px; height: 24px;
-        }
-
-        .nav-link.active {
-            color: var(--accent-magenta);
-            font-weight: 700;
-            transform: translateY(-2px);
-        }
+        .nav-link svg { width: 24px; height: 24px; margin-bottom: 4px; }
+        .nav-link.active { color: var(--accent-magenta); font-weight: 700; }
 
         .tab-button {
             flex: 1;
             padding: 12px 0;
             font-weight: 600;
             color: #A0A0A0;
-            background-color: transparent;
+            background: transparent;
             border: none;
             cursor: pointer;
             transition: all 0.2s;
@@ -149,13 +139,8 @@
             transition: width 0.3s ease;
         }
 
-        .tab-button.active {
-            color: var(--accent-magenta);
-        }
-
-        .tab-button.active::after {
-            width: 40%;
-        }
+        .tab-button.active { color: var(--accent-magenta); }
+        .tab-button.active::after { width: 40%; }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -173,287 +158,354 @@
     <div class="container mx-auto p-4 max-w-lg relative z-10">
         <header class="mb-6 text-center">
             <h1 class="text-3xl font-bold text-white">My Wallet</h1>
-            <p class="text-gray-400">Deposit or withdraw your funds securely.</p>
+            <p class="text-gray-400">Secure Deposit & Withdrawal</p>
         </header>
 
-        <div class="flex card mb-1 p-1 rounded-full">
-            <button id="deposit-tab-btn" class="tab-button rounded-full">Deposit</button>
-            <button id="withdraw-tab-btn" class="tab-button rounded-full">Withdraw</button>
+        <div class="flex card mb-6 p-1 rounded-full">
+            <button id="deposit-tab-btn" class="tab-button active">Deposit</button>
+            <button id="withdraw-tab-btn" class="tab-button">Withdraw</button>
         </div>
 
         <main>
-            <div id="deposit-content" class="tab-content card p-6 space-y-6">
-                <div>
-                     <h2 class="text-xl font-semibold mb-4">Step 1: Send Funds</h2>
-                     <div class="bg-orange-900/50 border border-orange-500 text-orange-200 px-4 py-3 rounded-lg mb-4" role="alert">
-                         <div class="flex">
-                             <div class="py-1"><svg class="fill-current h-6 w-6 text-orange-400 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zM9 5v6h2V5H9zm0 8v2h2v-2H9z"/></svg></div>
-                             <div>
-                                 <p class="font-bold">Important: Use Correct Network</p>
-                                 <p class="text-sm">Only send funds via <strong>Ethereum (ERC-20)</strong>. Using another network will result in permanent loss of funds.</p>
-                             </div>
-                         </div>
-                     </div>
-                     <div id="loading-spinner-deposit" class="text-center py-4"><p class="text-gray-400">Generating deposit address...</p></div>
-                     <div id="error-message-container-deposit" class="hidden text-red-400 bg-red-900/50 p-4 rounded-lg"><p id="error-message-deposit"></p></div>
-                     <div id="address-container-deposit" class="hidden">
-                         <p class="text-gray-400 mb-2">Send funds to this address:</p>
-                         <div class="bg-black/20 p-4 rounded-lg flex items-center justify-between border border-white/10">
-                             <code id="deposit-address" class="text-sm text-yellow-300 break-all"></code>
-                             <button id="copy-button" class="ml-4 px-3 py-1.5 text-sm font-medium bg-blue-600 rounded-lg hover:bg-blue-700">Copy</button>
-                         </div>
-                     </div>
-                </div>
-                <div>
-                    <h2 class="text-xl font-semibold mb-4">Step 2: Submit for Verification</h2>
-                    <form id="txid-form" class="space-y-4">
+            <!-- DEPOSIT SECTION -->
+            <div id="deposit-content" class="tab-content active card p-6 space-y-6">
+                
+                <!-- PHASE 1: INPUT FORM -->
+                <div id="deposit-phase-1">
+                    <h2 class="text-xl font-semibold mb-4">Create New Deposit</h2>
+                    <form id="deposit-create-form" class="space-y-4">
                         <div>
-                            <label for="amount-input-deposit" class="block text-sm font-medium text-gray-300 mb-1">Amount (USD)</label>
-                            <input type="number" id="amount-input-deposit" class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-sm focus:ring-2 focus:ring-magenta-500" placeholder="e.g., 50.00" required min="0" step="0.01">
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Amount (USD)</label>
+                            <input type="number" id="deposit-amount" class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-purple-500 outline-none" placeholder="e.g. 100" required min="10">
                         </div>
+                        
                         <div>
-                            <label for="txid-input" class="block text-sm font-medium text-gray-300 mb-1">Transaction ID (TXID)</label>
-                            <input type="text" id="txid-input" class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-sm" placeholder="Paste your TXID here" required>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Select Currency</label>
+                            <select id="deposit-currency" class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-purple-500 outline-none">
+                                <option value="usdttrc20">USDT (TRC20) - Recommended</option>
+                                <option value="usdterc20">USDT (ERC20)</option>
+                                <option value="btc">Bitcoin (BTC)</option>
+                                <option value="eth">Ethereum (ETH)</option>
+                                <option value="bnbbsc">BNB (BSC)</option>
+                                <option value="ltc">Litecoin (LTC)</option>
+                                <option value="trx">Tron (TRX)</option>
+                            </select>
                         </div>
-                        <button type="submit" id="submit-txid-button" class="w-full mt-4 px-4 py-2.5 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">Submit for Verification</button>
+
+                        <button type="submit" id="btn-create-deposit" class="w-full py-3 font-bold text-white bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg hover:opacity-90 transition-all shadow-lg">
+                            Generate Deposit Address
+                        </button>
                     </form>
-                    <div id="form-message-deposit" class="mt-4 text-center text-sm"></div>
+                    <p id="create-error" class="text-red-400 text-sm text-center mt-2 hidden"></p>
                 </div>
-                <div>
-                    <h2 class="text-xl font-semibold mb-4">Deposit History</h2>
-                    <div id="history-container-deposit" class="space-y-3">
-                        <p id="history-loading-deposit" class="text-gray-400 text-center">Loading history...</p>
+
+                <!-- PHASE 2: INVOICE DISPLAY (Hidden initially) -->
+                <div id="deposit-phase-2" class="hidden">
+                    <div class="text-center mb-4">
+                        <div class="inline-block p-2 bg-white rounded-lg mb-2">
+                            <!-- QR Code Image Placeholder -->
+                            <img id="qr-code-img" src="" alt="QR Code" class="w-32 h-32 object-contain">
+                        </div>
+                        <p class="text-gray-400 text-sm">Scan to pay</p>
+                    </div>
+
+                    <div class="bg-black/30 p-4 rounded-xl border border-white/10 space-y-3">
+                        <div>
+                            <p class="text-xs text-gray-400 uppercase">Send Exactly</p>
+                            <p class="text-xl font-bold text-green-400 flex items-center gap-2">
+                                <span id="invoice-amount">0.0000</span> 
+                                <span id="invoice-currency" class="uppercase text-sm text-gray-300"></span>
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400 uppercase mb-1">To Address</p>
+                            <div class="flex items-center gap-2 bg-black/40 p-2 rounded-lg border border-white/5">
+                                <code id="invoice-address" class="text-xs text-yellow-300 break-all flex-1 font-mono"></code>
+                                <button id="btn-copy" class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-xs text-white transition">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400 uppercase">Payment ID</p>
+                            <p id="invoice-id" class="text-xs text-gray-500 font-mono">...</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-900/20 border border-blue-500/30 p-3 rounded-lg mt-4">
+                        <p class="text-xs text-blue-200 text-center">
+                            ⚠️ Send the <strong>exact amount</strong> shown above.<br>
+                            Wait for the network to confirm.
+                        </p>
+                    </div>
+
+                    <div class="mt-6 space-y-3">
+                        <button id="btn-check-status" class="w-full py-3 font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 transition shadow-lg">
+                            I Have Paid / Check Status
+                        </button>
+                        <button id="btn-cancel-deposit" class="w-full py-2 font-medium text-gray-400 hover:text-white transition">
+                            Cancel / New Deposit
+                        </button>
+                    </div>
+
+                    <p id="status-result" class="text-center text-sm font-bold mt-3 h-5"></p>
+                </div>
+
+                <!-- HISTORY SECTION -->
+                <div class="mt-8 border-t border-white/10 pt-6">
+                    <h3 class="text-lg font-semibold mb-3">Recent Deposits</h3>
+                    <div id="deposit-history-list" class="space-y-2 max-h-60 overflow-y-auto">
+                        <p class="text-gray-500 text-center text-sm">Loading history...</p>
                     </div>
                 </div>
             </div>
 
+            <!-- WITHDRAW SECTION (Kept mostly same, just cleaned up) -->
             <div id="withdraw-content" class="tab-content card p-6 space-y-6">
-                <div>
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-semibold">Withdrawal Request</h2>
-                        <p class="text-sm text-gray-400">Balance: <strong id="balance-display-withdraw" style="color: var(--accent-teal);">$0.00</strong></p>
-                    </div>
-                    <form id="withdraw-form">
-                        <div class="mb-4">
-                            <label for="amount-input-withdraw" class="block text-sm font-medium text-gray-300 mb-1">Amount (USD)</label>
-                            <input type="number" id="amount-input-withdraw" step="0.01" class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-sm" placeholder="e.g., 100" required>
-                            <p class="text-xs text-gray-400 mt-1">Minimum withdrawal: $5.00</p>
-                        </div>
-                        <div class="mb-4">
-                            <label for="address-input-withdraw" class="block text-sm font-medium text-gray-300 mb-1">Your TRC-20 Wallet Address</label>
-                            <input type="text" id="address-input-withdraw" class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-sm" placeholder="Tx..." required>
-                        </div>
-                        <button type="submit" id="submit-button-withdraw" class="w-full mt-2 px-4 py-3 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
-                            Submit Withdrawal Request
-                        </button>
-                    </form>
-                    <div id="form-message-withdraw" class="mt-4 text-center text-sm"></div>
+                <div class="flex justify-between items-center bg-black/20 p-4 rounded-xl border border-white/5">
+                    <span class="text-gray-400">Available Balance</span>
+                    <span id="withdraw-balance" class="text-2xl font-bold text-green-400">$0.00</span>
                 </div>
-                <div>
-                    <h2 class="text-xl font-semibold mb-4">Withdrawal History</h2>
-                    <div id="history-container-withdraw" class="space-y-3">
-                        <p id="history-loading-withdraw" class="text-gray-400 text-center">Loading history...</p>
+
+                <form id="withdraw-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Withdraw Amount ($)</label>
+                        <input type="number" id="withdraw-amount" class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Min $10" required min="10">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Your Wallet Address (TRC20)</label>
+                        <input type="text" id="withdraw-address" class="w-full bg-black/20 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="T..." required>
+                    </div>
+                    <button type="submit" id="btn-withdraw" class="w-full py-3 font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-lg">
+                        Request Withdrawal
+                    </button>
+                </form>
+                <p id="withdraw-msg" class="text-center text-sm"></p>
+
+                <div class="mt-6 border-t border-white/10 pt-4">
+                    <h3 class="text-sm font-semibold text-gray-400 mb-2">Withdrawal History</h3>
+                    <div id="withdraw-history-list" class="space-y-2">
+                        <p class="text-gray-500 text-center text-xs">Loading...</p>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- Bottom Navigation -->
     <nav class="bottom-nav">
-        <a href="/dashboard.html" class="nav-link" id="nav-dashboard"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>Dashboard</span></a>
-        <a href="/packages.html" class="nav-link" id="nav-packages"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg><span>Packages</span></a>
-        <a href="/earning.html" class="nav-link" id="nav-earning"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg><span>Earn</span></a>
-        <a href="/wallet.html" class="nav-link" id="nav-wallet"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg><span>Wallet</span></a>
-        <a href="/profile.html" class="nav-link" id="nav-profile"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><span>Profile</span></a>
+        <a href="/dashboard.html" class="nav-link"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>Home</span></a>
+        <a href="/packages.html" class="nav-link"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg><span>Invest</span></a>
+        <a href="/wallet.html" class="nav-link active"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg><span>Wallet</span></a>
+        <a href="/profile.html" class="nav-link"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><span>Profile</span></a>
     </nav>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Headers & Token
             const token = localStorage.getItem('authToken');
             const headers = { 'Content-Type': 'application/json', 'x-auth-token': token };
 
-            const depositTabBtn = document.getElementById('deposit-tab-btn');
-            const withdrawTabBtn = document.getElementById('withdraw-tab-btn');
+            // --- TABS LOGIC ---
+            const depositTab = document.getElementById('deposit-tab-btn');
+            const withdrawTab = document.getElementById('withdraw-tab-btn');
             const depositContent = document.getElementById('deposit-content');
             const withdrawContent = document.getElementById('withdraw-content');
-            function switchTab(tab) {
-                if (tab === 'deposit') {
-                    depositTabBtn.classList.add('active');
-                    withdrawTabBtn.classList.remove('active');
+
+            function switchTab(mode) {
+                if (mode === 'deposit') {
+                    depositTab.classList.add('active');
+                    withdrawTab.classList.remove('active');
                     depositContent.classList.add('active');
                     withdrawContent.classList.remove('active');
                 } else {
-                    withdrawTabBtn.classList.add('active');
-                    depositTabBtn.classList.remove('active');
+                    withdrawTab.classList.add('active');
+                    depositTab.classList.remove('active');
                     withdrawContent.classList.add('active');
                     depositContent.classList.remove('active');
                 }
             }
-            depositTabBtn.addEventListener('click', () => switchTab('deposit'));
-            withdrawTabBtn.addEventListener('click', () => switchTab('withdraw'));
-            const navLink = document.getElementById('nav-wallet');
-            if(navLink) navLink.classList.add('active');
+            depositTab.addEventListener('click', () => switchTab('deposit'));
+            withdrawTab.addEventListener('click', () => switchTab('withdraw'));
 
-            const loadingSpinner_d = document.getElementById('loading-spinner-deposit');
-            const errorContainer_d = document.getElementById('error-message-container-deposit');
-            const errorMessageEl_d = document.getElementById('error-message-deposit');
-            const addressContainer_d = document.getElementById('address-container-deposit');
-            const depositAddressEl_d = document.getElementById('deposit-address');
-            const copyButton_d = document.getElementById('copy-button');
-            const txidForm_d = document.getElementById('txid-form');
-            const txidInput_d = document.getElementById('txid-input');
-            const amountInput_d = document.getElementById('amount-input-deposit');
-            const formMessage_d = document.getElementById('form-message-deposit');
-            const submitTxidButton_d = document.getElementById('submit-txid-button');
-            const historyContainer_d = document.getElementById('history-container-deposit');
-            const historyLoading_d = document.getElementById('history-loading-deposit');
-
-            const balanceDisplay_w = document.getElementById('balance-display-withdraw');
-            const withdrawForm_w = document.getElementById('withdraw-form');
-            const amountInput_w = document.getElementById('amount-input-withdraw');
-            const addressInput_w = document.getElementById('address-input-withdraw');
-            const submitButton_w = document.getElementById('submit-button-withdraw');
-            const formMessage_w = document.getElementById('form-message-withdraw');
-            const historyContainer_w = document.getElementById('history-container-withdraw');
-            const historyLoading_w = document.getElementById('history-loading-withdraw');
-            const MINIMUM_WITHDRAWAL = 5;
-
-            const fetchDepositAddress = async () => {
-                try {
-                    const response = await fetch('/api/deposit/address', { headers });
-                    const data = await response.json();
-                    loadingSpinner_d.classList.add('hidden');
-                    if (data.success) {
-                        depositAddressEl_d.textContent = data.address;
-                        addressContainer_d.classList.remove('hidden');
-                    } else { throw new Error(data.message || 'Could not generate deposit address.'); }
-                } catch (err) {
-                    loadingSpinner_d.classList.add('hidden');
-                    errorMessageEl_d.textContent = err.message;
-                    errorContainer_d.classList.remove('hidden');
-                }
-            };
-            const fetchDepositHistory = async () => {
-                try {
-                    const response = await fetch('/api/deposit/history', { headers });
-                    const data = await response.json();
-                    historyLoading_d.classList.add('hidden');
-                    if (data.success && data.history.length > 0) {
-                        historyContainer_d.innerHTML = '';
-                        data.history.forEach(tx => {
-                            const txDate = new Date(tx.date).toLocaleString();
-                            const statusStyles = { 'completed': 'var(--accent-teal)', 'rejected': '#F87171', 'pending_review': '#FBBF24' };
-                            const statusColor = statusStyles[tx.status] || '#A0A0A0';
-                            const statusText = tx.status.replace('_', ' ');
-                            historyContainer_d.innerHTML += `<div class="bg-black/20 p-3 rounded-lg flex justify-between items-center text-sm"><div><p class="text-gray-400"><a href="https://etherscan.io/tx/${tx.txid}" target="_blank" class="text-blue-400 hover:underline truncate" title="${tx.txid}">${tx.txid.substring(0, 10)}...</a></p><p class="text-xs text-gray-500">${txDate}</p></div><div class="font-semibold capitalize" style="color:${statusColor}">${statusText}</div></div>`;
-                        });
-                    } else { historyContainer_d.innerHTML = '<p class="text-gray-500 text-center">No deposit history found.</p>';}
-                } catch (err) {
-                    historyLoading_d.classList.add('hidden');
-                    historyContainer_d.innerHTML = '<p class="text-red-400 text-center">Could not load history.</p>';
-                }
-            };
-            copyButton_d.addEventListener('click', () => {
-                navigator.clipboard.writeText(depositAddressEl_d.textContent).then(() => {
-                    copyButton_d.textContent = 'Copied!';
-                    setTimeout(() => { copyButton_d.textContent = 'Copy'; }, 2000);
-                });
-            });
-            txidForm_d.addEventListener('submit', async (event) => {
-                event.preventDefault();
-                submitTxidButton_d.disabled = true;
-                submitTxidButton_d.textContent = 'Submitting...';
-                try {
-                    const response = await fetch('/api/deposit/verify', {
-                        method: 'POST', headers: headers,
-                        body: JSON.stringify({ txid: txidInput_d.value.trim(), amount: parseFloat(amountInput_d.value) })
-                    });
-                    const result = await response.json();
-                    if (!result.success) throw new Error(result.message);
-                    formMessage_d.style.color = 'var(--accent-teal)';
-                    formMessage_d.textContent = result.message;
-                    txidForm_d.reset();
-                    fetchDepositHistory();
-                } catch (error) {
-                    formMessage_d.style.color = '#F87171';
-                    formMessage_d.textContent = error.message;
-                } finally {
-                    submitTxidButton_d.disabled = false;
-                    submitTxidButton_d.textContent = 'Submit for Verification';
-                }
-            });
-
-            const fetchUserData_w = async () => {
-                try {
-                    const response = await fetch('/api/user/info', { headers });
-                    const data = await response.json();
-                    if (data.success) {
-                        balanceDisplay_w.textContent = `$${data.user.balance.toFixed(2)}`;
-                    }
-                } catch (error) { console.error("Could not fetch user balance for withdrawal tab."); }
-            };
-
-            const fetchWithdrawalHistory_w = async () => {
-                try {
-                    const response = await fetch('/api/withdraw/history', { headers });
-                    const data = await response.json();
-                    historyLoading_w.classList.add('hidden');
-                    if (data.success && data.history.length > 0) {
-                        historyContainer_w.innerHTML = '';
-                        data.history.forEach(tx => {
-                            const txDate = new Date(tx.date).toLocaleString();
-                            const statusStyles = { 'completed': 'var(--accent-teal)', 'rejected': '#F87171', 'pending_review': '#FBBF24' };
-                            const statusColor = statusStyles[tx.status] || '#A0A0A0';
-                            const statusText = tx.status.replace('_', ' ');
-                            historyContainer_w.innerHTML += `<div class="bg-black/20 p-3 rounded-lg flex justify-between items-center text-sm"><div><p class="font-semibold text-white">$${tx.amount.toFixed(2)}</p><p class="text-xs text-gray-400 truncate" title="${tx.address}">To: ${tx.address.substring(0, 10)}...</p><p class="text-xs text-gray-500">${txDate}</p></div><div class="font-semibold capitalize" style="color:${statusColor}">${statusText}</div></div>`;
-                        });
-                    } else { historyContainer_w.innerHTML = '<p class="text-gray-500 text-center">No withdrawal history found.</p>'; }
-                } catch (err) {
-                    historyLoading_w.classList.add('hidden');
-                    historyContainer_w.innerHTML = '<p class="text-red-400 text-center">Could not load history.</p>';
-                }
-            };
+            // --- DEPOSIT LOGIC ---
+            const phase1 = document.getElementById('deposit-phase-1');
+            const phase2 = document.getElementById('deposit-phase-2');
+            const createForm = document.getElementById('deposit-create-form');
+            const createBtn = document.getElementById('btn-create-deposit');
+            const createError = document.getElementById('create-error');
             
-            withdrawForm_w.addEventListener('submit', async (e) => {
+            let currentPaymentId = null; // To track active session
+
+            // 1. CREATE DEPOSIT
+            createForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const amount = parseFloat(amountInput_w.value);
-                if (isNaN(amount) || amount < MINIMUM_WITHDRAWAL) {
-                    formMessage_w.style.color = '#F87171';
-                    formMessage_w.textContent = `Minimum withdrawal amount is $${MINIMUM_WITHDRAWAL}.`;
-                    return;
-                }
-                submitButton_w.disabled = true;
-                submitButton_w.textContent = 'Submitting...';
-                formMessage_w.textContent = '';
+                createBtn.disabled = true;
+                createBtn.innerText = 'Generating Invoice...';
+                createError.classList.add('hidden');
+
+                const amount = document.getElementById('deposit-amount').value;
+                const currency = document.getElementById('deposit-currency').value;
 
                 try {
-                    const response = await fetch('/api/withdraw/request', {
-                        method: 'POST', headers: headers,
-                        body: JSON.stringify({ amount: amountInput_w.value, address: addressInput_w.value })
+                    const res = await fetch('/api/deposit/create_deposit', {
+                        method: 'POST', headers,
+                        body: JSON.stringify({ amount, currency })
                     });
-                    const result = await response.json();
-                    if (!result.success) {
-                        throw new Error(result.message);
-                    }
-                    formMessage_w.style.color = 'var(--accent-teal)';
-                    formMessage_w.textContent = result.message;
-                    withdrawForm_w.reset();
-                    balanceDisplay_w.textContent = `$${result.newBalance.toFixed(2)}`;
-                    fetchWithdrawalHistory_w();
-                } catch (error) {
-                    formMessage_w.style.color = '#F87171';
-                    formMessage_w.textContent = error.message;
+                    const data = await res.json();
+
+                    if (!data.success) throw new Error(data.message);
+
+                    // SUCCESS: Show Phase 2 (Invoice)
+                    currentPaymentId = data.payment_id;
+                    
+                    document.getElementById('invoice-amount').innerText = data.amount_expected;
+                    document.getElementById('invoice-currency').innerText = currency;
+                    document.getElementById('invoice-address').innerText = data.deposit_address;
+                    document.getElementById('invoice-id').innerText = data.payment_id;
+                    
+                    // Generate Simple QR Code (using Google Charts API for free QR)
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${data.deposit_address}`;
+                    document.getElementById('qr-code-img').src = qrUrl;
+
+                    phase1.classList.add('hidden');
+                    phase2.classList.remove('hidden');
+
+                } catch (err) {
+                    createError.innerText = err.message;
+                    createError.classList.remove('hidden');
                 } finally {
-                    submitButton_w.disabled = false;
-                    submitButton_w.textContent = 'Submit Withdrawal Request';
+                    createBtn.disabled = false;
+                    createBtn.innerText = 'Generate Deposit Address';
                 }
             });
 
-            fetchDepositAddress();
-            fetchDepositHistory();
-            fetchUserData_w();
-            fetchWithdrawalHistory_w();
-            switchTab('deposit');
+            // 2. COPY ADDRESS
+            document.getElementById('btn-copy').addEventListener('click', () => {
+                const addr = document.getElementById('invoice-address').innerText;
+                navigator.clipboard.writeText(addr);
+                const btn = document.getElementById('btn-copy');
+                btn.innerText = 'Copied!';
+                setTimeout(() => btn.innerText = 'Copy', 2000);
+            });
+
+            // 3. CHECK STATUS
+            const statusBtn = document.getElementById('btn-check-status');
+            const statusMsg = document.getElementById('status-result');
+
+            statusBtn.addEventListener('click', async () => {
+                if (!currentPaymentId) return;
+                statusBtn.disabled = true;
+                statusBtn.innerText = 'Checking Blockchain...';
+                statusMsg.innerText = '';
+
+                try {
+                    const res = await fetch('/api/deposit/verify', {
+                        method: 'POST', headers,
+                        body: JSON.stringify({ payment_id: currentPaymentId })
+                    });
+                    const data = await res.json();
+
+                    if (data.status === 'completed' || data.status === 'finished') {
+                        statusMsg.style.color = 'var(--accent-teal)';
+                        statusMsg.innerText = "✅ Payment Received! Balance Updated.";
+                        // Wait 2 sec then reload to show history
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        statusMsg.style.color = '#FBBF24'; // Yellow
+                        statusMsg.innerText = `Status: ${data.status}. Please wait & try again.`;
+                    }
+                } catch (err) {
+                    statusMsg.innerText = "Error checking status.";
+                } finally {
+                    statusBtn.disabled = false;
+                    statusBtn.innerText = 'I Have Paid / Check Status';
+                }
+            });
+
+            // 4. CANCEL / NEW
+            document.getElementById('btn-cancel-deposit').addEventListener('click', () => {
+                phase2.classList.add('hidden');
+                phase1.classList.remove('hidden');
+                createForm.reset();
+                statusMsg.innerText = '';
+            });
+
+            // 5. LOAD DEPOSIT HISTORY
+            async function loadDepositHistory() {
+                const list = document.getElementById('deposit-history-list');
+                try {
+                    const res = await fetch('/api/deposit/history', { headers });
+                    const data = await res.json();
+                    
+                    if (data.history && data.history.length > 0) {
+                        list.innerHTML = data.history.map(tx => `
+                            <div class="bg-black/20 p-3 rounded-lg flex justify-between items-center border border-white/5">
+                                <div>
+                                    <p class="text-white font-medium text-sm">${tx.amount} <span class="text-xs text-gray-400 uppercase">${tx.currency || 'USD'}</span></p>
+                                    <p class="text-xs text-gray-500">${new Date(tx.date).toLocaleDateString()}</p>
+                                </div>
+                                <div class="text-xs font-bold px-2 py-1 rounded ${
+                                    tx.status === 'completed' ? 'bg-green-900 text-green-300' :
+                                    tx.status === 'failed' ? 'bg-red-900 text-red-300' :
+                                    'bg-yellow-900 text-yellow-300'
+                                }">
+                                    ${tx.status ? tx.status.toUpperCase() : 'PENDING'}
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        list.innerHTML = '<p class="text-center text-gray-500 text-xs">No deposits yet.</p>';
+                    }
+                } catch (e) { list.innerHTML = '<p class="text-red-500 text-xs">Failed to load history</p>'; }
+            }
+
+            // --- WITHDRAW LOGIC (Kept Simple) ---
+            async function loadUserBalance() {
+                try {
+                    const res = await fetch('/api/user/info', { headers });
+                    const data = await res.json();
+                    if(data.success) {
+                        document.getElementById('withdraw-balance').innerText = `$${data.user.balance.toFixed(2)}`;
+                    }
+                } catch(e) {}
+            }
+
+            const withdrawForm = document.getElementById('withdraw-form');
+            const withdrawBtn = document.getElementById('btn-withdraw');
+            const withdrawMsg = document.getElementById('withdraw-msg');
+
+            withdrawForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                withdrawBtn.disabled = true;
+                withdrawBtn.innerText = 'Processing...';
+                withdrawMsg.innerText = '';
+
+                const amount = document.getElementById('withdraw-amount').value;
+                const address = document.getElementById('withdraw-address').value;
+
+                try {
+                    const res = await fetch('/api/withdraw/request', {
+                        method: 'POST', headers,
+                        body: JSON.stringify({ amount, address })
+                    });
+                    const data = await res.json();
+                    if(!data.success) throw new Error(data.message);
+                    
+                    withdrawMsg.style.color = 'var(--accent-teal)';
+                    withdrawMsg.innerText = data.message;
+                    withdrawForm.reset();
+                    loadUserBalance(); // Refresh balance
+                } catch(err) {
+                    withdrawMsg.style.color = '#F87171';
+                    withdrawMsg.innerText = err.message;
+                } finally {
+                    withdrawBtn.disabled = false;
+                    withdrawBtn.innerText = 'Request Withdrawal';
+                }
+            });
+
+            // INIT LOADS
+            loadDepositHistory();
+            loadUserBalance();
         });
     </script>
 </body>
