@@ -32,21 +32,26 @@ router.post("/create_deposit", authMiddleware, async (req, res) => {
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // --- THE FIX: CALCULATE AMOUNT WITH FEE ---
-        // If user wants $30, we ask for $30 + 1% to cover fees.
+        // --- THE FIX: CALCULATE AMOUNT WITH SERVICE FEE ---
+        // If user wants $30, we ask for $30 + 1% service fee to cover our buffer.
         const originalAmount = parseFloat(amount);
         
-        // Formula: Amount + (Amount * Fee)
-        // Example: 30 + (30 * 0.01) = 30.30
+        // Formula: Amount + (Amount * Service Fee)
         const amountToPay = originalAmount + (originalAmount * SERVICE_FEE_PERCENT);
 
         // A. Ask NowPayments to create invoice for the HIGHER amount
         const response = await axios.post(`${NOWPAYMENTS_URL}/payment`, {
-            price_amount: amountToPay, // User pays $30.30
+            price_amount: amountToPay, // User pays $30.30 (Service Fee Included)
             price_currency: 'usd',
             pay_currency: currency,
             order_id: user.id,
-            order_description: `Deposit for ${user.username}`
+            order_description: `Deposit for ${user.username}`,
+            
+            // 💥 CRITICAL FIX: Transfer all network fees to the customer 💥
+            // This ensures all fixed network fees (the $8-$10 cost) are added to the invoice
+            // so the merchant (you) receives the full amount.
+            is_fee_paid_by_user: true 
+            
         }, { headers: apiHeaders });
 
         const { payment_id, pay_address, pay_amount } = response.data;
@@ -68,12 +73,13 @@ router.post("/create_deposit", authMiddleware, async (req, res) => {
             success: true,
             payment_id: payment_id,
             deposit_address: pay_address,
-            amount_expected: pay_amount // This will show the crypto equivalent of $30.30
+            amount_expected: pay_amount // This will show the crypto equivalent of $30.30 + Network Fees
         });
 
     } catch (error) {
-        console.error("NowPayments Error:", error.response?.data || error.message);
-        res.status(500).json({ success: false, message: "Failed to generate deposit address." });
+        // Log the specific NowPayments error data to help troubleshoot the Polygon failure
+        console.error("NowPayments API Error:", error.response?.data);
+        res.status(500).json({ success: false, message: "Failed to generate deposit address. Check server logs." });
     }
 });
 
