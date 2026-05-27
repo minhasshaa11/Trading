@@ -1,28 +1,30 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+const crypto = require('crypto'); // Built-in Node module for secure signature verification
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
 
 // Configuration
 const NOWPAYMENTS_API_KEY = process.env.NOWPAYMENTS_API_KEY;
+const NOWPAYMENTS_IPN_SECRET = process.env.NOWPAYMENTS_IPN_SECRET; // The key from your dashboard image
 const NOWPAYMENTS_URL = 'https://api.nowpayments.io/v1';
 
-// SERVICE FEE PERCENTAGE (0.5% is standard for NowPayments)
-// We add a tiny bit extra (0.01) to cover price fluctuations
+// Webhook destination URL configured exactly to your Render app
+const MY_SERVER_WEBHOOK_URL = "https://trading-app-2s4e.onrender.com/api/deposit/ipn-callback";
+
 const SERVICE_FEE_PERCENT = 0.01; // 1% Total (0.5% NowPayments + 0.5% Safety buffer)
 
-// Helper: Headers for API calls
 const apiHeaders = {
     'x-api-key': NOWPAYMENTS_API_KEY,
     'Content-Type': 'application/json'
 };
 
 // ==========================================
-// 1. CREATE DEPOSIT (With Fee Calculation)
+// 1. CREATE DEPOSIT (Strictly USD Base)
 // ==========================================
 router.post("/create_deposit", authMiddleware, async (req, res) => {
-    const { amount, currency } = req.body;
+    const { amount, currency } = req.body; // currency = e.g., 'usdttrc20'
 
     if (!amount || !currency) {
         return res.status(400).json({ success: false, message: "Amount and currency are required." });
@@ -32,37 +34,33 @@ router.post("/create_deposit", authMiddleware, async (req, res) => {
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // --- THE FIX: CALCULATE AMOUNT WITH SERVICE FEE ---
         const originalAmount = parseFloat(amount);
         const amountToPay = originalAmount + (originalAmount * SERVICE_FEE_PERCENT);
 
-        // A. Ask NowPayments to create invoice for the HIGHER amount
+        // Ask NowPayments to create invoice
         const response = await axios.post(`${NOWPAYMENTS_URL}/payment`, {
             price_amount: amountToPay, 
-            price_currency: 'usd',
+            price_currency: 'usd', // Continuing strictly with USD values
             pay_currency: currency,
             order_id: user.id,
-            order_description: `Deposit for ${user.username}`,
-            
-            // CRITICAL FIX: Transfer all network fees to the customer 
+            order_description: `USD Deposit for ${user.username}`,
+            ipn_callback_url: MY_SERVER_WEBHOOK_URL, // Passes your Render link to NowPayments dynamically
             is_fee_paid_by_user: true 
-            
         }, { headers: apiHeaders });
 
         const { payment_id, pay_address, pay_amount } = response.data;
 
-        // B. Save the ORIGINAL amount ($30) to DB
+        // Save the transaction record natively as USD
         user.transactions.push({
             txid: payment_id,
             amount: originalAmount, 
-            currency: currency,
+            currency: 'USD',
             status: 'pending',
             date: new Date()
         });
 
         await user.save();
 
-        // C. Send the Invoice to Frontend
         res.json({
             success: true,
             payment_id: payment_id,
@@ -71,28 +69,19 @@ router.post("/create_deposit", authMiddleware, async (req, res) => {
         });
 
     } catch (error) {
-        // 💥 IMPROVED ERROR HANDLING 💥
         let errorMessage = "Failed to generate deposit address.";
-        
         if (error.response) {
-            // API returned a specific error (e.g., "Invalid API Key," "Bad Currency")
             errorMessage = error.response.data.message || `API Error: ${error.response.status}`;
-            console.error("NowPayments API Response Error:", error.response.data);
-        } else if (error.code) {
-             // Axios/Network error (e.g., ENOTFOUND, ETIMEDOUT)
-            errorMessage = `Network Error: Could not connect to the payment gateway. (${error.code})`;
-            console.error("Axios Network Error:", error.message);
+            console.error("NowPayments API Error:", error.response.data);
         } else {
-            // Generic error
-            console.error("Unknown Error:", error.message);
+            console.error("Network/Internal Error:", error.message);
         }
-
         res.status(500).json({ success: false, message: errorMessage });
     }
 });
 
 // ==========================================
-// 2. VERIFY STATUS (Check if paid)
+// 2. VERIFY STATUS (Secure Manual Fallback Check)
 // ==========================================
 router.post("/verify", authMiddleware, async (req, res) => {
     const { payment_id } = req.body;
@@ -111,35 +100,25 @@ router.post("/verify", authMiddleware, async (req, res) => {
             return res.status(404).json({ success: false, message: "Transaction record not found." });
         }
 
-        if (transaction.status === 'completed' || transaction.status === 'finished') {
+        // Fixed checking vulnerability logic to avoid double balance updates
+        if (transaction.status === 'completed') {
              return res.json({ success: true, message: "Deposit already confirmed!", status: 'completed' });
         }
 
-        // A. Ask NowPayments for status
-        const response = await axios.get(`${NOWPAYMENTS_URL}/payment/${payment_id}`, { 
-            headers: apiHeaders 
-        });
-
+        const response = await axios.get(`${NOWPAYMENTS_URL}/payment/${payment_id}`, { headers: apiHeaders });
         const status = response.data.payment_status; 
-        console.log(`Payment ${payment_id} status: ${status}`);
 
-        // B. If Success, update DB
-        if (status === 'finished' || status === 'confirmed' || status === 'sending') {
-            
-            // 1. Update status
-            transaction.status = 'completed';
-            
-            // 2. Add ORIGINAL Balance ($30) to User
-            if (transaction.status !== 'completed_logged') {
-                 user.balance = (user.balance || 0) + transaction.amount;
-                 transaction.status = 'completed'; // Mark strictly
+        if (status === 'finished' || status === 'confirmed') {
+            // Tight block checking to prevent multi-call balance exploitation
+            if (transaction.status !== 'completed') {
+                transaction.status = 'completed';
+                user.balance = (user.balance || 0) + transaction.amount;
+                await user.save();
             }
-            
-            await user.save();
             
             return res.json({ 
                 success: true, 
-                message: "Deposit Successful! Balance Updated.", 
+                message: "Deposit Successful! USD Balance Updated.", 
                 status: 'completed' 
             });
         } else if (status === 'failed' || status === 'expired') {
@@ -150,18 +129,65 @@ router.post("/verify", authMiddleware, async (req, res) => {
 
         res.json({ 
             success: true, 
-            message: "Payment is processing. Please wait.", 
+            message: "Payment processing. Please wait for confirmations.", 
             status: status 
         });
 
     } catch (error) {
-        console.error("Verification Error:", error.response?.data || error.message);
+        console.error("Manual Verification Error:", error.message);
         res.status(500).json({ success: false, message: "Error checking payment status." });
     }
 });
 
 // ==========================================
-// 3. GET HISTORY
+// 3. AUTOMATED WEBHOOK (IPN Endpoint Listener)
+// ==========================================
+// NOTE: Public endpoint accessed directly by NowPayments. Keep authMiddleware OFF here.
+router.post("/ipn-callback", async (req, res) => {
+    try {
+        const receivedSignature = req.headers['x-nowpayments-sig'];
+        if (!receivedSignature) return res.status(400).send('Missing signature header');
+
+        // Cryptographic integrity validation: Sort payload keys alphabetically
+        const sortedBody = Object.keys(req.body).sort().reduce((obj, key) => {
+            obj[key] = req.body[key];
+            return obj;
+        }, {});
+
+        const hmac = crypto.createHmac('sha512', NOWPAYMENTS_IPN_SECRET);
+        hmac.update(JSON.stringify(sortedBody));
+        const calculatedSignature = hmac.digest('hex');
+
+        // Block unauthorized/spoofed callback attempts
+        if (receivedSignature !== calculatedSignature) {
+            console.error("Security Warning: IPN Verification mismatch signature block triggered.");
+            return res.status(401).send('Signature match failed');
+        }
+
+        const { payment_status, payment_id, order_id } = req.body;
+
+        if (payment_status === 'finished' || payment_status === 'confirmed') {
+            const user = await User.findById(order_id);
+            if (!user) return res.status(404).send('User reference not found');
+
+            const transaction = user.transactions.find(t => t.txid === String(payment_id));
+            if (transaction && transaction.status !== 'completed') {
+                transaction.status = 'completed';
+                user.balance = (user.balance || 0) + transaction.amount;
+                await user.save();
+                console.log(`Automated Success: Credited $${transaction.amount} USD to User ID: ${user._id}`);
+            }
+        }
+
+        res.status(200).send('OK');
+    } catch (error) {
+        console.error("IPN Process Exception Error:", error.message);
+        res.status(500).send('Internal Server Processing Failure');
+    }
+});
+
+// ==========================================
+// 4. GET HISTORY
 // ==========================================
 router.get("/history", authMiddleware, async (req, res) => {
     try {
@@ -171,7 +197,6 @@ router.get("/history", authMiddleware, async (req, res) => {
         const sortedTransactions = user.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
         res.json({ success: true, history: sortedTransactions });
     } catch (error) {
-        console.error('Error fetching history:', error);
         res.status(500).json({ success: false, message: "Internal server error." });
     }
 });
