@@ -1,24 +1,14 @@
 const mongoose = require('mongoose');
-const bcryptjs = require('bcryptjs');
+const bcryptjs = require('bcryptjs'); // Fixed to use bcryptjs consistently matching your old structure
 
 const transactionSchema = new mongoose.Schema({
-    // In the new system, we initially store the NowPayments 'payment_id' here.
-    // Once confirmed, you could optionally update it to the real blockchain Hash.
     txid: { type: String, required: true },
-    
-    // Added 'currency' so you know if they paid in 'usdttrc20', 'btc', etc.
     currency: { type: String }, 
-
-    // NowPayments statuses: 'waiting', 'confirming', 'confirmed', 'sending', 'finished', 'failed'
     status: { type: String, default: 'pending' },
-    
     date: { type: Date, default: Date.now },
     type: { type: String, enum: ['deposit', 'withdrawal'], default: 'deposit' },
     amount: { type: Number },
-    
-    // This will store the UNIQUE deposit address generated for this specific transaction
     address: { type: String }, 
-    
     tax: { type: Number, default: 0 },
     finalAmount: { type: Number }
 });
@@ -52,8 +42,6 @@ const userSchema = new mongoose.Schema({
         default: 0.00,
     },
     
-    // These fields are less important now that we generate unique addresses per transaction,
-    // but we keep them to avoid breaking any old logic.
     depositAddress: {
         type: String,
         unique: true,
@@ -99,9 +87,16 @@ const userSchema = new mongoose.Schema({
         required: true,
         default: 0
     },
+    
+    // --- PACKAGE & REWARD SYSTEM UPGRADES ---
     active_package: {
         type: String,
+        enum: ['Silver', 'Gold', 'VIP', null], // Tracks Tier level names dynamically
         default: null
+    },
+    active_investment_amount: {
+        type: Number, // Stores the explicit amount invested (e.g. 30, 150, 600)
+        default: 0
     },
     package_expiry_date: {
         type: Date,
@@ -110,6 +105,14 @@ const userSchema = new mongoose.Schema({
     last_claim_timestamp: {
         type: Date,
         default: null
+    },
+    earnings_today: {
+        type: Number, // Stores the specific random dollar payout generated today
+        default: 0.00
+    },
+    percentage_today: {
+        type: String, // Stores the random ROI percentage string generated today (e.g., "3.42%")
+        default: "0.00"
     }
 }, {
     timestamps: true
@@ -118,15 +121,19 @@ const userSchema = new mongoose.Schema({
 // Password hashing middleware
 userSchema.pre('save', async function (next) {
     if (!this.isModified('password') || !this.password) return next();
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
+    try {
+        const salt = await bcryptjs.genSalt(10);
+        this.password = await bcryptjs.hash(this.password, salt);
+        next();
+    } catch (err) {
+        next(err);
+    }
 });
 
 // Password comparison method
 userSchema.methods.comparePassword = async function (enteredPassword) {
     if (!this.password) return false;
-    return await bcrypt.compare(enteredPassword, this.password);
+    return await bcryptjs.compare(enteredPassword, this.password);
 };
 
 module.exports = mongoose.model('User', userSchema);
