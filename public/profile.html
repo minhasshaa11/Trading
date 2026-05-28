@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Profile - Investment App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -184,12 +184,13 @@
                 <h2 class="text-lg font-bold mb-4">Your Investment Plan</h2>
                 <div id="package-loading" class="text-center text-gray-400 py-4">Loading package status...</div>
                 <div id="package-content" class="hidden text-center">
-                    <p class="text-sm text-gray-400">Current Active Plan</p>
-                    <p id="package-name" class="text-3xl font-bold my-2" style="color: var(--accent-teal);">-</p>
+                    <p class="text-sm text-gray-400">Current Active Pool</p>
+                    <p id="package-name" class="text-3xl font-bold my-1" style="color: var(--accent-teal);">-</p>
+                    <p class="text-xs text-gray-300 mb-3">Allocated Amount: <span id="package-amount" class="font-bold text-white">$0.00</span></p>
                     <p class="text-sm text-gray-400">Expires on: <span id="package-expiry">-</span></p>
                 </div>
                 <div id="no-package-content" class="hidden text-center">
-                    <p class="text-gray-400 mb-4">You do not have an active investment package.</p>
+                    <p class="text-gray-400 mb-4">You do not have an active tiered investment contract.</p>
                     <a href="/packages.html" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">View Packages</a>
                 </div>
             </div>
@@ -206,7 +207,6 @@
                 <div id="ref-loading" class="text-center text-gray-400 py-8">Loading...</div>
                 <div id="ref-content" class="hidden space-y-6">
                     <div>
-                        <label class="text-sm font-medium text-gray-300">Your Referral Link</label>
                         <div class="mt-1 flex rounded-lg shadow-sm border border-white/10">
                             <input type="text" id="ref-link-input" readonly class="flex-1 w-full rounded-none rounded-l-md bg-black/20 p-3 text-gray-300 border-0 focus:ring-0">
                             <button id="copy-ref-link-btn" class="px-5 rounded-r-md bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors">Copy</button>
@@ -259,6 +259,7 @@
             const packageContent = document.getElementById('package-content');
             const noPackageContent = document.getElementById('no-package-content');
             const packageNameEl = document.getElementById('package-name');
+            const packageAmountEl = document.getElementById('package-amount');
             const packageExpiryEl = document.getElementById('package-expiry');
             const refLoading = document.getElementById('ref-loading');
             const refContent = document.getElementById('ref-content');
@@ -293,11 +294,13 @@
                         avatarDiv.textContent = displayName.charAt(0).toUpperCase();
                         const bgColor = generateColor(displayName);
                         avatarDiv.style.backgroundColor = bgColor;
-                        avatarDiv.style.boxShadow = `0 0 20px ${bgColor}60`; // Add a glow effect
+                        avatarDiv.style.boxShadow = `0 0 20px ${bgColor}60`; 
                         balanceDisplay.textContent = `$${user.balance.toFixed(2)}`;
                         packageLoading.style.display = 'none';
+                        
                         if (user.active_package) {
-                            packageNameEl.textContent = user.active_package;
+                            packageNameEl.textContent = `${user.active_package} Matrix Pool`;
+                            packageAmountEl.textContent = `$${(user.active_investment_amount || 0).toFixed(2)}`;
                             packageExpiryEl.textContent = new Date(user.package_expiry_date).toLocaleDateString();
                             packageContent.classList.remove('hidden');
                         } else {
@@ -342,7 +345,7 @@
                          data.activities.forEach(act => {
                             const statusStyles = { 
                                 'completed': { color: 'var(--accent-teal)' }, 
-                                'pending_review': { color: '#FBBF24' }, 
+                                'pending': { color: '#FBBF24' }, 
                                 'failed': { color: '#F87171' }
                             };
                             const style = statusStyles[act.status] || { color: '#9CA3AF' };
