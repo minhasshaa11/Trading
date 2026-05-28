@@ -82,11 +82,6 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        
-        .card.interactive:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 16px 40px rgba(0,0,0,0.5);
-        }
 
         .bottom-nav {
             position: fixed;
@@ -151,25 +146,47 @@
     
     <div class="aurora-background"></div>
 
-    <div class="container mx-auto p-4 relative z-10">
+    <div class="container mx-auto p-4 max-w-xl relative z-10">
         <header class="flex justify-between items-center mb-6">
             <div>
-                <h1 class="text-2xl font-bold text-white">Investment Packages</h1>
-                <p class="text-gray-400">Select a package to start earning.</p>
+                <h1 class="text-2xl font-bold text-white">Investment Levels</h1>
+                <p class="text-gray-400">Allocate flexible capital into tiered pools.</p>
             </div>
             <div class="text-right">
-                <p class="text-xs text-gray-400">Balance</p>
+                <p class="text-xs text-gray-400">Available Balance</p>
                 <p id="balance-display" class="font-bold text-xl" style="color: var(--accent-teal);">$0.00</p>
             </div>
         </header>
 
-        <main id="packages-container" class="grid grid-cols-1 sm:grid-cols-2 gap-6"></main>
+        <section class="card p-6 mb-8 border border-white/10 text-center">
+            <h2 class="text-lg font-bold text-white mb-2">Initialize Dynamic Contract</h2>
+            <p class="text-xs text-gray-400 mb-4">Enter an investment value to deploy your 60-day random yield pool.</p>
+            
+            <div class="mb-4">
+                <label class="block text-left text-xs font-semibold text-gray-400 mb-1">Allocation Amount (USD)</label>
+                <input type="number" id="investment-input" min="30" placeholder="Min. $30" class="w-full bg-black/40 border border-white/20 rounded-lg p-3 text-white font-bold text-lg focus:outline-none focus:border-purple-500">
+            </div>
+
+            <div class="text-left bg-black/30 p-3 rounded-lg border border-white/5 text-xs text-gray-400 space-y-1 mb-4">
+                <p>🔹 <span class="text-white font-semibold">Silver Tier</span> ($30 - $99): 1.67% - 4.17% dynamic daily</p>
+                <p>🔹 <span class="text-white font-semibold">Gold Tier</span> ($100 - $499): 2.00% - 4.50% dynamic daily</p>
+                <p>🔹 <span class="text-white font-semibold">VIP Tier</span> ($500+): 2.50% - 5.00% dynamic daily</p>
+            </div>
+
+            <button id="activate-pool-btn" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all transform active:scale-95 shadow-lg shadow-blue-600/20">
+                Deploy Active Contract
+            </button>
+        </section>
+
+        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 px-1">Your Running Contract</h2>
+        <main id="packages-container" class="space-y-4"></main>
+        
         <div id="status-message" class="text-center mt-6 min-h-[24px] font-semibold"></div>
     </div>
 
     <div id="custom-confirm-modal" class="modal-overlay">
         <div class="card p-8 text-center w-11/12 max-w-sm">
-            <h2 id="modal-title" class="text-xl font-bold text-white mb-4">Confirm Purchase</h2>
+            <h2 id="modal-title" class="text-xl font-bold text-white mb-4">Confirm Allocation</h2>
             <p id="modal-text" class="text-gray-300 mb-6">Are you sure?</p>
             <div class="flex justify-center gap-4">
                 <button id="modal-cancel-btn" class="flex-1 py-2 px-4 bg-white/5 hover:bg-white/10 rounded-lg font-semibold transition-colors">Cancel</button>
@@ -191,14 +208,14 @@
             document.getElementById('nav-packages').classList.add('active');
             const token = localStorage.getItem('authToken');
 
-            const headers = { 
-                'Content-Type': 'application/json', 
-                'x-auth-token': token 
-            };
+            const headers = { 'Content-Type': 'application/json', 'x-auth-token': token };
             
             const balanceDisplay = document.getElementById('balance-display');
             const packagesContainer = document.getElementById('packages-container');
             const statusMessage = document.getElementById('status-message');
+            const investmentInput = document.getElementById('investment-input');
+            const activatePoolBtn = document.getElementById('activate-pool-btn');
+            
             const modal = document.getElementById('custom-confirm-modal');
             const modalTitle = document.getElementById('modal-title');
             const modalText = document.getElementById('modal-text');
@@ -206,19 +223,12 @@
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
             let activeUserPackage = null;
+            let activeInvestmentAmount = 0;
             let userBalance = 0;
 
-            const packages = {
-                "Bronze":   { price: 30,   dailyProfit: 1,    durationDays: 90, color: 'border-yellow-700' },
-                "Silver":   { price: 100,  dailyProfit: 4,  durationDays: 90, color: 'border-gray-400' },
-                "Gold":     { price: 200,  dailyProfit: 9,   durationDays: 90, color: 'border-yellow-500' },
-                "Platinum": { price: 500,  dailyProfit: 23, durationDays: 90, color: 'border-blue-400' },
-                "Diamond":  { price: 1000, dailyProfit: 50,   durationDays: 90, color: 'border-purple-400' },
-            };
-
-            function showCustomConfirm(packageName, onConfirm) {
+            function showCustomConfirm(targetAmount, onConfirm) {
                 modalTitle.textContent = `Confirm Purchase`;
-                modalText.textContent = `Are you sure you want to purchase the ${packageName} Plan?`;
+                modalText.textContent = `Deploy $${targetAmount.toFixed(2)} USD allocation into the running pool metrics matrix? This action locks balance parameters into execution for 60 days.`;
                 modal.style.display = 'flex';
 
                 const confirmHandler = () => { onConfirm(); cleanup(); };
@@ -246,74 +256,78 @@
                         userBalance = result.user.balance;
                         balanceDisplay.textContent = `$${userBalance.toFixed(2)}`;
                         activeUserPackage = result.user.active_package;
-                        renderPackages();
+                        activeInvestmentAmount = result.user.active_investment_amount || 0;
+                        renderCurrentContract();
                     } else { throw new Error(result.message); }
                 } catch (error) { 
-                    showStatus('Could not load user data. Please try again.', true);
+                    showStatus('Could not load operational verification metrics structure.', true);
                 }
             }
 
-            async function purchasePackage(packageName) {
-                showCustomConfirm(packageName, async () => {
-                    showStatus('Processing your purchase...', false);
+            activatePoolBtn.addEventListener('click', async () => {
+                const amount = parseFloat(investmentInput.value);
+                
+                if (isNaN(amount) || amount < 30) {
+                    return showStatus('Minimum allocation size configuration requires $30 USD base value.', true);
+                }
+                if (amount > userBalance) {
+                    return showStatus('Insufficient account balance threshold to configure execution contract.', true);
+                }
+
+                showCustomConfirm(amount, async () => {
+                    showStatus('Processing cryptographic node parameters matrix configuration...', false);
                     try {
                         const response = await fetch('/api/user/purchase-package', {
                             method: 'POST',
                             headers: headers,
-                            body: JSON.stringify({ packageName })
+                            body: JSON.stringify({ amount: amount })
                         });
                         const result = await response.json();
                         if (result.success) {
                             showStatus(result.message, false);
+                            investmentInput.value = '';
                             confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ['#BE38F3', '#00F5D4', '#FFFFFF'] });
                             fetchUserStatus();
                         } else {
                             showStatus(result.message, true);
                         }
                     } catch (error) {
-                        showStatus('An error occurred. Please try again.', true);
+                        showStatus('An exception error parameter intercepted calculation routine protocols.', true);
                     }
                 });
-            }
+            });
 
-            function renderPackages() {
+            function renderCurrentContract() {
                 packagesContainer.innerHTML = '';
-                for (const [name, details] of Object.entries(packages)) {
-                    const isAffordable = userBalance >= details.price;
-                    const isCurrentPlan = activeUserPackage === name;
-                    const canInteract = !isCurrentPlan && isAffordable;
+                const card = document.createElement('div');
+                
+                if (activeUserPackage) {
+                    let borderCol = 'border-gray-400';
+                    let roiSpan = '1.67% - 4.17%';
+                    if (activeUserPackage === "Gold") { borderCol = 'border-yellow-500'; roiSpan = '2.00% - 4.50%'; }
+                    if (activeUserPackage === "VIP") { borderCol = 'border-purple-400'; roiSpan = '2.50% - 5.00%'; }
 
-                    const card = document.createElement('div');
-                    card.className = `card p-6 rounded-2xl flex flex-col relative border-t-4 ${details.color} ${!isAffordable && !isCurrentPlan ? 'opacity-50' : ''} ${canInteract ? 'interactive' : ''}`;
-
-                    let buttonHtml = '';
-                    if (isCurrentPlan) {
-                        buttonHtml = `<button disabled class="mt-auto w-full py-3 font-bold text-white rounded-lg cursor-default" style="background-color: var(--accent-teal);">Plan Activated</button>`;
-                    } else if (!isAffordable) {
-                        buttonHtml = `<button disabled class="mt-auto w-full py-3 font-bold text-gray-400 bg-black/20 rounded-lg cursor-not-allowed">Insufficient Balance</button>`;
-                    } else {
-                        buttonHtml = `<button class="purchase-btn mt-auto w-full py-3 font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Activate Plan</button>`;
-                    }
-
+                    card.className = `card p-5 border-t-4 ${borderCol} flex flex-col`;
                     card.innerHTML = `
-                        <h2 class="text-xl font-bold text-white mb-2">${name} Plan</h2>
-                        <p class="text-3xl font-bold mb-4" style="color: var(--accent-magenta); text-shadow: 0 0 15px rgba(var(--accent-magenta-rgb), 0.5);">$${details.price.toLocaleString()}</p>
-                        <ul class="text-gray-300 space-y-2 mb-6 text-left">
-                            <li class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="color: var(--accent-teal);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Daily Profit: <strong>$${details.dailyProfit.toLocaleString()}</strong></li>
-                             <li class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="color: var(--accent-teal);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>Duration: <strong>${details.durationDays} Days</strong></li>
-                        </ul>
-                        ${buttonHtml}
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-bold text-white">${activeUserPackage} Pool Matrix</h3>
+                            <span class="bg-green-500/10 border border-green-500/30 text-green-400 text-xs px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Running</span>
+                        </div>
+                        <p class="text-2xl font-extrabold text-white mb-3">$${activeInvestmentAmount.toFixed(2)} <span class="text-xs text-gray-400 font-normal">allocated value</span></p>
+                        <div class="text-xs text-gray-300 space-y-1">
+                            <p>📈 Variable ROI Scope: <span class="text-yellow-400 font-semibold">${roiSpan} daily</span></p>
+                            <p>⏳ Duration Window: <span class="text-white font-semibold">60 Operational Days</span></p>
+                        </div>
                     `;
-
-                    if (canInteract) {
-                        card.querySelector('.purchase-btn').addEventListener('click', () => purchasePackage(name));
-                    }
-                    packagesContainer.appendChild(card);
+                } else {
+                    card.className = `card p-6 border-dashed border-2 border-white/10 text-center text-gray-400 text-sm`;
+                    card.innerHTML = `No running contract pipelines initialized. Deploy an allocation value above to configure tracking arrays.`;
                 }
+                packagesContainer.appendChild(card);
             }
+
             fetchUserStatus();
         });
     </script>
 </body>
 </html>
-
