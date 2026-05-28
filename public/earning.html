@@ -160,13 +160,18 @@
             const earningCard = document.getElementById('earning-card');
             let countdownInterval;
 
-            const profitMap = { "Bronze": 1, "Silver": 4, "Gold": 9, "Platinum": 23, "Diamond": 50 };
-            const packageOrder = ["Bronze", "Silver", "Gold", "Platinum", "Diamond"];
+            // Updated tier order map tracking for marketing upgrade tips
+            const tierOrder = ["Silver", "Gold", "VIP"];
+            const tierPromos = {
+                "Silver": "Gold level members are claiming up to 4.50% dynamic ROI today!",
+                "Gold": "VIP level members are claiming up to 5.00% max dynamic ROI today!"
+            };
 
-            function showReadyToClaim(profitAmount, upgradeMessage) {
+            function showReadyToClaim(profitAmount, rateString, upgradeMessage) {
                 earningCard.innerHTML = `
                     <h1 class="text-2xl font-bold text-white mb-2">Claim Your Daily Profit</h1>
-                    <p class="text-gray-400 mb-6">Your profit of <span class="font-bold" style="color: var(--accent-teal);">$${profitAmount.toLocaleString()}</span> is ready.</p>
+                    <p class="text-gray-400 mb-2">Today's Variable Matrix Rate: <span class="font-extrabold text-yellow-400">${rateString}</span></p>
+                    <p class="text-gray-400 mb-6">Your profit allocation of <span class="font-bold" style="color: var(--accent-teal);">$${profitAmount.toFixed(2)}</span> is ready.</p>
                     <button id="claim-btn" class="w-full text-white font-bold py-4 rounded-lg shadow-lg transition-transform transform hover:scale-105" style="background: linear-gradient(90deg, var(--accent-magenta), var(--accent-teal)); text-shadow: 0 0 10px rgba(0,0,0,0.5);">
                         Claim Now
                     </button>
@@ -179,7 +184,7 @@
             function showWaiting(nextClaimTime) {
                 earningCard.innerHTML = `
                     <h1 class="text-2xl font-bold text-white mb-2">Profit Claimed</h1>
-                    <p class="text-gray-400 mb-6">Your next claim will be available in:</p>
+                    <p class="text-gray-400 mb-6">Your next dynamic payout allocation will load in:</p>
                     <div id="countdown" class="text-4xl font-bold font-mono" style="color: var(--accent-magenta); text-shadow: 0 0 15px rgba(var(--accent-magenta-rgb), 0.5);">--:--:--</div>
                 `;
                 startCountdown(nextClaimTime);
@@ -231,7 +236,7 @@
                     }
                 } catch (error) {
                     statusMessage.className = 'text-sm mt-4 min-h-[20px] text-red-400';
-                    statusMessage.textContent = 'An error occurred.';
+                    statusMessage.textContent = 'An error occurred processing execution allocation.';
                     claimBtn.disabled = false;
                     claimBtn.textContent = 'Claim Now';
                 }
@@ -245,31 +250,39 @@
                     if (!result.success) return showError("Could not verify your account status.");
 
                     const user = result.user;
-                    if (!user.active_package) return showError("You do not have an active investment package.");
-                    if (new Date() > new Date(user.package_expiry_date)) return showError("Your investment package has expired.");
+                    if (!user.active_package) return showError("You do not have an active investment package tier contract.");
+                    if (new Date() > new Date(user.package_expiry_date)) return showError("Your tiered investment package has expired.");
 
                     const todayReset = new Date();
                     todayReset.setUTCHours(0, 0, 0, 0);
 
+                    // If the user has already executed a claiming transaction within this daily window cycle
                     if (user.last_claim_timestamp && new Date(user.last_claim_timestamp) > todayReset) {
                         const tomorrowReset = new Date(todayReset.getTime() + 24 * 60 * 60 * 1000);
                         showWaiting(tomorrowReset.getTime());
                     } else {
-                        const currentPackageIndex = packageOrder.indexOf(user.active_package);
+                        // The user hasn't claimed yet, check if dynamic payout data is ready from cron
+                        const currentAmount = user.earnings_today || 0;
+                        const currentRateStr = user.percentage_today || "0.00%";
+
+                        if (currentAmount <= 0) {
+                            return showError("Today's dynamic returns haven't loaded yet. Please try checking back in a few moments.");
+                        }
+
                         let upgradeMsg = '';
-                        if (currentPackageIndex < packageOrder.length - 1) {
-                            const nextPackage = packageOrder[currentPackageIndex + 1];
-                            const nextProfit = profitMap[nextPackage];
+                        const currentTierName = user.active_package;
+                        if (tierPromos[currentTierName]) {
                             upgradeMsg = `
                                 <div class="mt-6 pt-4 border-t border-white/10">
-                                    <p class="text-xs text-gray-400">${nextPackage} members are claiming <span class="font-bold" style="color: var(--accent-teal);">$${nextProfit.toLocaleString()}</span> today.</p>
-                                    <a href="packages.html" class="text-xs font-semibold" style="color: var(--accent-magenta);">Upgrade Plan</a>
+                                    <p class="text-xs text-gray-400">${tierPromos[currentTierName]}</p>
+                                    <a href="packages.html" class="text-xs font-semibold" style="color: var(--accent-magenta);">Upgrade Tier Bracket</a>
                                 </div>`;
                         }
-                        showReadyToClaim(profitMap[user.active_package] || 0, upgradeMsg);
+
+                        showReadyToClaim(currentAmount, currentRateStr, upgradeMsg);
                     }
                 } catch (error) {
-                    showError("Could not connect to the server.");
+                    showError("Could not connect to the remote architecture gateway.");
                 }
             }
 
@@ -278,4 +291,3 @@
     </script>
 </body>
 </html>
-
