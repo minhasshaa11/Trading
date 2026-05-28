@@ -1,4 +1,4 @@
-// index.js (Refactored for Investment Packages Model)
+// index.js (Fully Refactored for Tiered Random Rewards & 60 Days Auto-Expiry)
 // ------------------ DEPENDENCIES ------------------
 require("dotenv").config();
 const express = require("express");
@@ -8,9 +8,9 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
 const jwt = require('jsonwebtoken');
+const cron = require('node-cron'); // NEW: Added for automated background tasks
 
 // ------------------ MODELS & ROUTES ------------------
-// FIX: Use './models/User' because index.js and models are in the same directory.
 const User = require("./models/User"); 
 
 const authRoutes = require("./routes/auth");
@@ -28,7 +28,6 @@ const io = socketIo(server, {
     methods: ["GET", "POST"]
   }
 });
-// The 'app.set' for marketData is no longer needed
 
 // ------------------ MIDDLEWARE ------------------
 app.use(cors());
@@ -42,13 +41,76 @@ app.use("/api/deposit", depositRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/withdraw", withdrawRoutes);
 
-// ----- SIMPLIFIED: Real-time functionality for the new dashboard -----
+// ------------------ AUTOMATED DYNAMIC REWARD ENGINE ------------------
 
-// A simpler function to get the data our new dashboard needs
+// Helper: Calculate random percentage based on current tier limits
+function generateRandomTierPercentage(tierName) {
+    let min, max;
+    if (tierName === "Silver") { min = 1.67; max = 4.17; }
+    else if (tierName === "Gold") { min = 2.00; max = 4.50; }
+    else if (tierName === "VIP") { min = 2.50; max = 5.00; }
+    else { return 0; }
+
+    const rand = Math.random() * (max - min) + min;
+    return parseFloat(rand.toFixed(2));
+}
+
+// CRON JOB: Runs automatically every night at 00:00 (Midnight UTC)
+cron.schedule('0 0 * * *', async () => {
+    console.log("⏳ Running Midnight Automated Reward Engine & Expiry Processor...");
+    try {
+        const now = new Date();
+        
+        // 1. SYSTEM OPERATION A: Handle Expired Accounts
+        const expiryResult = await User.updateMany(
+            { active_package: { $ne: null }, package_expiry_date: { $lt: now } },
+            { 
+                $set: { 
+                    active_package: null, 
+                    active_investment_amount: 0, 
+                    package_expiry_date: null,
+                    earnings_today: 0.00,
+                    percentage_today: "0.00%"
+                } 
+            }
+        );
+        if (expiryResult.modifiedCount > 0) {
+            console.log(`🧹 Cleaned up ${expiryResult.modifiedCount} expired investment contracts.`);
+        }
+
+        // 2. SYSTEM OPERATION B: Loop through active accounts and generate dynamic numbers
+        const activeUsers = await User.find({ active_package: { $ne: null }, package_expiry_date: { $gte: now } });
+        
+        for (let user of activeUsers) {
+            const currentTier = user.active_package;
+            const capital = user.active_investment_amount || 30; // fallback safety
+            
+            const selectedPercentage = generateRandomTierPercentage(currentTier);
+            const computedEarnings = capital * (selectedPercentage / 100);
+
+            user.earnings_today = parseFloat(computedEarnings.toFixed(2));
+            user.percentage_today = `${selectedPercentage}%`;
+            
+            await user.save();
+        }
+        
+        console.log(`🎯 Successfully distributed random daily rewards to ${activeUsers.length} investors.`);
+        
+        // Push update notification directly to active sockets to instantly refresh screens
+        io.emit('global_market_payout_refresh', { updated: true });
+
+    } catch (error) {
+        console.error("CRITICAL EXCEPTION IN CRON JOB ENGINE:", error.message);
+    }
+});
+
+// ----- REAL-TIME SOCKET DATA SYNC ENGINE -----
+
+// Upgraded to fetch the new tiered variable fields
 async function getDashboardData(userId) {
-    // Note: The fields active_package and package_expiry_date might not exist in your current User model
-    // unless you have added them manually. Ensure your User model is up-to-date.
-    const user = await User.findById(userId).select('username balance active_package package_expiry_date');
+    const user = await User.findById(userId).select(
+        'username balance active_package active_investment_amount package_expiry_date earnings_today percentage_today'
+    );
     if (!user) {
         throw new Error('User not found.');
     }
@@ -56,7 +118,10 @@ async function getDashboardData(userId) {
         username: user.username,
         balance: user.balance,
         activePackage: user.active_package,
+        investmentAmount: user.active_investment_amount,
         packageExpiry: user.package_expiry_date,
+        earningsToday: user.earnings_today,
+        percentageToday: user.percentage_today
     };
 }
 
@@ -75,11 +140,11 @@ io.use((socket, next) => {
     }
 });
 
-// Main Socket.IO connection handler (simplified)
+// Main Socket.IO connection handler
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
 
-    // When the dashboard connects, send it the user's data
+    // Standard client data request logic
     socket.on('request_dashboard_data', async () => {
         try {
             const userId = socket.decoded.id;
@@ -95,26 +160,19 @@ io.on('connection', (socket) => {
     });
 });
 
-// REMOVED: All Binance market data, candle generation, and price polling functions are gone.
-
 // ------------------ DB + STARTUP ------------------
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "MongoDB connection error:"));
-
 db.once("open", async () => {
   console.log("✅ Connected to MongoDB");
-  // REMOVED: No longer need to initialize market data or the old trade module
 });
 
 // ------------------ CATCH-ALL / STATIC SERVE ------------------
-// This part is useful for making sure your front-end pages load correctly.
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) return res.status(404).json({ message: 'API endpoint not found.' });
   
-  // Try to find the file in the public directory (e.g., login.html, dashboard.html)
   res.sendFile(path.join(__dirname, 'public', req.path), (err) => {
-    // If a specific file is not found, default to sending the main dashboard page.
     if (err) {
       res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
     }
