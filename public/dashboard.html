@@ -177,24 +177,13 @@
                     <svg class="w-6 h-6" style="color: var(--accent-magenta);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
                 <div>
-                    <p class="text-gray-400 text-sm">Active Tier</p>
+                    <p class="text-gray-400 text-sm">Active Package</p>
                     <p id="package-display" class="text-2xl font-bold text-white hidden">None</p>
                     <div id="package-skeleton" class="skeleton h-8 w-28 mt-1"></div>
                 </div>
             </div>
         </div>
-
-        <div id="live-stats-row" class="grid grid-cols-2 gap-4 hidden">
-            <div class="card p-4 rounded-xl text-center">
-                <p class="text-xs text-gray-400 uppercase tracking-wider">Today's Dynamic ROI</p>
-                <p id="ui-percentage-today" class="text-xl font-extrabold text-yellow-400 mt-1">0.00%</p>
-            </div>
-            <div class="card p-4 rounded-xl text-center">
-                <p class="text-xs text-gray-400 uppercase tracking-wider">Today's Est. Return</p>
-                <p id="ui-earnings-today" class="text-xl font-extrabold text-green-400 mt-1">$0.00</p>
-            </div>
-        </div>
-
+        <!-- UPDATED ACTION BUTTONS -->
         <div class="grid grid-cols-3 gap-4 sm:gap-6">
             <a href="wallet.html" class="flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-blue-500/30"><svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg><span class="font-semibold text-sm sm:text-base">Deposit</span></a>
             <a href="wallet.html" class="flex flex-col items-center justify-center bg-gray-700 hover:bg-gray-800 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-gray-500/30"><svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg><span class="font-semibold text-sm sm:text-base">Withdraw</span></a>
@@ -261,44 +250,22 @@
         const balanceSkeleton = document.getElementById('balance-skeleton');
         const packageSkeleton = document.getElementById('package-skeleton');
         const dynamicActionSection = document.getElementById('dynamic-action-section');
-        
-        // Dynamic subcard targets
-        const liveStatsRow = document.getElementById('live-stats-row');
-        const uiPercentageToday = document.getElementById('ui-percentage-today');
-        const uiEarningsToday = document.getElementById('ui-earnings-today');
 
         const renderData = (data) => {
             usernameDisplay.textContent = data.username || 'User';
             balanceDisplay.textContent = `$${data.balance.toFixed(2)}`;
-            
+            packageDisplay.textContent = data.activePackage || 'None';
             balanceSkeleton.style.display = 'none';
             packageSkeleton.style.display = 'none';
             balanceDisplay.style.display = 'block';
             packageDisplay.style.display = 'block';
-
             if (data.activePackage) {
-                packageDisplay.textContent = `${data.activePackage} ($${data.investmentAmount || 0})`;
                 const expiry = new Date(data.packageExpiry).toLocaleDateString();
-                
-                // Inject updated metadata values into sub-cards
-                uiPercentageToday.textContent = data.percentageToday && data.percentageToday !== "0.00" ? data.percentageToday : "Pending...";
-                uiEarningsToday.textContent = data.earningsToday ? `$${data.earningsToday.toFixed(2)}` : "$0.00";
-                liveStatsRow.classList.remove('hidden');
-
-                dynamicActionSection.innerHTML = `
-                    <h2 class="text-xl font-semibold text-white">Your Daily Task is Ready</h2>
-                    <p class="text-gray-400 mt-2 mb-4">Click the button below to claim your random profit allocation. Your investment contract expires on ${expiry}.</p>
-                    <a href="earning.html" class="inline-block text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105" style="background-color: var(--accent-teal);">Go to Earning Page</a>
-                `;
+                // UPDATED 'GO TO EARNING' BUTTON STYLE
+                dynamicActionSection.innerHTML = `<h2 class="text-xl font-semibold text-white">Your Daily Task is Ready</h2><p class="text-gray-400 mt-2 mb-4">Click the button below to claim your daily profit. Your package expires on ${expiry}.</p><a href="earning.html" class="inline-block text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105" style="background-color: var(--accent-teal);">Go to Earning Page</a>`;
             } else {
-                packageDisplay.textContent = 'None';
-                liveStatsRow.classList.add('hidden');
-                
-                dynamicActionSection.innerHTML = `
-                    <h2 class="text-xl font-semibold text-white">Start Earning Today</h2>
-                    <p class="text-gray-400 mt-2 mb-4">You don't have an active tiered investment contract. Deposit funds and allocate a package to begin receiving dynamic daily returns.</p>
-                    <a href="packages.html" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">View Packages</a>
-                `;
+                // UPDATED 'VIEW PACKAGES' BUTTON STYLE
+                dynamicActionSection.innerHTML = `<h2 class="text-xl font-semibold text-white">Start Earning Today</h2><p class="text-gray-400 mt-2 mb-4">You don't have an active investment package. Purchase a package to start earning daily profits.</p><a href="packages.html" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">View Packages</a>`;
             }
         };
 
@@ -318,13 +285,6 @@
                 console.error('Could not load dashboard data from socket.');
             }
         });
-
-        // AUTOMATION TRIGGER: Wakes up and re-polls system information if a midnight payout happens live
-        socket.on('global_market_payout_refresh', () => {
-            console.log("Payout event detected from Cron Engine. Re-fetching fresh metrics...");
-            socket.emit('request_dashboard_data');
-        });
-
         socket.on('disconnect', () => console.log('Disconnected from server.'));
     }
 
@@ -345,6 +305,7 @@
             console.log("Telegram WebApp is ready.");
             startApp();
         } else if (attempts < 100) {
+            console.log(`Telegram not ready, retrying... (Attempt ${attempts + 1})`);
             setTimeout(() => waitForTelegram(attempts + 1), 100);
         } else {
             console.error("Telegram WebApp failed to load after 10 seconds.");
@@ -359,3 +320,4 @@
 
 </body>
 </html>
+
