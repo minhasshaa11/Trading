@@ -2,25 +2,20 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const User = require('../models/User');
-const ChatThread = require('../models/Chat'); 
+const ChatThread = require('../models/Chat'); // <--- NEW REQUIREMENT
 const authMiddleware = require('../middleware/auth');
 
-// --- NEW UPDATED TIER DEFINITIONS (60 Days Expiry) ---
-const TIERS = {
-    "Silver": { minPrice: 30, maxPrice: 99, minROI: 1.67, maxROI: 4.17, durationDays: 60 },
-    "Gold":   { minPrice: 100, maxPrice: 499, minROI: 2.00, maxROI: 4.50, durationDays: 60 },
-    "VIP":    { minPrice: 500, maxPrice: 100000, minROI: 2.50, maxROI: 5.00, durationDays: 60 }
+// --- PACKAGE DEFINITIONS (Unchanged) ---
+const PACKAGES = {
+    "Bronze": { price: 30, dailyProfit: 1, durationDays: 30 },
+    "Silver": { price: 100, dailyProfit: 4, durationDays: 30 },
+    "Gold": { price: 200, dailyProfit: 9, durationDays: 30 },
+    "Platinum": { price: 500, dailyProfit: 23, durationDays: 30 },
+    "Diamond": { price: 1000, dailyProfit: 50, durationDays: 30 },
 };
+// -----------------------------------
 
-// Helper: Determine package tier name based on investment dollar amount
-function getTierNameByAmount(amount) {
-    if (amount >= 30 && amount < 100) return "Silver";
-    if (amount >= 100 && amount < 500) return "Gold";
-    if (amount >= 500) return "VIP";
-    return null;
-}
-
-// GET api/user/info - Provides basic user info with current daily random metadata
+// GET api/user/info - Provides basic user info
 router.get('/info', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
@@ -47,55 +42,39 @@ router.get('/referral-info', authMiddleware, async (req, res) => {
             referralCount: referralCount,
             totalCommissions: user.referralCommissions
         });
-    } catch (error) {
+    } catch (error)
+    {
         console.error("Error fetching referral info:", error);
         res.status(500).json({ success: false, message: 'Server error.' });
     }
 });
 
-// POST api/user/purchase-package - Flexible Investment Amount Package Purchasing
+// POST api/user/purchase-package - Handles purchasing an investment package
 router.post('/purchase-package', authMiddleware, async (req, res) => {
-    const { amount } = req.body; // Expecting raw numeric amount (e.g., 30, 150, 600)
-    const numericAmount = parseFloat(amount);
+    const { packageName } = req.body;
+    const selectedPackage = PACKAGES[packageName];
 
-    if (!numericAmount || numericAmount < 30) {
-        return res.status(400).json({ success: false, message: "Minimum investment amount is $30." });
-    }
-
-    const tierName = getTierNameByAmount(numericAmount);
-    if (!tierName) {
-        return res.status(400).json({ success: false, message: "Invalid tier classification for this amount." });
+    if (!selectedPackage) {
+        return res.status(404).json({ success: false, message: "Package not found." });
     }
     
     try {
         const user = await User.findById(req.user.id);
-        if (!user) { return res.status(404).json({ success: false, message: "User not found." }); }
-        
-        if (user.balance < numericAmount) {
-            return res.status(400).json({ success: false, message: "Insufficient balance to activate this investment." });
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found." });
+        }
+        if (user.balance < selectedPackage.price) {
+            return res.status(400).json({ success: false, message: "Insufficient balance to purchase this package." });
         }
 
-        const tierConfig = TIERS[tierName];
-
-        // Deduct balance and update detailed model tracking variables
-        user.balance -= numericAmount;
-        user.active_package = tierName; 
-        user.active_investment_amount = numericAmount; 
-        
+        user.balance -= selectedPackage.price;
+        user.active_package = packageName;
         const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + tierConfig.durationDays);
+        expiryDate.setDate(expiryDate.getDate() + selectedPackage.durationDays);
         user.package_expiry_date = expiryDate;
         
-        // Setup default placeholder state for today's entry
-        user.earnings_today = 0.00;
-        user.percentage_today = "0.00%";
-
         await user.save();
-        res.json({ 
-            success: true, 
-            message: `$${numericAmount} allocated into ${tierName} Tier successfully! Plan active for 60 days.`, 
-            newBalance: user.balance 
-        });
+        res.json({ success: true, message: `${packageName} package purchased successfully!`, newBalance: user.balance });
 
     } catch (error) {
         console.error("Purchase package error:", error);
@@ -103,16 +82,18 @@ router.post('/purchase-package', authMiddleware, async (req, res) => {
     }
 });
 
-// POST api/user/claim-earnings - Handles claiming dynamically generated daily earnings
+// POST api/user/claim-earnings - Handles claiming daily earnings
 router.post('/claim-earnings', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
-        if (!user) { return res.status(404).json({ success: false, message: "User not found." }); }
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found." });
+        }
         if (!user.active_package) {
-            return res.status(400).json({ success: false, message: "You do not have an active package tier." });
+            return res.status(400).json({ success: false, message: "You do not have an active package." });
         }
         if (new Date() > user.package_expiry_date) {
-            return res.status(400).json({ success: false, message: "Your investment package has expired." });
+            return res.status(400).json({ success: false, message: "Your package has expired." });
         }
 
         const now = new Date();
@@ -120,22 +101,15 @@ router.post('/claim-earnings', authMiddleware, async (req, res) => {
         todayReset.setUTCHours(0, 0, 0, 0); 
 
         if (user.last_claim_timestamp && user.last_claim_timestamp > todayReset) {
-            return res.status(400).json({ success: false, message: "You have already claimed your random profit allocation for today." });
+            return res.status(400).json({ success: false, message: "You have already claimed your profit for today." });
         }
 
-        if (!user.earnings_today || user.earnings_today <= 0) {
-            return res.status(400).json({ success: false, message: "Today's dynamic returns haven't updated yet. Please check back shortly." });
-        }
-
-        const profitToClaim = user.earnings_today;
-        user.balance += profitToClaim;
+        const dailyProfit = PACKAGES[user.active_package].dailyProfit;
+        user.balance += dailyProfit;
         user.last_claim_timestamp = now;
         
-        // Soft reset today's value so double accumulation cannot happen
-        user.earnings_today = 0.00; 
-
         await user.save();
-        res.json({ success: true, message: `Successfully claimed today's return of $${profitToClaim} USD!`, newBalance: user.balance });
+        res.json({ success: true, message: `Successfully claimed ${dailyProfit} PKR!`, newBalance: user.balance });
 
     } catch (error) {
         console.error("Claim earnings error:", error);
@@ -143,10 +117,14 @@ router.post('/claim-earnings', authMiddleware, async (req, res) => {
     }
 });
 
-// --- NEW ROUTES FOR CUSTOMER SUPPORT CHAT (Unchanged) ---
+// --- NEW ROUTES FOR CUSTOMER SUPPORT CHAT ---
+
+// GET api/user/support/initialize-chat
 router.get('/support/initialize-chat', authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
+        
+        // Find existing thread or create a new one
         let thread = await ChatThread.findOne({ userId });
 
         if (!thread) {
@@ -155,26 +133,32 @@ router.get('/support/initialize-chat', authMiddleware, async (req, res) => {
             return res.json({ success: true, chatId: thread._id, messages: [], message: "New chat thread created." });
         }
 
+        // Return existing thread details
         res.json({ 
             success: true, 
             chatId: thread._id, 
             messages: thread.messages,
             message: "Existing chat thread loaded."
         });
+
     } catch (err) {
         console.error('Error initializing user chat:', err.message);
         res.status(500).json({ success: false, message: 'Server error during chat initialization.' });
     }
 });
 
+// POST api/user/support/send-message
 router.post('/support/send-message', authMiddleware, async (req, res) => {
     const { chatId, content } = req.body;
+
     if (!content || content.trim() === "") {
         return res.status(400).json({ success: false, message: "Message content cannot be empty." });
     }
     
     try {
         const userId = req.user.id;
+        
+        // Find the thread and ensure it belongs to the user
         const thread = await ChatThread.findOne({ _id: chatId, userId });
 
         if (!thread) {
@@ -188,27 +172,31 @@ router.post('/support/send-message', authMiddleware, async (req, res) => {
         };
         
         thread.messages.push(newMessage);
-        thread.status = 'pending_admin_reply'; 
+        thread.status = 'pending_admin_reply'; // Mark for admin attention
         thread.lastUpdated = new Date();
         
         await thread.save();
+
         res.json({ success: true, message: "Message sent.", newMessage });
+
     } catch (err) {
         console.error('Error sending user message:', err.message);
         res.status(500).json({ success: false, message: 'Server error during message send.' });
     }
 });
 
-// --- ACCOUNT LOG SUMMARY METRICS ---
+// --- ORIGINAL ROUTES CONTINUED ---
+
+// GET api/user/account-summary
 router.get('/account-summary', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
-        if (!user) { return res.status(404).json({ success: false, message: 'User not found' }); }
-        
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
         const totalWithdrawals = user.transactions
             .filter(tx => tx.type === 'withdrawal' && tx.status === 'completed')
             .reduce((sum, tx) => sum + (tx.amount || 0), 0);
-            
         const lifetimeProfit = (user.balance + totalWithdrawals) - user.totalDeposits;
         res.json({
             success: true,
@@ -224,16 +212,17 @@ router.get('/account-summary', authMiddleware, async (req, res) => {
     }
 });
 
+// GET api/user/recent-activity
 router.get('/recent-activity', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
-        if (!user) { return res.status(404).json({ success: false, message: 'User not found' }); }
-        
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
         const recentActivities = user.transactions
             .sort((a, b) => new Date(b.date) - new Date(a.date))
             .slice(0, 5)
             .map(tx => ({ date: tx.date, type: tx.type, amount: tx.amount, status: tx.status }));
-            
         res.json({ success: true, activities: recentActivities });
     } catch (err) {
         console.error('Error fetching recent activity:', err.message);
@@ -241,11 +230,14 @@ router.get('/recent-activity', authMiddleware, async (req, res) => {
     }
 });
 
+// --- RESTORED: ROUTE TO GET A USER'S REFERRALS LIST ---
 router.get('/my-referrals', authMiddleware, async (req, res) => {
     try {
+        // Use the primary display name (firstName or username) for the list
         const referrals = await User.find({ referredBy: req.user.id })
                                     .select('username firstName createdAt') 
                                     .sort({ createdAt: -1 });
+
         res.json({ success: true, referrals: referrals });
     } catch (error) {
         console.error("Error fetching referrals:", error);
