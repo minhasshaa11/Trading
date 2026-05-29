@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Dashboard - Investment Platform</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -308,10 +312,9 @@
         } else if (attempts < 50) {
             setTimeout(() => waitForTelegram(attempts + 1), 100);
         } else {
-            // Detailed Debugger Screen Output
             let debugMsg = "Unknown Error";
             if (!window.Telegram) {
-                debugMsg = "Telegram Script block ho gayi hai.";
+                debugMsg = "Telegram Script block ho gayi hai. Is issue ko theek karne ke liye apne web page ko Refresh karein.";
             } else if (!WebApp) {
                 debugMsg = "WebApp object load nahi hua.";
             } else if (!WebApp.initData) {
