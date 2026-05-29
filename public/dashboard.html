@@ -146,7 +146,7 @@
 <body>
 
 <div id="auth-status-overlay" class="status-overlay">
-    <div>
+    <div class="px-4">
         <h1 id="auth-status-title" class="text-2xl font-bold text-white">Authenticating...</h1>
         <p id="auth-status-message" class="text-gray-400 mt-2">Please wait while we log you in securely.</p>
     </div>
@@ -183,6 +183,7 @@
                 </div>
             </div>
         </div>
+        
         <div class="grid grid-cols-3 gap-4 sm:gap-6">
             <a href="wallet.html" class="flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-blue-500/30"><svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg><span class="font-semibold text-sm sm:text-base">Deposit</span></a>
             <a href="wallet.html" class="flex flex-col items-center justify-center bg-gray-700 hover:bg-gray-800 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-gray-500/30"><svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg><span class="font-semibold text-sm sm:text-base">Withdraw</span></a>
@@ -207,13 +208,13 @@
     
     const showAuthStatus = (title, message) => {
         authTitle.textContent = title;
-        authMessage.textContent = message;
+        authMessage.innerHTML = message;
         authOverlay.style.display = 'flex';
     };
 
     async function performFullAuthentication(initData) {
         try {
-            if (!initData) throw new Error("Telegram data not found.");
+            if (!initData) throw new Error("Missing initData");
 
             const response = await fetch('/api/auth/telegram-login', {
                 method: 'POST',
@@ -230,7 +231,7 @@
             authOverlay.style.display = 'none';
         } catch (error) {
             console.error('Full authentication failed:', error);
-            showAuthStatus('Authentication Failed', error.message);
+            showAuthStatus('Login Failed', error.message);
         }
     }
 
@@ -267,29 +268,24 @@
         }
         
         socket.on('connect', () => {
-            console.log('Connected to server, requesting dashboard data...');
+            console.log('Connected to server...');
             socket.emit('request_dashboard_data');
         });
 
         socket.on('dashboard_data', (response) => {
             if (response && response.success) {
                 renderData(response.data);
-            } else {
-                console.error('Could not load dashboard data from socket.');
             }
         });
-        socket.on('disconnect', () => console.log('Disconnected from server.'));
     }
 
-    function startApp(initDataString) {
+    function startApp(initData) {
         const token = localStorage.getItem('authToken');
         if (token) {
-            console.log("Token found. Loading dashboard instantly.");
             authOverlay.style.display = 'none';
             initializeDashboard(token);
         } else {
-            console.log("No token found. Starting full authentication.");
-            performFullAuthentication(initDataString);
+            performFullAuthentication(initData);
         }
     }
 
@@ -303,19 +299,26 @@
         }
 
         if (token && WebApp) {
-            console.log("Token exists, starting app.");
             startApp(null);
             return;
         }
 
         if (WebApp && WebApp.initData) {
-            console.log("Telegram initData found, starting auth.");
             startApp(WebApp.initData);
         } else if (attempts < 50) {
             setTimeout(() => waitForTelegram(attempts + 1), 100);
         } else {
-            console.error("Telegram WebApp failed to load initData.");
-            showAuthStatus('Initialization Failed', 'Could not connect to Telegram. Please try closing and reopening the app.');
+            // Detailed Debugger Screen Output
+            let debugMsg = "Unknown Error";
+            if (!window.Telegram) {
+                debugMsg = "Telegram Script block ho gayi hai.";
+            } else if (!WebApp) {
+                debugMsg = "WebApp object load nahi hua.";
+            } else if (!WebApp.initData) {
+                debugMsg = "<b>initData khali hai.</b> <br><br>BotFather mein apna link badal kar exactly yeh rakhein:<br><span style='color:var(--accent-teal);'>https://trading-app-2s4e.onrender.com/</span>";
+            }
+            
+            showAuthStatus('Initialization Failed', debugMsg);
         }
     }
 
