@@ -1,42 +1,27 @@
 const mongoose = require('mongoose');
-const bcryptjs = require('bcryptjs');
+const bcrypt = require('bcryptjs'); // Fixed: was calling bcrypt but importing bcryptjs
 
 const transactionSchema = new mongoose.Schema({
-    // In the new system, we initially store the NowPayments 'payment_id' here.
-    // Once confirmed, you could optionally update it to the real blockchain Hash.
     txid: { type: String, required: true },
-    
-    // Added 'currency' so you know if they paid in 'usdttrc20', 'btc', etc.
-    currency: { type: String }, 
-
-    // NowPayments statuses: 'waiting', 'confirming', 'confirmed', 'sending', 'finished', 'failed'
+    currency: { type: String },
     status: { type: String, default: 'pending' },
-    
     date: { type: Date, default: Date.now },
     type: { type: String, enum: ['deposit', 'withdrawal'], default: 'deposit' },
     amount: { type: Number },
-    
-    // This will store the UNIQUE deposit address generated for this specific transaction
-    address: { type: String }, 
-    
+    address: { type: String },
     tax: { type: Number, default: 0 },
     finalAmount: { type: Number }
 });
 
 const userSchema = new mongoose.Schema({
-    // --- FIELDS FOR TELEGRAM LOGIN ---
+    // Telegram fields
     telegramId: {
         type: String,
         unique: true,
-        sparse: true 
+        sparse: true
     },
-    firstName: {
-        type: String
-    },
-    lastName: {
-        type: String
-    },
-    // ------------------------------------
+    firstName: { type: String },
+    lastName: { type: String },
 
     username: {
         type: String,
@@ -44,16 +29,13 @@ const userSchema = new mongoose.Schema({
         trim: true,
         sparse: true
     },
-    password: {
-        type: String,
-    },
+    password: { type: String },
+
     balance: {
         type: Number,
         default: 0.00,
     },
-    
-    // These fields are less important now that we generate unique addresses per transaction,
-    // but we keep them to avoid breaking any old logic.
+
     depositAddress: {
         type: String,
         unique: true,
@@ -64,7 +46,7 @@ const userSchema = new mongoose.Schema({
         default: null,
         sparse: true,
     },
-    
+
     transactions: [transactionSchema],
 
     referralCode: {
