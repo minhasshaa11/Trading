@@ -6,9 +6,8 @@
     <title>Dashboard - Investment Platform</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" defer></script>
-    <script src="https://cdn.tailwindcss.com" defer></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +19,6 @@
             --accent-magenta: #BE38F3;
             --accent-teal: #00F5D4;
         }
-
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-dark-navy);
@@ -28,47 +26,20 @@
             padding-bottom: 100px;
             overflow-x: hidden;
         }
-
-        .aurora-background {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1; overflow: hidden;
-        }
+        .aurora-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; }
         .aurora-background::before, .aurora-background::after {
-            content: ''; position: absolute; width: 800px; height: 800px;
-            border-radius: 50%; opacity: 0.2; mix-blend-mode: screen; filter: blur(100px);
+            content: ''; position: absolute; width: 800px; height: 800px; border-radius: 50%; opacity: 0.2; mix-blend-mode: screen; filter: blur(100px);
         }
-        .aurora-background::before {
-            background: radial-gradient(circle, var(--accent-magenta), transparent 60%);
-            top: -20%; left: -20%;
-        }
-        .aurora-background::after {
-            background: radial-gradient(circle, var(--accent-teal), transparent 60%);
-            bottom: -20%; right: -20%;
-        }
-        .card {
-            background-color: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .bottom-nav {
-            position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
-            width: calc(100% - 32px); max-width: 400px; display: flex; justify-content: space-around;
-            z-index: 1000; background-color: rgba(0, 0, 0, 0.3); backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 12px 0;
-        }
-        .nav-link {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            flex-grow: 1; text-decoration: none; color: #A0A0A0; font-size: 0.75rem; gap: 4px;
-        }
-        .nav-link.active { color: var(--accent-magenta); font-weight: 700; }
-        .skeleton { background-color: rgba(255, 255, 255, 0.1); border-radius: 0.25rem; animation: pulse 2s infinite; }
+        .aurora-background::before { background: radial-gradient(circle, var(--accent-magenta), transparent 60%); top: -20%; left: -20%; }
+        .aurora-background::after { background: radial-gradient(circle, var(--accent-teal), transparent 60%); bottom: -20%; right: -20%; }
+        .card { background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .bottom-nav { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 400px; display: flex; justify-content: space-around; z-index: 1000; background-color: rgba(0, 0, 0, 0.3); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 12px 0; }
+        .nav-link { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; text-decoration: none; color: #A0A0A0; font-weight: 500; font-size: 0.75rem; gap: 4px; }
+        .nav-link svg { width: 24px; height: 24px; }
+        .nav-link.active { color: var(--accent-magenta); font-weight: 700; transform: translateY(-2px); }
+        .skeleton { background-color: rgba(255, 255, 255, 0.1); border-radius: 0.25rem; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         @keyframes pulse { 50% { opacity: .5; } }
-        .status-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            display: flex; align-items: center; justify-content: center; text-align: center; 
-            z-index: 2000; background-color: var(--bg-dark-navy); 
-        }
+        .status-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; z-index: 2000; background-color: var(--bg-dark-navy); }
     </style>
 </head>
 <body>
@@ -77,7 +48,6 @@
     <div class="px-4">
         <h1 id="auth-status-title" class="text-2xl font-bold text-white">Authenticating...</h1>
         <p id="auth-status-message" class="text-gray-400 mt-2">Connecting securely to Telegram...</p>
-        <button id="force-reload-btn" onclick="window.location.reload()" class="mt-6 bg-blue-600 px-6 py-2 rounded-lg text-white font-bold hidden">Reload Page</button>
     </div>
 </div>
 
@@ -92,6 +62,9 @@
     <main class="space-y-8">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div class="card p-6 rounded-2xl flex items-center space-x-4">
+                <div class="bg-blue-500/10 p-3 rounded-full border border-blue-500/20">
+                    <svg class="w-6 h-6 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                </div>
                 <div>
                     <p class="text-gray-400 text-sm">Total Balance</p>
                     <p id="balance-display" class="text-2xl font-bold text-white hidden" style="color: var(--accent-teal);">$0.00</p>
@@ -99,6 +72,9 @@
                 </div>
             </div>
              <div class="card p-6 rounded-2xl flex items-center space-x-4">
+                <div class="bg-purple-500/10 p-3 rounded-full border border-purple-500/20">
+                    <svg class="w-6 h-6" style="color: var(--accent-magenta);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
                 <div>
                     <p class="text-gray-400 text-sm">Active Package</p>
                     <p id="package-display" class="text-2xl font-bold text-white hidden">None</p>
@@ -108,67 +84,41 @@
         </div>
         
         <div class="grid grid-cols-3 gap-4 sm:gap-6">
-            <a href="wallet.html" class="flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 font-semibold text-sm">Deposit</a>
-            <a href="wallet.html" class="flex flex-col items-center justify-center bg-gray-700 hover:bg-gray-800 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 font-semibold text-sm">Withdraw</a>
-            <a href="packages.html" class="flex flex-col items-center justify-center bg-yellow-500 hover:bg-yellow-600 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 font-semibold text-sm">Packages</a>
+            <a href="wallet.html" class="flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5"><span class="font-semibold text-sm sm:text-base">Deposit</span></a>
+            <a href="wallet.html" class="flex flex-col items-center justify-center bg-gray-700 hover:bg-gray-800 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5"><span class="font-semibold text-sm sm:text-base">Withdraw</span></a>
+            <a href="packages.html" class="flex flex-col items-center justify-center bg-yellow-500 hover:bg-yellow-600 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5"><span class="font-semibold text-sm sm:text-base">Packages</span></a>
         </div>
         <div id="dynamic-action-section" class="card p-6 rounded-2xl shadow-lg text-center"></div>
     </main>
 </div>
 
 <nav class="bottom-nav">
-    <a href="dashboard.html" class="nav-link active">Dashboard</a>
-    <a href="packages.html" class="nav-link">Packages</a>
-    <a href="earning.html" class="nav-link">Earn</a>
-    <a href="wallet.html" class="nav-link">Wallet</a>
-    <a href="profile.html" class="nav-link">Profile</a>
+    <a href="dashboard.html" class="nav-link active" id="nav-dashboard"><span>Dashboard</span></a>
+    <a href="packages.html" class="nav-link" id="nav-packages"><span>Packages</span></a>
+    <a href="earning.html" class="nav-link" id="nav-earning"><span>Earn</span></a>
+    <a href="wallet.html" class="nav-link" id="nav-wallet"><span>Wallet</span></a>
+    <a href="profile.html" class="nav-link" id="nav-profile"><span>Profile</span></a>
 </nav>
 
 <script>
     const authOverlay = document.getElementById('auth-status-overlay');
     const authTitle = document.getElementById('auth-status-title');
     const authMessage = document.getElementById('auth-status-message');
-    const forceReloadBtn = document.getElementById('force-reload-btn');
-    
-    const showAuthStatus = (title, message, showBtn = false) => {
-        authTitle.textContent = title;
-        authMessage.innerHTML = message;
-        authOverlay.style.display = 'flex';
-        if(showBtn) forceReloadBtn.classList.remove('hidden');
-    };
 
-    async function performFullAuthentication(initData) {
-        try {
-            if (!initData) throw new Error("Missing initData");
-            const response = await fetch('/api/auth/telegram-login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ initData: initData }),
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || `Server error: ${response.status}`);
-            }
-            const { token, user } = await response.json();
-            localStorage.setItem('authToken', token);
-            initializeDashboard(token, user);
-            authOverlay.style.display = 'none';
-        } catch (error) {
-            showAuthStatus('Login Failed', error.message, true);
-        }
-    }
-
-    function initializeDashboard(token, initialUserData = null) {
+    function initializeDashboard(token) {
         document.getElementById('dashboard-content').style.display = 'block';
+        
         if (typeof io !== 'undefined') {
             const socket = io({ auth: { token } });
-            // Same rendering logic as before
+            
             socket.on('connect', () => { socket.emit('request_dashboard_data'); });
+            
             socket.on('dashboard_data', (response) => {
                 if (response && response.success) {
                     document.getElementById('username-display').textContent = response.data.username || 'User';
                     document.getElementById('balance-display').textContent = `$${response.data.balance.toFixed(2)}`;
                     document.getElementById('package-display').textContent = response.data.activePackage || 'None';
+                    
                     document.getElementById('balance-skeleton').style.display = 'none';
                     document.getElementById('package-skeleton').style.display = 'none';
                     document.getElementById('balance-display').style.display = 'block';
@@ -185,37 +135,55 @@
         }
     }
 
-    function startApp() {
-        const WebApp = window.Telegram ? window.Telegram.WebApp : null;
+    // Yeh function load hote hi chalega, koi delay nahi
+    window.onload = function() {
         const token = localStorage.getItem('authToken');
-        
         if (token) {
             authOverlay.style.display = 'none';
             initializeDashboard(token);
-        } else if (WebApp && WebApp.initData) {
-            performFullAuthentication(WebApp.initData);
-        } else {
-            showAuthStatus('Init Failed', 'Please close and open the app from the bot menu.', true);
+            return;
         }
-    }
 
-    // Wait for Telegram to mount with a slightly longer timeout
-    let attempts = 0;
-    function checkTelegram() {
-        if (window.Telegram && window.Telegram.WebApp) {
-            window.Telegram.WebApp.ready();
-            window.Telegram.WebApp.expand();
-            startApp();
-        } else if (attempts < 60) { // Waits up to 6 seconds
-            attempts++;
-            setTimeout(checkTelegram, 100);
-        } else {
-            showAuthStatus('Loading Stuck', 'Telegram app is using an old cache. Please click reload.', true);
+        const WebApp = window.Telegram?.WebApp;
+
+        // Condition 1: Telegram script load hi nahi hui
+        if (!WebApp) {
+            authTitle.textContent = "API Error";
+            authMessage.innerHTML = "Telegram API engine is missing. Ensure you are inside the Telegram App.";
+            return;
         }
-    }
 
-    // Direct kickstart
-    checkTelegram();
+        WebApp.ready();
+        WebApp.expand();
+
+        // Condition 2: Telegram open hai lekin WebApp button ke zariye nahi
+        if (!WebApp.initData) {
+            authTitle.textContent = "Invalid Launch";
+            authMessage.innerHTML = "You are clicking a text link instead of a WebApp button.<br><br><b>Fix:</b> Use the Bot's Menu button or Inline Keyboard button to open the app.";
+            return;
+        }
+
+        // Agar data mil gaya, toh direct login
+        fetch('/api/auth/telegram-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData: WebApp.initData })
+        })
+        .then(res => {
+            if(!res.ok) throw new Error(`Server returned ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            if(!data.token) throw new Error("No token received from server");
+            localStorage.setItem('authToken', data.token);
+            authOverlay.style.display = 'none';
+            initializeDashboard(data.token);
+        })
+        .catch(err => {
+            authTitle.textContent = "Backend Login Failed";
+            authMessage.textContent = err.message;
+        });
+    };
 </script>
 
 </body>
