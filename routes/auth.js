@@ -5,77 +5,94 @@ const User = require('../models/User');
 const crypto = require('crypto');
 
 // =================================================================================
-// --- NEW: TELEGRAM LOGIN & REGISTRATION ROUTE ---
-// This single endpoint handles both login and registration for Telegram users.
+// TELEGRAM LOGIN & REGISTRATION ROUTE
 // =================================================================================
 router.post('/telegram-login', async (req, res) => {
     const { initData } = req.body;
+
+    // --- DEBUG LOG (remove after fixing) ---
+    console.log("=== /telegram-login called ===");
+    console.log("initData received:", initData ? initData.substring(0, 100) + "..." : "EMPTY / NULL");
+    console.log("BOT_TOKEN set:", !!process.env.BOT_TOKEN);
+    console.log("JWT_SECRET set:", !!process.env.JWT_SECRET);
 
     if (!initData) {
         return res.status(400).json({ message: 'Telegram initData is required.' });
     }
 
     try {
-        // --- 1. Validate Telegram Data (Critical for Security) ---
-        if (!validateTelegramData(initData)) {
-            return res.status(401).json({ message: 'Invalid or tampered Telegram data.' });
+        // --- 1. Validate Telegram Data ---
+        const validationResult = validateTelegramData(initData);
+        console.log("Validation result:", validationResult);
+
+        if (!validationResult.valid) {
+            return res.status(401).json({ message: `Invalid Telegram data: ${validationResult.reason}` });
         }
 
-        // --- 2. Parse User Data & Referral Code ---
+        // --- 2. Parse User Data ---
         const params = new URLSearchParams(initData);
-        const user = JSON.parse(params.get('user'));
-        const startParam = params.get('start_param'); // This is the referral code from the bot link
+        const userParam = params.get('user');
+        const startParam = params.get('start_param');
 
-        if (!user || !user.id) {
-            return res.status(400).json({ message: 'User data not found in initData.' });
+        if (!userParam) {
+            return res.status(400).json({ message: 'User param missing from initData.' });
         }
 
-        // --- 3. Find Existing User or Prepare to Create a New One ---
-        let dbUser = await User.findOne({ telegramId: user.id.toString() });
+        let telegramUser;
+        try {
+            telegramUser = JSON.parse(userParam);
+        } catch (e) {
+            return res.status(400).json({ message: 'Could not parse user data from initData.' });
+        }
 
-        // If the user does not exist, create them
+        if (!telegramUser || !telegramUser.id) {
+            return res.status(400).json({ message: 'User ID not found in initData.' });
+        }
+
+        console.log("Telegram user ID:", telegramUser.id);
+
+        // --- 3. Find or Create User ---
+        let dbUser = await User.findOne({ telegramId: telegramUser.id.toString() });
+
         if (!dbUser) {
             let referredBy = null;
             let referrer = null;
 
-            // Use the start_param from Telegram as the referral code
             if (startParam) {
                 referrer = await User.findOne({ referralCode: startParam });
-                if (referrer) {
-                    referredBy = referrer._id;
-                }
+                if (referrer) referredBy = referrer._id;
             }
 
-            // Generate a unique referral code for the new user
+            // Generate unique referral code
             let isUnique = false;
             let newReferralCode = '';
             while (!isUnique) {
                 newReferralCode = `REF-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
-                const existingUser = await User.findOne({ referralCode: newReferralCode });
-                if (!existingUser) {
-                    isUnique = true;
-                }
+                const existing = await User.findOne({ referralCode: newReferralCode });
+                if (!existing) isUnique = true;
             }
 
             dbUser = new User({
-                telegramId: user.id.toString(),
-                firstName: user.first_name,
-                lastName: user.last_name || '',
-                username: user.username, // Can be undefined, which is fine
+                telegramId: telegramUser.id.toString(),
+                firstName: telegramUser.first_name || '',
+                lastName: telegramUser.last_name || '',
+                username: telegramUser.username || null,
                 referredBy: referredBy,
                 referralCode: newReferralCode
             });
 
             await dbUser.save();
+            console.log("New user created:", dbUser._id);
 
-            // If there was a referrer, update their count
             if (referrer) {
                 referrer.referralCount += 1;
                 await referrer.save();
             }
+        } else {
+            console.log("Existing user found:", dbUser._id);
         }
 
-        // --- 4. Create and Sign JWT Token ---
+        // --- 4. Create JWT ---
         const payload = {
             id: dbUser._id,
             telegramId: dbUser.telegramId
@@ -83,60 +100,75 @@ router.post('/telegram-login', async (req, res) => {
 
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
 
-        // --- 5. Send Token and User Data to Frontend ---
-        res.json({
+        // --- 5. Send Response ---
+        return res.json({
             message: "Logged in successfully.",
             token,
             user: {
                 id: dbUser._id,
-                username: dbUser.username || dbUser.firstName, // Fallback to firstName if no username
-                balance: dbUser.balance,
-                activePackage: dbUser.active_package,
-                packageExpiry: dbUser.package_expiry_date
+                username: dbUser.username || dbUser.firstName || 'User',
+                balance: dbUser.balance || 0,
+                activePackage: dbUser.active_package || null,
+                packageExpiry: dbUser.package_expiry_date || null
             }
         });
 
     } catch (error) {
         console.error("Telegram Login Error:", error);
-        res.status(500).json({ message: "Server error during authentication." });
+        return res.status(500).json({ message: "Server error during authentication.", error: error.message });
     }
 });
 
 
-/**
- * NEW: Helper function to validate initData against your bot token.
- * This ensures the request is authentic and came from Telegram.
- * @param {string} initData The string from Telegram.WebApp.initData
- * @returns {boolean}
- */
+// =================================================================================
+// VALIDATE TELEGRAM DATA
+// Returns { valid: true } or { valid: false, reason: "..." }
+// =================================================================================
 function validateTelegramData(initData) {
     const BOT_TOKEN = process.env.BOT_TOKEN;
+
     if (!BOT_TOKEN) {
-        console.error("FATAL: BOT_TOKEN environment variable is not set!");
-        return false;
+        console.error("FATAL: BOT_TOKEN is not set in environment variables!");
+        return { valid: false, reason: "BOT_TOKEN not configured on server." };
     }
 
-    const params = new URLSearchParams(initData);
-    const hash = params.get('hash');
-    params.delete('hash');
+    try {
+        const params = new URLSearchParams(initData);
+        const hash = params.get('hash');
 
-    const dataCheckString = Array.from(params.keys())
-        .sort()
-        .map(key => `${key}=${params.get(key)}`)
-        .join('\n');
+        if (!hash) {
+            return { valid: false, reason: "Hash missing from initData." };
+        }
 
-    const secretKey = crypto.createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest();
-    const hmac = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+        params.delete('hash');
 
-    return hmac === hash;
+        const dataCheckString = Array.from(params.keys())
+            .sort()
+            .map(key => `${key}=${params.get(key)}`)
+            .join('\n');
+
+        const secretKey = crypto
+            .createHmac('sha256', 'WebAppData')
+            .update(BOT_TOKEN)
+            .digest();
+
+        const hmac = crypto
+            .createHmac('sha256', secretKey)
+            .update(dataCheckString)
+            .digest('hex');
+
+        if (hmac !== hash) {
+            console.error("Hash mismatch! Expected:", hmac, "Got:", hash);
+            return { valid: false, reason: "Hash mismatch - data may be tampered." };
+        }
+
+        return { valid: true };
+
+    } catch (err) {
+        console.error("Validation error:", err);
+        return { valid: false, reason: err.message };
+    }
 }
-
-
-// =================================================================================
-// --- OLD ROUTES ---
-// You can now delete your old '/register' and '/login' routes if you are
-// moving completely to the Telegram Mini App login flow.
-// =================================================================================
 
 
 module.exports = router;
