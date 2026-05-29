@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Dashboard - Investment Platform</title>
-    
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -17,8 +15,10 @@
             --bg-dark-navy: #0A0D14;
             --text-off-white: #F0F0F0;
             --accent-magenta: #BE38F3;
+            --accent-magenta-rgb: 190, 56, 243;
             --accent-teal: #00F5D4;
         }
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-dark-navy);
@@ -26,28 +26,129 @@
             padding-bottom: 100px;
             overflow-x: hidden;
         }
-        .aurora-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; }
-        .aurora-background::before, .aurora-background::after {
-            content: ''; position: absolute; width: 800px; height: 800px; border-radius: 50%; opacity: 0.2; mix-blend-mode: screen; filter: blur(100px);
+
+        .aurora-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
         }
-        .aurora-background::before { background: radial-gradient(circle, var(--accent-magenta), transparent 60%); top: -20%; left: -20%; }
-        .aurora-background::after { background: radial-gradient(circle, var(--accent-teal), transparent 60%); bottom: -20%; right: -20%; }
-        .card { background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); }
-        .bottom-nav { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 400px; display: flex; justify-content: space-around; z-index: 1000; background-color: rgba(0, 0, 0, 0.3); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 12px 0; }
-        .nav-link { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; text-decoration: none; color: #A0A0A0; font-weight: 500; font-size: 0.75rem; gap: 4px; }
-        .nav-link svg { width: 24px; height: 24px; }
-        .nav-link.active { color: var(--accent-magenta); font-weight: 700; transform: translateY(-2px); }
-        .skeleton { background-color: rgba(255, 255, 255, 0.1); border-radius: 0.25rem; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+        .aurora-background::before,
+        .aurora-background::after {
+            content: '';
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            border-radius: 50%;
+            opacity: 0.2;
+            mix-blend-mode: screen;
+            filter: blur(100px);
+            will-change: transform;
+        }
+
+        .aurora-background::before {
+            background: radial-gradient(circle, var(--accent-magenta), transparent 60%);
+            top: -20%;
+            left: -20%;
+            animation: moveGradientOne 25s ease-in-out infinite alternate;
+        }
+
+        .aurora-background::after {
+            background: radial-gradient(circle, var(--accent-teal), transparent 60%);
+            bottom: -20%;
+            right: -20%;
+            animation: moveGradientTwo 30s ease-in-out infinite alternate;
+        }
+
+        @keyframes moveGradientOne {
+            from { transform: translate(-20%, -20%) rotate(0deg); }
+            to { transform: translate(20%, 20%) rotate(180deg); }
+        }
+
+        @keyframes moveGradientTwo {
+            from { transform: translate(20%, 20%) rotate(0deg); }
+            to { transform: translate(-20%, -20%) rotate(360deg); }
+        }
+
+        .card {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 400px;
+            display: flex;
+            justify-content: space-around;
+            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 12px 0;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.2);
+        }
+
+        .nav-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            text-decoration: none;
+            color: #A0A0A0;
+            font-weight: 500;
+            font-size: 0.75rem;
+            transition: all 0.2s ease-in-out;
+            gap: 4px;
+        }
+        
+        .nav-link svg {
+             width: 24px; height: 24px;
+        }
+
+        .nav-link.active {
+            color: var(--accent-magenta);
+            font-weight: 700;
+            transform: translateY(-2px);
+        }
+
+        .skeleton { 
+            background-color: rgba(255, 255, 255, 0.1); 
+            border-radius: 0.25rem; 
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; 
+        }
+        
         @keyframes pulse { 50% { opacity: .5; } }
-        .status-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; text-align: center; z-index: 2000; background-color: var(--bg-dark-navy); }
+        
+        .status-overlay { 
+            position: fixed; 
+            top: 0; left: 0; width: 100%; height: 100%; 
+            display: flex; align-items: center; justify-content: center; text-align: center; 
+            z-index: 2000; 
+            background-color: var(--bg-dark-navy); 
+        }
     </style>
 </head>
 <body>
 
 <div id="auth-status-overlay" class="status-overlay">
-    <div class="px-4">
+    <div>
         <h1 id="auth-status-title" class="text-2xl font-bold text-white">Authenticating...</h1>
-        <p id="auth-status-message" class="text-gray-400 mt-2">Connecting securely to Telegram...</p>
+        <p id="auth-status-message" class="text-gray-400 mt-2">Please wait while we log you in securely.</p>
     </div>
 </div>
 
@@ -84,106 +185,128 @@
         </div>
         
         <div class="grid grid-cols-3 gap-4 sm:gap-6">
-            <a href="wallet.html" class="flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5"><span class="font-semibold text-sm sm:text-base">Deposit</span></a>
-            <a href="wallet.html" class="flex flex-col items-center justify-center bg-gray-700 hover:bg-gray-800 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5"><span class="font-semibold text-sm sm:text-base">Withdraw</span></a>
-            <a href="packages.html" class="flex flex-col items-center justify-center bg-yellow-500 hover:bg-yellow-600 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5"><span class="font-semibold text-sm sm:text-base">Packages</span></a>
+            <a href="wallet.html" class="flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-blue-500/30"><svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg><span class="font-semibold text-sm sm:text-base">Deposit</span></a>
+            <a href="wallet.html" class="flex flex-col items-center justify-center bg-gray-700 hover:bg-gray-800 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-gray-500/30"><svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg><span class="font-semibold text-sm sm:text-base">Withdraw</span></a>
+            <a href="packages.html" class="flex flex-col items-center justify-center bg-yellow-500 hover:bg-yellow-600 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-yellow-500/30"><svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg><span class="font-semibold text-sm sm:text-base">Packages</span></a>
         </div>
         <div id="dynamic-action-section" class="card p-6 rounded-2xl shadow-lg text-center"></div>
     </main>
 </div>
 
 <nav class="bottom-nav">
-    <a href="dashboard.html" class="nav-link active" id="nav-dashboard"><span>Dashboard</span></a>
-    <a href="packages.html" class="nav-link" id="nav-packages"><span>Packages</span></a>
-    <a href="earning.html" class="nav-link" id="nav-earning"><span>Earn</span></a>
-    <a href="wallet.html" class="nav-link" id="nav-wallet"><span>Wallet</span></a>
-    <a href="profile.html" class="nav-link" id="nav-profile"><span>Profile</span></a>
+    <a href="dashboard.html" class="nav-link" id="nav-dashboard"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span>Dashboard</span></a>
+    <a href="packages.html" class="nav-link" id="nav-packages"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg><span>Packages</span></a>
+    <a href="earning.html" class="nav-link" id="nav-earning"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg><span>Earn</span></a>
+    <a href="wallet.html" class="nav-link" id="nav-wallet"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg><span>Wallet</span></a>
+    <a href="profile.html" class="nav-link" id="nav-profile"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><span>Profile</span></a>
 </nav>
 
 <script>
     const authOverlay = document.getElementById('auth-status-overlay');
     const authTitle = document.getElementById('auth-status-title');
     const authMessage = document.getElementById('auth-status-message');
+    
+    const showAuthStatus = (title, message) => {
+        authTitle.textContent = title;
+        authMessage.textContent = message;
+        authOverlay.style.display = 'flex';
+    };
 
-    function initializeDashboard(token) {
-        document.getElementById('dashboard-content').style.display = 'block';
-        
-        if (typeof io !== 'undefined') {
-            const socket = io({ auth: { token } });
-            
-            socket.on('connect', () => { socket.emit('request_dashboard_data'); });
-            
-            socket.on('dashboard_data', (response) => {
-                if (response && response.success) {
-                    document.getElementById('username-display').textContent = response.data.username || 'User';
-                    document.getElementById('balance-display').textContent = `$${response.data.balance.toFixed(2)}`;
-                    document.getElementById('package-display').textContent = response.data.activePackage || 'None';
-                    
-                    document.getElementById('balance-skeleton').style.display = 'none';
-                    document.getElementById('package-skeleton').style.display = 'none';
-                    document.getElementById('balance-display').style.display = 'block';
-                    document.getElementById('package-display').style.display = 'block';
-                    
-                    const dynamicSection = document.getElementById('dynamic-action-section');
-                    if (response.data.activePackage) {
-                        dynamicSection.innerHTML = `<h2 class="text-xl font-semibold">Daily Task Ready</h2><a href="earning.html" class="inline-block mt-4 bg-green-500 text-black font-bold py-3 px-8 rounded-lg">Go to Earning</a>`;
-                    } else {
-                        dynamicSection.innerHTML = `<h2 class="text-xl font-semibold">Start Earning</h2><a href="packages.html" class="inline-block mt-4 bg-yellow-500 text-black font-bold py-3 px-8 rounded-lg">View Packages</a>`;
-                    }
-                }
+    async function performFullAuthentication(initData) {
+        try {
+            const response = await fetch('/api/auth/telegram-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ initData: initData }),
             });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `Server error: ${response.status}`);
+            }
+            const { token, user } = await response.json();
+            localStorage.setItem('authToken', token);
+            initializeDashboard(token, user);
+            authOverlay.style.display = 'none';
+        } catch (error) {
+            console.error('Full authentication failed:', error);
+            showAuthStatus('Authentication Failed', error.message);
         }
     }
 
-    // Yeh function load hote hi chalega, koi delay nahi
-    window.onload = function() {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            authOverlay.style.display = 'none';
-            initializeDashboard(token);
-            return;
+    function initializeDashboard(token, initialUserData = null) {
+        document.getElementById('dashboard-content').style.display = 'block';
+        document.getElementById('nav-dashboard').classList.add('active');
+
+        const socket = io({ auth: { token } });
+        const usernameDisplay = document.getElementById('username-display');
+        const balanceDisplay = document.getElementById('balance-display');
+        const packageDisplay = document.getElementById('package-display');
+        const balanceSkeleton = document.getElementById('balance-skeleton');
+        const packageSkeleton = document.getElementById('package-skeleton');
+        const dynamicActionSection = document.getElementById('dynamic-action-section');
+
+        const renderData = (data) => {
+            usernameDisplay.textContent = data.username || 'User';
+            balanceDisplay.textContent = `$${data.balance.toFixed(2)}`;
+            packageDisplay.textContent = data.activePackage || 'None';
+            balanceSkeleton.style.display = 'none';
+            packageSkeleton.style.display = 'none';
+            balanceDisplay.style.display = 'block';
+            packageDisplay.style.display = 'block';
+            if (data.activePackage) {
+                const expiry = new Date(data.packageExpiry).toLocaleDateString();
+                dynamicActionSection.innerHTML = `<h2 class="text-xl font-semibold text-white">Your Daily Task is Ready</h2><p class="text-gray-400 mt-2 mb-4">Click the button below to claim your daily profit. Your package expires on ${expiry}.</p><a href="earning.html" class="inline-block text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105" style="background-color: var(--accent-teal);">Go to Earning Page</a>`;
+            } else {
+                dynamicActionSection.innerHTML = `<h2 class="text-xl font-semibold text-white">Start Earning Today</h2><p class="text-gray-400 mt-2 mb-4">You don't have an active investment package. Purchase a package to start earning daily profits.</p><a href="packages.html" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">View Packages</a>`;
+            }
+        };
+
+        if (initialUserData) {
+            renderData(initialUserData);
         }
-
-        const WebApp = window.Telegram?.WebApp;
-
-        // Condition 1: Telegram script load hi nahi hui
-        if (!WebApp) {
-            authTitle.textContent = "API Error";
-            authMessage.innerHTML = "Telegram API engine is missing. Ensure you are inside the Telegram App.";
-            return;
-        }
-
-        WebApp.ready();
-        WebApp.expand();
-
-        // Condition 2: Telegram open hai lekin WebApp button ke zariye nahi
-        if (!WebApp.initData) {
-            authTitle.textContent = "Invalid Launch";
-            authMessage.innerHTML = "You are clicking a text link instead of a WebApp button.<br><br><b>Fix:</b> Use the Bot's Menu button or Inline Keyboard button to open the app.";
-            return;
-        }
-
-        // Agar data mil gaya, toh direct login
-        fetch('/api/auth/telegram-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ initData: WebApp.initData })
-        })
-        .then(res => {
-            if(!res.ok) throw new Error(`Server returned ${res.status}`);
-            return res.json();
-        })
-        .then(data => {
-            if(!data.token) throw new Error("No token received from server");
-            localStorage.setItem('authToken', data.token);
-            authOverlay.style.display = 'none';
-            initializeDashboard(data.token);
-        })
-        .catch(err => {
-            authTitle.textContent = "Backend Login Failed";
-            authMessage.textContent = err.message;
+        
+        socket.on('connect', () => {
+            socket.emit('request_dashboard_data');
         });
-    };
+
+        socket.on('dashboard_data', (response) => {
+            if (response && response.success) {
+                renderData(response.data);
+            }
+        });
+    }
+
+    // AAPKA ORIGINAL LOOP WAPAS LAGA DIYA
+    function waitForTelegram(attempts = 0) {
+        const WebApp = window.Telegram?.WebApp;
+        const token = localStorage.getItem('authToken');
+
+        // Agar token pehle se mojood hai, direct dashboard dikhao
+        if (token) {
+            initializeDashboard(token);
+            authOverlay.style.display = 'none';
+            return;
+        }
+
+        // Agar Telegram aur initData mil gaya toh login karo
+        if (WebApp && WebApp.initData) {
+            WebApp.ready();
+            WebApp.expand();
+            performFullAuthentication(WebApp.initData);
+        } 
+        // Agar nahi mila toh wait karo (Jaise aapke original code mein tha)
+        else if (attempts < 50) {
+            setTimeout(() => waitForTelegram(attempts + 1), 100);
+        } 
+        // 5 second wait ke baad bhi data na mile
+        else {
+            showAuthStatus('Initialization Failed', 'Menu button must be configured as a Web App, not a standard URL.');
+        }
+    }
+
+    window.addEventListener('load', () => {
+        waitForTelegram();
+    });
 </script>
 
 </body>
