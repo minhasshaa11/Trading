@@ -183,7 +183,8 @@
                 </div>
             </div>
         </div>
-        <!-- UPDATED ACTION BUTTONS -->
+
+        <!-- ACTION BUTTONS -->
         <div class="grid grid-cols-3 gap-4 sm:gap-6">
             <a href="wallet.html" class="flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-blue-500/30"><svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg><span class="font-semibold text-sm sm:text-base">Deposit</span></a>
             <a href="wallet.html" class="flex flex-col items-center justify-center bg-gray-700 hover:bg-gray-800 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-gray-500/30"><svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg><span class="font-semibold text-sm sm:text-base">Withdraw</span></a>
@@ -214,11 +215,13 @@
 
     async function performFullAuthentication() {
         try {
-            const WebApp = window.Telegram.WebApp;
+            const WebApp = window.Telegram?.WebApp;
+            if (!WebApp) throw new Error("Telegram script loaded but environment missing.");
+            
             WebApp.ready();
             WebApp.expand();
             const initData = WebApp.initData;
-            if (!initData) throw new Error("Telegram data not found.");
+            if (!initData) throw new Error("Telegram initData not found.");
 
             const response = await fetch('/api/auth/telegram-login', {
                 method: 'POST',
@@ -261,10 +264,8 @@
             packageDisplay.style.display = 'block';
             if (data.activePackage) {
                 const expiry = new Date(data.packageExpiry).toLocaleDateString();
-                // UPDATED 'GO TO EARNING' BUTTON STYLE
                 dynamicActionSection.innerHTML = `<h2 class="text-xl font-semibold text-white">Your Daily Task is Ready</h2><p class="text-gray-400 mt-2 mb-4">Click the button below to claim your daily profit. Your package expires on ${expiry}.</p><a href="earning.html" class="inline-block text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105" style="background-color: var(--accent-teal);">Go to Earning Page</a>`;
             } else {
-                // UPDATED 'VIEW PACKAGES' BUTTON STYLE
                 dynamicActionSection.innerHTML = `<h2 class="text-xl font-semibold text-white">Start Earning Today</h2><p class="text-gray-400 mt-2 mb-4">You don't have an active investment package. Purchase a package to start earning daily profits.</p><a href="packages.html" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">View Packages</a>`;
             }
         };
@@ -300,16 +301,32 @@
         }
     }
 
-    function waitForTelegram(attempts = 0) {
-        if (window.Telegram && window.Telegram.WebApp) {
-            console.log("Telegram WebApp is ready.");
+    function checkTelegramEnvironment() {
+        // Fallback checks for development inside standard desktop platforms
+        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+            console.log("Telegram WebApp identified securely.");
             startApp();
-        } else if (attempts < 100) {
-            console.log(`Telegram not ready, retrying... (Attempt ${attempts + 1})`);
-            setTimeout(() => waitForTelegram(attempts + 1), 100);
+            return true;
+        }
+        return false;
+    }
+
+    function waitForTelegram(attempts = 0) {
+        if (checkTelegramEnvironment()) return;
+
+        // Force launch bypass if inside mobile Telegram container but delay happens
+        if (window.Telegram && window.Telegram.WebApp) {
+             console.log("Telegram API element container found. Pushing application start initialization.");
+             startApp();
+             return;
+        }
+
+        if (attempts < 30) { 
+            setTimeout(() => waitForTelegram(attempts + 1), 150);
         } else {
-            console.error("Telegram WebApp failed to load after 10 seconds.");
-            showAuthStatus('Initialization Failed', 'Could not connect to Telegram. Please try closing and reopening the app.');
+            // Direct launch validation fallback structure if node scripts delay
+            console.log("Direct loop fallback active execution.");
+            startApp();
         }
     }
 
@@ -320,4 +337,3 @@
 
 </body>
 </html>
-
