@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Dashboard - Investment Platform</title>
+    <!-- KEY FIX: Telegram MUST load first -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -266,158 +267,133 @@
     const spinner      = document.getElementById('loading-spinner');
     const retryBtn     = document.getElementById('retry-btn');
 
-    // ─── Helpers ────────────────────────────────────────────────────
-    function showAuthStatus(title, message, showRetry = false) {
+    function showError(title, message, detail) {
         authTitle.textContent   = title;
         authMessage.textContent = message;
-        spinner.style.display   = showRetry ? 'none' : 'block';
-        retryBtn.style.display  = showRetry ? 'inline-block' : 'none';
+        spinner.style.display   = 'none';
+        retryBtn.style.display  = 'inline-block';
         authOverlay.style.display = 'flex';
     }
 
-    function hideAuthOverlay() {
+    function showLoading(msg) {
+        authTitle.textContent   = 'Authenticating...';
+        authMessage.textContent = msg || 'Please wait...';
+        spinner.style.display   = 'block';
+        retryBtn.style.display  = 'none';
+        authOverlay.style.display = 'flex';
+    }
+
+    function hideOverlay() {
         authOverlay.style.display = 'none';
     }
 
-    // ─── Dashboard Render ───────────────────────────────────────────
-    function initializeDashboard(token, initialUserData = null) {
+    function initializeDashboard(token, initialUserData) {
         document.getElementById('dashboard-content').style.display = 'block';
         document.getElementById('nav-dashboard').classList.add('active');
 
-        const socket          = io({ auth: { token } });
-        const usernameDisplay = document.getElementById('username-display');
-        const balanceDisplay  = document.getElementById('balance-display');
-        const packageDisplay  = document.getElementById('package-display');
-        const balanceSkeleton = document.getElementById('balance-skeleton');
-        const packageSkeleton = document.getElementById('package-skeleton');
-        const dynamicSection  = document.getElementById('dynamic-action-section');
+        var socket          = io({ auth: { token: token } });
+        var usernameDisplay = document.getElementById('username-display');
+        var balanceDisplay  = document.getElementById('balance-display');
+        var packageDisplay  = document.getElementById('package-display');
+        var balanceSkeleton = document.getElementById('balance-skeleton');
+        var packageSkeleton = document.getElementById('package-skeleton');
+        var dynamicSection  = document.getElementById('dynamic-action-section');
 
         function renderData(data) {
             usernameDisplay.textContent = data.username || 'User';
-            balanceDisplay.textContent  = `$${(data.balance || 0).toFixed(2)}`;
+            balanceDisplay.textContent  = '$' + (data.balance || 0).toFixed(2);
             packageDisplay.textContent  = data.activePackage || 'None';
-
             balanceSkeleton.style.display = 'none';
             packageSkeleton.style.display = 'none';
             balanceDisplay.style.display  = 'block';
             packageDisplay.style.display  = 'block';
 
             if (data.activePackage) {
-                const expiry = new Date(data.packageExpiry).toLocaleDateString();
-                dynamicSection.innerHTML = `
-                    <h2 class="text-xl font-semibold text-white">Your Daily Task is Ready</h2>
-                    <p class="text-gray-400 mt-2 mb-4">Click below to claim your daily profit. Package expires on ${expiry}.</p>
-                    <a href="earning.html" class="inline-block text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105" style="background-color: var(--accent-teal); color: #0A0D14;">Go to Earning Page</a>
-                `;
+                var expiry = new Date(data.packageExpiry).toLocaleDateString();
+                dynamicSection.innerHTML = '<h2 class="text-xl font-semibold text-white">Your Daily Task is Ready</h2><p class="text-gray-400 mt-2 mb-4">Click below to claim your daily profit. Package expires on ' + expiry + '.</p><a href="earning.html" class="inline-block font-bold py-3 px-8 rounded-lg shadow-lg" style="background-color:var(--accent-teal);color:#0A0D14;">Go to Earning Page</a>';
             } else {
-                dynamicSection.innerHTML = `
-                    <h2 class="text-xl font-semibold text-white">Start Earning Today</h2>
-                    <p class="text-gray-400 mt-2 mb-4">You don't have an active investment package. Purchase one to start earning daily profits.</p>
-                    <a href="packages.html" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105">View Packages</a>
-                `;
+                dynamicSection.innerHTML = '<h2 class="text-xl font-semibold text-white">Start Earning Today</h2><p class="text-gray-400 mt-2 mb-4">You don\'t have an active investment package. Purchase one to start earning daily profits.</p><a href="packages.html" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg">View Packages</a>';
             }
         }
 
         if (initialUserData) renderData(initialUserData);
 
-        socket.on('connect', () => {
-            console.log('Socket connected, requesting dashboard data...');
-            socket.emit('request_dashboard_data');
-        });
-
-        socket.on('dashboard_data', (response) => {
-            if (response && response.success) {
-                renderData(response.data);
-            } else {
-                console.error('Could not load dashboard data from socket.');
-            }
-        });
-
-        socket.on('connect_error', (err) => {
-            console.error('Socket connection error:', err.message);
-        });
-
-        socket.on('disconnect', () => console.log('Socket disconnected.'));
+        socket.on('connect', function() { socket.emit('request_dashboard_data'); });
+        socket.on('dashboard_data', function(res) { if (res && res.success) renderData(res.data); });
+        socket.on('connect_error', function(err) { console.error('Socket error:', err.message); });
     }
 
-    // ─── Telegram Auth ──────────────────────────────────────────────
-    // Waits for Telegram WebApp to be available (Promise-based)
-    function waitForTelegramReady(maxWaitMs = 10000) {
-        return new Promise((resolve, reject) => {
+    // KEY FIX: Poll for both window.Telegram AND initData
+    function performFullAuthentication() {
+        showLoading('Connecting to Telegram...');
+        var attempts = 0;
+
+        function checkTelegram() {
+            attempts++;
             if (window.Telegram && window.Telegram.WebApp) {
-                return resolve(window.Telegram.WebApp);
-            }
-            const interval = 100;
-            let elapsed = 0;
-            const timer = setInterval(() => {
-                elapsed += interval;
-                if (window.Telegram && window.Telegram.WebApp) {
-                    clearInterval(timer);
-                    resolve(window.Telegram.WebApp);
-                } else if (elapsed >= maxWaitMs) {
-                    clearInterval(timer);
-                    reject(new Error('Could not connect to Telegram. Please close the app completely and reopen.'));
+                var tg = window.Telegram.WebApp;
+                tg.ready();
+                tg.expand();
+                var initData = tg.initData;
+                if (initData) {
+                    doLogin(initData);
+                } else if (attempts < 150) {
+                    setTimeout(checkTelegram, 100);
+                } else {
+                    showError('Initialization Failed', 'Telegram data is empty. Please close and reopen the app from your bot.', '');
                 }
-            }, interval);
+            } else if (attempts < 150) {
+                setTimeout(checkTelegram, 100);
+            } else {
+                showError('Initialization Failed', 'Could not connect to Telegram. Please close the app completely and reopen.', '');
+            }
+        }
+        checkTelegram();
+    }
+
+    function doLogin(initData) {
+        showLoading('Verifying your account...');
+        fetch('/api/auth/telegram-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData: initData })
+        })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, status: r.status, data: d }; }); })
+        .then(function(result) {
+            if (!result.ok) {
+                showError('Login Failed', result.data.message || 'Server error.', 'Status: ' + result.status);
+                return;
+            }
+            localStorage.setItem('authToken', result.data.token);
+            hideOverlay();
+            initializeDashboard(result.data.token, result.data.user);
+        })
+        .catch(function(err) {
+            showError('Connection Error', 'Could not reach the server.', err.message);
         });
     }
 
-    async function performFullAuthentication() {
-        showAuthStatus('Authenticating...', 'Please wait while we log you in securely.');
-        try {
-            const WebApp = await waitForTelegramReady();
-            WebApp.ready();
-            WebApp.expand();
-
-            const initData = WebApp.initData;
-            if (!initData) {
-                throw new Error('Telegram init data not found. Please reopen the app from Telegram.');
-            }
-
-            const response = await fetch('/api/auth/telegram-login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ initData }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `Server error: ${response.status}`);
-            }
-
-            const { token, user } = await response.json();
-            localStorage.setItem('authToken', token);
-            hideAuthOverlay();
-            initializeDashboard(token, user);
-
-        } catch (error) {
-            console.error('Authentication failed:', error);
-            showAuthStatus('Initialization Failed', error.message, true);
-        }
-    }
-
-    // ─── Retry Button ───────────────────────────────────────────────
     function retryAuth() {
-        localStorage.removeItem('authToken'); // clear stale token if any
+        localStorage.removeItem('authToken');
         performFullAuthentication();
     }
 
-    // ─── App Entry Point ────────────────────────────────────────────
-    // KEY FIX: If token exists → skip Telegram check entirely, load dashboard directly.
-    // Only go through Telegram auth if no token found.
     function startApp() {
-        const token = localStorage.getItem('authToken');
+        var token = localStorage.getItem('authToken');
         if (token) {
-            console.log('Token found in storage. Loading dashboard directly.');
-            hideAuthOverlay();
+            hideOverlay();
             initializeDashboard(token);
         } else {
-            console.log('No token. Starting Telegram authentication flow.');
             performFullAuthentication();
         }
     }
 
-    window.addEventListener('load', startApp);
+    // Start on DOMContentLoaded — don't wait for images/fonts to load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startApp);
+    } else {
+        startApp();
+    }
 </script>
 
 </body>
