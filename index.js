@@ -1,4 +1,4 @@
-// index.js
+// index.js (Refactored for Investment Packages Model)
 // ------------------ DEPENDENCIES ------------------
 require("dotenv").config();
 const express = require("express");
@@ -10,6 +10,7 @@ const path = require("path");
 const jwt = require('jsonwebtoken');
 
 // ------------------ MODELS & ROUTES ------------------
+// FIX: Use './models/User' because index.js and models are in the same directory.
 const User = require("./models/User"); 
 
 const authRoutes = require("./routes/auth");
@@ -27,13 +28,12 @@ const io = socketIo(server, {
     methods: ["GET", "POST"]
   }
 });
+// The 'app.set' for marketData is no longer needed
 
 // ------------------ MIDDLEWARE ------------------
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-// Static files ko serve karne ka direct tarika
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/api/auth", authRoutes);
@@ -42,8 +42,12 @@ app.use("/api/deposit", depositRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/withdraw", withdrawRoutes);
 
-// ----- REAL-TIME SOCKET LOGIC -----
+// ----- SIMPLIFIED: Real-time functionality for the new dashboard -----
+
+// A simpler function to get the data our new dashboard needs
 async function getDashboardData(userId) {
+    // Note: The fields active_package and package_expiry_date might not exist in your current User model
+    // unless you have added them manually. Ensure your User model is up-to-date.
     const user = await User.findById(userId).select('username balance active_package package_expiry_date');
     if (!user) {
         throw new Error('User not found.');
@@ -56,7 +60,7 @@ async function getDashboardData(userId) {
     };
 }
 
-// Socket.IO Authentication Middleware
+// Socket.IO Authentication Middleware (unchanged)
 io.use((socket, next) => {
     const token = socket.handshake.auth.token;
     if (!token) {
@@ -71,10 +75,11 @@ io.use((socket, next) => {
     }
 });
 
-// Main Socket.IO connection handler
+// Main Socket.IO connection handler (simplified)
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
 
+    // When the dashboard connects, send it the user's data
     socket.on('request_dashboard_data', async () => {
         try {
             const userId = socket.decoded.id;
@@ -90,6 +95,8 @@ io.on('connection', (socket) => {
     });
 });
 
+// REMOVED: All Binance market data, candle generation, and price polling functions are gone.
+
 // ------------------ DB + STARTUP ------------------
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 const db = mongoose.connection;
@@ -97,20 +104,17 @@ db.on("error", console.error.bind(console, "MongoDB connection error:"));
 
 db.once("open", async () => {
   console.log("✅ Connected to MongoDB");
+  // REMOVED: No longer need to initialize market data or the old trade module
 });
 
-// ------------------ TELEGRAM MOBILE FIX ROUTING ------------------
-
-// DIRECT ROUTE: Jab link open ho toh bina redirect kiye direct dashboard serve karega
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
-});
-
-// CATCH-ALL ROUTE: Baqi saari files aur errors ke liye
+// ------------------ CATCH-ALL / STATIC SERVE ------------------
+// This part is useful for making sure your front-end pages load correctly.
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api/')) return res.status(404).json({ message: 'API endpoint not found.' });
   
+  // Try to find the file in the public directory (e.g., login.html, dashboard.html)
   res.sendFile(path.join(__dirname, 'public', req.path), (err) => {
+    // If a specific file is not found, default to sending the main dashboard page.
     if (err) {
       res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
     }
