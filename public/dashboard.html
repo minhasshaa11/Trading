@@ -3,20 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-
     <title>Dashboard - Investment Platform</title>
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
     <style>
-
         :root {
             --bg-dark-navy: #0A0D14;
             --text-off-white: #F0F0F0;
@@ -116,345 +110,155 @@
             z-index: 9999;
             text-align: center;
         }
-
     </style>
 </head>
-
 <body>
 
 <div id="auth-status-overlay" class="status-overlay">
-
     <div>
-        <h1 id="auth-status-title" class="text-2xl font-bold">
-            Connecting...
-        </h1>
-
-        <p id="auth-status-message" class="text-gray-400 mt-2">
-            Please wait...
-        </p>
+        <h1 id="auth-status-title" class="text-2xl font-bold">Connecting...</h1>
+        <p id="auth-status-message" class="text-gray-400 mt-2">Please wait...</p>
     </div>
-
 </div>
 
 <div class="aurora-background"></div>
 
-<div id="dashboard-content"
-     class="container mx-auto p-4 max-w-4xl relative z-10"
-     style="display:none;">
-
+<div id="dashboard-content" class="container mx-auto p-4 max-w-4xl relative z-10" style="display:none;">
     <header class="mb-8">
         <p class="text-gray-400">Welcome back,</p>
-
         <h1 class="text-3xl font-bold text-white">
             <span id="username-display">...</span>
         </h1>
     </header>
 
     <main class="space-y-8">
-
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-
             <div class="card p-6 flex items-center space-x-4">
-
                 <div>
-                    <p class="text-gray-400 text-sm">
-                        Total Balance
-                    </p>
-
-                    <p id="balance-display"
-                       class="text-2xl font-bold"
-                       style="color: var(--accent-teal);">
-
-                        $0.00
-                    </p>
+                    <p class="text-gray-400 text-sm">Total Balance</p>
+                    <p id="balance-display" class="text-2xl font-bold" style="color: var(--accent-teal);">$0.00</p>
                 </div>
-
             </div>
 
             <div class="card p-6 flex items-center space-x-4">
-
                 <div>
-                    <p class="text-gray-400 text-sm">
-                        Active Package
-                    </p>
-
-                    <p id="package-display"
-                       class="text-2xl font-bold text-white">
-
-                        None
-                    </p>
+                    <p class="text-gray-400 text-sm">Active Package</p>
+                    <p id="package-display" class="text-2xl font-bold text-white">None</p>
                 </div>
-
             </div>
-
         </div>
 
         <div class="grid grid-cols-3 gap-4">
-
-            <a href="wallet.html"
-               class="bg-blue-600 text-center py-6 rounded-2xl font-bold">
-
-                Deposit
-
-            </a>
-
-            <a href="wallet.html"
-               class="bg-gray-700 text-center py-6 rounded-2xl font-bold">
-
-                Withdraw
-
-            </a>
-
-            <a href="packages.html"
-               class="bg-yellow-500 text-center py-6 rounded-2xl font-bold">
-
-                Packages
-
-            </a>
-
+            <a href="wallet.html" class="bg-blue-600 text-center py-6 rounded-2xl font-bold">Deposit</a>
+            <a href="wallet.html" class="bg-gray-700 text-center py-6 rounded-2xl font-bold">Withdraw</a>
+            <a href="packages.html" class="bg-yellow-500 text-center py-6 rounded-2xl font-bold">Packages</a>
         </div>
 
-        <div id="dynamic-action-section"
-             class="card p-6 text-center">
-        </div>
-
+        <div id="dynamic-action-section" class="card p-6 text-center"></div>
     </main>
-
 </div>
 
 <nav class="bottom-nav">
-
-    <a href="dashboard.html"
-       class="nav-link active">
-
-        Dashboard
-
-    </a>
-
-    <a href="packages.html"
-       class="nav-link">
-
-        Packages
-
-    </a>
-
-    <a href="earning.html"
-       class="nav-link">
-
-        Earn
-
-    </a>
-
-    <a href="wallet.html"
-       class="nav-link">
-
-        Wallet
-
-    </a>
-
-    <a href="profile.html"
-       class="nav-link">
-
-        Profile
-
-    </a>
-
+    <a href="dashboard.html" class="nav-link active">Dashboard</a>
+    <a href="packages.html" class="nav-link">Packages</a>
+    <a href="earning.html" class="nav-link">Earn</a>
+    <a href="wallet.html" class="nav-link">Wallet</a>
+    <a href="profile.html" class="nav-link">Profile</a>
 </nav>
 
 <script>
+    // FIX 1: Hook Telegram objects directly right at core engine load phase
+    let WebApp = window.Telegram ? window.Telegram.WebApp : null;
+    if (WebApp) {
+        try {
+            WebApp.ready();
+            WebApp.expand();
+        } catch (e) {
+            console.error("Early init drop logged:", e);
+        }
+    }
 
-    const authOverlay =
-        document.getElementById('auth-status-overlay');
-
-    const authTitle =
-        document.getElementById('auth-status-title');
-
-    const authMessage =
-        document.getElementById('auth-status-message');
+    const authOverlay = document.getElementById('auth-status-overlay');
+    const authTitle = document.getElementById('auth-status-title');
+    const authMessage = document.getElementById('auth-status-message');
 
     function showAuthStatus(title, message) {
-
         authTitle.textContent = title;
         authMessage.textContent = message;
-
         authOverlay.style.display = 'flex';
     }
 
     async function performFullAuthentication() {
-
         try {
+            const initData = WebApp ? WebApp.initData : null;
 
-            if (!window.Telegram ||
-                !window.Telegram.WebApp) {
-
-                throw new Error(
-                    "Telegram WebApp unavailable"
-                );
+            if (!initData || initData.length === 0) {
+                throw new Error("Telegram authentication parameters missing. Please open the bot directly inside Telegram.");
             }
 
-            const WebApp =
-                window.Telegram.WebApp;
+            console.log("Telegram security handshake initialization active...");
 
-            WebApp.ready();
-            WebApp.expand();
-
-            await new Promise(resolve =>
-                setTimeout(resolve, 1500)
-            );
-
-            const initData =
-                WebApp.initData;
-
-            if (!initData ||
-                initData.length === 0) {
-
-                throw new Error(
-                    "Telegram auth failed"
-                );
-            }
-
-            console.log("Telegram data received");
-
-            const response =
-                await fetch('/api/auth/telegram-login', {
-
-                    method: 'POST',
-
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-
-                    body: JSON.stringify({
-                        initData: initData
-                    })
-                });
+            const response = await fetch('/api/auth/telegram-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ initData: initData })
+            });
 
             if (!response.ok) {
-
-                let errorMsg =
-                    `Server Error ${response.status}`;
-
+                let errorMsg = `Server Error ${response.status}`;
                 try {
-
-                    const err =
-                        await response.json();
-
-                    errorMsg =
-                        err.message || errorMsg;
-
+                    const err = await response.json();
+                    errorMsg = err.message || errorMsg;
                 } catch {}
-
                 throw new Error(errorMsg);
             }
 
-            const result =
-                await response.json();
+            const result = await response.json();
 
             if (!result.token) {
-
-                throw new Error(
-                    "Token missing"
-                );
+                throw new Error("Authentication node dropped security token payload.");
             }
 
-            localStorage.setItem(
-                'authToken',
-                result.token
-            );
-
+            localStorage.setItem('authToken', result.token);
             authOverlay.style.display = 'none';
-
-            initializeDashboard(
-                result.token,
-                result.user
-            );
+            initializeDashboard(result.token, result.user);
 
         } catch (error) {
-
             console.error(error);
-
-            showAuthStatus(
-                "Initialization Failed",
-                error.message ||
-                "Could not connect to Telegram"
-            );
+            showAuthStatus("Initialization Failed", error.message || "Could not connect to Telegram securely");
         }
     }
 
     function initializeDashboard(token, userData = null) {
-
-        document.getElementById(
-            'dashboard-content'
-        ).style.display = 'block';
+        document.getElementById('dashboard-content').style.display = 'block';
 
         const socket = io({
-
-            auth: {
-                token
-            },
-
+            auth: { token },
             transports: ['websocket', 'polling']
-
         });
 
-        const usernameDisplay =
-            document.getElementById(
-                'username-display'
-            );
-
-        const balanceDisplay =
-            document.getElementById(
-                'balance-display'
-            );
-
-        const packageDisplay =
-            document.getElementById(
-                'package-display'
-            );
-
-        const dynamicActionSection =
-            document.getElementById(
-                'dynamic-action-section'
-            );
+        const usernameDisplay = document.getElementById('username-display');
+        const balanceDisplay = document.getElementById('balance-display');
+        const packageDisplay = document.getElementById('package-display');
+        const dynamicActionSection = document.getElementById('dynamic-action-section');
 
         function renderData(data) {
-
-            usernameDisplay.textContent =
-                data.username || 'User';
-
-            balanceDisplay.textContent =
-                `$${Number(data.balance || 0).toFixed(2)}`;
-
-            packageDisplay.textContent =
-                data.activePackage || 'None';
+            usernameDisplay.textContent = data.username || 'User';
+            balanceDisplay.textContent = `$${Number(data.balance || 0).toFixed(2)}`;
+            packageDisplay.textContent = data.activePackage || 'None';
 
             if (data.activePackage) {
-
                 dynamicActionSection.innerHTML = `
-                    <h2 class="text-xl font-bold">
-                        Your Daily Task is Ready
-                    </h2>
-
-                    <a href="earning.html"
-                       class="inline-block mt-4 bg-green-500 text-black font-bold py-3 px-6 rounded-xl">
-
+                    <h2 class="text-xl font-bold">Your Daily Task is Ready</h2>
+                    <a href="earning.html" class="inline-block mt-4 bg-green-500 text-black font-bold py-3 px-6 rounded-xl">
                        Go To Earning
-
                     </a>
                 `;
-
             } else {
-
                 dynamicActionSection.innerHTML = `
-                    <h2 class="text-xl font-bold">
-                        Start Earning Today
-                    </h2>
-
-                    <a href="packages.html"
-                       class="inline-block mt-4 bg-yellow-500 text-black font-bold py-3 px-6 rounded-xl">
-
+                    <h2 class="text-xl font-bold">Start Earning Today</h2>
+                    <a href="packages.html" class="inline-block mt-4 bg-yellow-500 text-black font-bold py-3 px-6 rounded-xl">
                        View Packages
-
                     </a>
                 `;
             }
@@ -465,83 +269,52 @@
         }
 
         socket.on('connect', () => {
-
-            console.log("Socket Connected");
-
-            socket.emit(
-                'request_dashboard_data'
-            );
+            console.log("Socket Stream Connected Successfully");
+            socket.emit('request_dashboard_data');
         });
 
         socket.on('dashboard_data', response => {
-
-            if (response &&
-                response.success) {
-
-                renderData(
-                    response.data
-                );
+            if (response && response.success) {
+                renderData(response.data);
             }
         });
 
         socket.on('connect_error', err => {
-
-            console.error(
-                "Socket Error:",
-                err
-            );
+            console.error("Socket Verification Pipeline dropped execution:", err);
         });
     }
 
-    async function waitForTelegram() {
-
-        let retries = 0;
-
-        while (retries < 60) {
-
-            if (window.Telegram &&
-                window.Telegram.WebApp) {
-
-                console.log(
-                    "Telegram WebApp Ready"
-                );
-
-                await new Promise(resolve =>
-                    setTimeout(resolve, 1500)
-                );
-
-                performFullAuthentication();
-
-                return;
-            }
-
-            retries++;
-
-            console.log(
-                `Waiting Telegram ${retries}`
-            );
-
-            await new Promise(resolve =>
-                setTimeout(resolve, 300)
-            );
+    function startApplicationPipeline() {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            console.log("Existing token validation verified. Launching dashboard.");
+            authOverlay.style.display = 'none';
+            initializeDashboard(token);
+        } else {
+            console.log("Token array empty. Processing fresh authentication layer.");
+            performFullAuthentication();
         }
-
-        showAuthStatus(
-            "Initialization Failed",
-            "Could not connect to Telegram"
-        );
     }
 
-    window.addEventListener('load', () => {
+    // FIX 2: Optimized asynchronous loop listener bypassing sleep lags completely
+    function checkTelegramEnvironment(attempts = 0) {
+        if (window.Telegram && window.Telegram.WebApp) {
+            WebApp = window.Telegram.WebApp;
+            console.log("Telegram platform successfully attached.");
+            startApplicationPipeline();
+            return;
+        }
 
-        setTimeout(() => {
+        if (attempts < 30) {
+            setTimeout(() => checkTelegramEnvironment(attempts + 1), 150);
+        } else {
+            // Direct safety check trigger fallback execution
+            startApplicationPipeline();
+        }
+    }
 
-            waitForTelegram();
-
-        }, 1000);
-
-    });
-
+    // Initialize layout startup sequence smoothly
+    checkTelegramEnvironment();
 </script>
 
 </body>
