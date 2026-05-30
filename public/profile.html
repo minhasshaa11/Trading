@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Profile - Bond 1x</title>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" as="style">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -12,14 +11,10 @@
         :root{--cream:#FBF8F3;--cream-dark:#F2EDE4;--cream-border:#E8DFD0;--brown-dark:#2D1F0E;--brown-mid:#4A3020;--brown-light:#8B6040;--gold:#C9832A;--gold-light:#E8A84A;--gold-pale:#F5E8D0;--green:#3D7A52;--red:#C0392B;--text-main:#1E140A;--text-muted:#9A8070;--white:#FFFFFF;}
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
         body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-main);min-height:100vh;padding-bottom:90px;overflow-x:hidden;}
-
-        /* Header */
         .hdr{background:var(--brown-dark);padding:20px 20px 0;position:relative;overflow:hidden;}
         .hdr::before{content:'';position:absolute;top:-60px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(201,131,42,.15),transparent 70%);}
         .hdr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
         .hdr-logo{font-family:'Cormorant Garamond',serif;font-size:20px;font-style:italic;color:var(--gold);letter-spacing:3px;}
-
-        /* Profile Hero */
         .prof-hero{background:var(--brown-mid);border-radius:18px 18px 0 0;padding:24px 20px;border:1px solid rgba(201,131,42,.15);border-bottom:none;position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;}
         .prof-hero::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
         .prof-av{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-light));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--brown-dark);flex-shrink:0;box-shadow:0 4px 16px rgba(201,131,42,.3);}
@@ -29,40 +24,28 @@
         .prof-bal{text-align:right;}
         .prof-bal-lbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#6B5030;}
         .prof-bal-val{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--gold-light);}
-
-        /* Body */
         .bdy{padding:16px;}
-
-        /* Cards */
         .p-card{background:var(--white);border:1px solid var(--cream-border);border-radius:16px;padding:20px;box-shadow:0 4px 20px rgba(45,31,14,.06);margin-bottom:14px;animation:fu .4s ease both;}
         .p-card:nth-child(2){animation-delay:.06s;}
         .p-card:nth-child(3){animation-delay:.12s;}
         .p-card:nth-child(4){animation-delay:.18s;}
         .p-card:nth-child(5){animation-delay:.24s;}
         @keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-
         .sec-lbl{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;}
         .card-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-style:italic;color:var(--text-main);margin-bottom:14px;}
-
-        /* Summary Stats */
         .sum-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
         .sum-item{text-align:center;background:var(--cream-dark);border:1px solid var(--cream-border);border-radius:12px;padding:14px 8px;}
         .sum-lbl{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
         .sum-val{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--text-main);}
-
-        /* Package Section */
         .pkg-status{text-align:center;padding:8px 0;}
         .pkg-status-lbl{font-size:11px;color:var(--text-muted);margin-bottom:4px;}
         .pkg-status-name{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--gold);margin-bottom:4px;}
         .pkg-status-exp{font-size:12px;color:var(--text-muted);}
         .pkg-status-badge{display:inline-block;font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:4px 12px;border-radius:20px;font-weight:500;background:rgba(61,122,82,.12);border:1px solid rgba(61,122,82,.3);color:var(--green);margin-top:8px;}
-
         .no-pkg-msg{text-align:center;padding:8px 0;}
         .no-pkg-msg p{font-size:13px;color:var(--text-muted);margin-bottom:14px;}
         .no-pkg-btn{display:inline-block;background:var(--gold);color:var(--brown-dark);text-decoration:none;border-radius:12px;padding:12px 24px;font-size:13px;font-weight:600;letter-spacing:1px;transition:all .2s;}
         .no-pkg-btn:active{background:var(--gold-light);transform:scale(.97);}
-
-        /* Activity Items */
         .act-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--cream-border);}
         .act-item:last-child{border-bottom:none;}
         .act-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -75,41 +58,29 @@
         .act-amt{font-size:14px;font-weight:600;text-align:right;}
         .act-amt.plus{color:var(--green);}
         .act-amt.minus{color:var(--red);}
-
-        /* Referral */
         .ref-link-box{display:flex;align-items:center;gap:8px;background:var(--cream-dark);border:1px solid var(--cream-border);border-radius:12px;padding:4px 4px 4px 14px;margin-bottom:14px;}
         .ref-link-input{flex:1;background:transparent;border:none;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-main);outline:none;min-width:0;overflow:hidden;text-overflow:ellipsis;}
         .ref-copy-btn{background:var(--gold);border:none;border-radius:10px;padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--brown-dark);cursor:pointer;transition:all .2s;white-space:nowrap;}
         .ref-copy-btn:active{background:var(--gold-light);transform:scale(.96);}
-
         .ref-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
         .ref-stat{text-align:center;background:var(--cream-dark);border:1px solid var(--cream-border);border-radius:12px;padding:14px;}
         .ref-stat-val{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:var(--text-main);}
         .ref-stat-val.comm{color:var(--green);}
         .ref-stat-lbl{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);margin-top:4px;}
-
         .ref-list-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;}
         .ref-list{max-height:200px;overflow-y:auto;background:var(--cream-dark);border:1px solid var(--cream-border);border-radius:12px;padding:8px;}
         .ref-user{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;}
         .ref-user:nth-child(even){background:var(--white);}
         .ref-user-name{font-size:13px;font-weight:500;color:var(--text-main);}
         .ref-user-date{font-size:11px;color:var(--text-muted);}
-
-        /* Support Button */
         .support-btn{display:block;width:100%;background:var(--gold);color:var(--brown-dark);text-decoration:none;border-radius:12px;padding:14px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;text-align:center;transition:all .2s;box-shadow:0 4px 16px rgba(201,131,42,.3);}
         .support-btn:active{background:var(--gold-light);transform:scale(.97);}
-
-        /* Messages */
         .msg-empty{font-size:12px;color:var(--text-muted);text-align:center;padding:12px 0;}
         .msg-loading{font-size:12px;color:var(--text-muted);text-align:center;padding:12px 0;}
-
+        .msg-error{font-size:12px;color:var(--red);text-align:center;padding:12px 0;}
         .hidden{display:none!important;}
-
-        /* Skeleton */
         .skel{background:linear-gradient(90deg,var(--cream-dark) 25%,var(--cream-border) 50%,var(--cream-dark) 75%);background-size:200% 100%;animation:sh 1.4s infinite;border-radius:6px;display:block;}
         @keyframes sh{to{background-position:-200% 0}}
-
-        /* Nav */
         .nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:420px;background:var(--brown-dark);border-radius:22px;padding:12px 8px;display:flex;justify-content:space-around;z-index:1000;box-shadow:0 8px 32px rgba(45,31,14,.25);border:1px solid rgba(201,131,42,.15);}
         .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;transition:all .2s;}
         .ni svg{color:#9A8060;transition:color .2s;}
@@ -142,7 +113,6 @@
 </div>
 
 <div class="bdy">
-    <!-- Account Summary -->
     <div class="p-card">
         <div class="card-title">Account Summary</div>
         <div class="sum-grid" id="summary-content">
@@ -161,7 +131,6 @@
         </div>
     </div>
 
-    <!-- Investment Plan -->
     <div class="p-card">
         <div class="card-title">Your Investment Plan</div>
         <div id="package-loading" class="msg-loading">Loading package status...</div>
@@ -177,7 +146,6 @@
         </div>
     </div>
 
-    <!-- Recent Activity -->
     <div class="p-card">
         <div class="card-title">Recent Activity</div>
         <div id="recent-activity-container">
@@ -185,7 +153,6 @@
         </div>
     </div>
 
-    <!-- Referral Program -->
     <div class="p-card">
         <div class="card-title">Referral Program</div>
         <div id="ref-loading" class="msg-loading">Loading...</div>
@@ -212,7 +179,6 @@
         </div>
     </div>
 
-    <!-- Support -->
     <div class="p-card">
         <div class="card-title">Support</div>
         <a href="support-chat.html" class="support-btn">Contact Support</a>
@@ -232,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var BOT_USERNAME = 'bond1xbot';
     var MINI_APP_NAME = 'bondearn';
     var token = localStorage.getItem('authToken');
-    var headers = {'x-auth-token':token};
+    var headers = {'x-auth-token': token};
 
     var usernameDisplay = document.getElementById('username-display');
     var joinedDateDisplay = document.getElementById('joined-date-display');
@@ -255,128 +221,285 @@ document.addEventListener('DOMContentLoaded', function() {
     var referralListContainer = document.getElementById('referral-list-container');
     var referralListLoading = document.getElementById('referral-list-loading');
 
-    function generateColor(str) {
-        var hash = 0;
-        if(!str) return '#C9832A';
-        for(var i=0; i<str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        var color = '#';
-        for(var i=0; i<3; i++){
-            var value = (hash >> (i * 8)) & 0xFF;
-            color += ('00' + value.toString(16)).substr(-2);
+    /* FIX 2: Auth error handler */
+    function handleAuth(r) {
+        if (r.status === 401) {
+            localStorage.removeItem('authToken');
+            window.location.href = '/login.html';
+            return true;
         }
-        return color;
+        return false;
+    }
+
+    /* FIX 7: Safe number formatting */
+    function safeFixed(val, decimals) {
+        var num = parseFloat(val);
+        return isNaN(num) ? '0.00' : num.toFixed(decimals || 2);
+    }
+
+    /* FIX 8: Safe string helper */
+    function safeStr(val) {
+        if (val === null || val === undefined) return '';
+        return String(val);
+    }
+
+    /* FIX 6: Generate readable avatar color with guaranteed contrast */
+    function generateColor(str) {
+        if (!str) return '#C9832A';
+        var hash = 0;
+        for (var i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        /* Keep hue variable, but fix saturation and lightness for readability */
+        var hue = Math.abs(hash) % 360;
+        return 'hsl(' + hue + ', 55%, 45%)';
     }
 
     function fetchUserInfo() {
-        fetch('/api/user/info',{headers:headers})
-        .then(function(r){return r.json();})
-        .then(function(data){
-            if(data.success){
+        fetch('/api/user/info', { headers: headers })
+        .then(function(r) {
+            if (handleAuth(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            if (data.success) {
                 var user = data.user;
-                var displayName = user.firstName || user.username;
+                /* FIX 8: Null-safe display name */
+                var displayName = safeStr(user.firstName) || safeStr(user.username) || 'User';
+
                 usernameDisplay.textContent = displayName;
-                joinedDateDisplay.textContent = new Date(user.createdAt).toLocaleDateString();
+                joinedDateDisplay.textContent = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A';
+
+                /* FIX 8: Safe charAt */
                 avatarDiv.textContent = displayName.charAt(0).toUpperCase();
                 var bgColor = generateColor(displayName);
-                avatarDiv.style.background = 'linear-gradient(135deg,' + bgColor + ',' + bgColor + '99)';
-                balanceDisplay.innerHTML = '<sup style="font-size:14px;">$</sup>' + user.balance.toFixed(2);
+                avatarDiv.style.background = 'linear-gradient(135deg,' + bgColor + ',' + bgColor + ')';
+
+                /* FIX 4: Use textContent for balance */
+                balanceDisplay.textContent = '$' + safeFixed(user.balance, 2);
+
                 packageLoading.style.display = 'none';
-                if(user.active_package){
+                if (user.active_package) {
                     packageNameEl.textContent = user.active_package;
-                    packageExpiryEl.textContent = new Date(user.package_expiry_date).toLocaleDateString();
+                    packageExpiryEl.textContent = user.package_expiry_date
+                        ? new Date(user.package_expiry_date).toLocaleDateString()
+                        : 'N/A';
                     packageContent.classList.remove('hidden');
                 } else {
                     noPackageContent.classList.remove('hidden');
                 }
+            } else {
+                packageLoading.textContent = 'Failed to load profile.';
             }
+        })
+        .catch(function(err) {
+            /* FIX 3: Error handling */
+            console.error('User info error:', err);
+            usernameDisplay.textContent = 'Error loading';
+            packageLoading.textContent = 'Failed to load profile.';
+            packageLoading.className = 'msg-error';
         });
     }
 
     function fetchReferralInfo() {
-        fetch('/api/user/referral-info',{headers:headers})
-        .then(function(r){return r.json();})
-        .then(function(data){
+        fetch('/api/user/referral-info', { headers: headers })
+        .then(function(r) {
+            if (handleAuth(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
             refLoading.style.display = 'none';
-            if(data.success){
+            if (data.success) {
                 refContent.classList.remove('hidden');
-                var referralLink = 'https://t.me/' + BOT_USERNAME + '/' + MINI_APP_NAME + '?startapp=' + data.referralCode;
+                var referralLink = 'https://t.me/' + BOT_USERNAME + '/' + MINI_APP_NAME + '?startapp=' + encodeURIComponent(safeStr(data.referralCode));
                 refLinkInput.value = referralLink;
-                document.getElementById('ref-count').textContent = data.referralCount;
-                document.getElementById('ref-commissions').textContent = '$' + data.totalCommissions.toFixed(2);
+                document.getElementById('ref-count').textContent = data.referralCount || 0;
+                document.getElementById('ref-commissions').textContent = '$' + safeFixed(data.totalCommissions, 2);
+            } else {
+                refLoading.style.display = 'block';
+                refLoading.textContent = 'Failed to load referral info.';
+                refLoading.className = 'msg-error';
             }
+        })
+        .catch(function(err) {
+            console.error('Referral info error:', err);
+            refLoading.textContent = 'Failed to load referral info.';
+            refLoading.className = 'msg-error';
         });
     }
 
     function fetchAccountSummary() {
-        fetch('/api/user/account-summary',{headers:headers})
-        .then(function(r){return r.json();})
-        .then(function(data){
-            if(data.success){
-                totalDepositedEl.textContent = '$' + data.summary.totalDeposits.toFixed(2);
-                totalWithdrawnEl.textContent = '$' + data.summary.totalWithdrawals.toFixed(2);
-                var profit = data.summary.lifetimeProfit;
+        fetch('/api/user/account-summary', { headers: headers })
+        .then(function(r) {
+            if (handleAuth(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            if (data.success && data.summary) {
+                totalDepositedEl.textContent = '$' + safeFixed(data.summary.totalDeposits, 2);
+                totalWithdrawnEl.textContent = '$' + safeFixed(data.summary.totalWithdrawals, 2);
+                var profit = parseFloat(data.summary.lifetimeProfit) || 0;
                 lifetimeProfitEl.textContent = '$' + profit.toFixed(2);
                 lifetimeProfitEl.style.color = profit >= 0 ? 'var(--green)' : 'var(--red)';
+            } else {
+                totalDepositedEl.textContent = '$0.00';
+                totalWithdrawnEl.textContent = '$0.00';
+                lifetimeProfitEl.textContent = '$0.00';
             }
+        })
+        .catch(function(err) {
+            console.error('Account summary error:', err);
+            totalDepositedEl.textContent = 'Error';
+            totalWithdrawnEl.textContent = 'Error';
+            lifetimeProfitEl.textContent = 'Error';
         });
     }
 
     function fetchRecentActivity() {
-        fetch('/api/user/recent-activity',{headers:headers})
-        .then(function(r){return r.json();})
-        .then(function(data){
+        fetch('/api/user/recent-activity', { headers: headers })
+        .then(function(r) {
+            if (handleAuth(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
             activityLoading.style.display = 'none';
-            if(data.success && data.activities.length > 0){
-                var html = '';
-                for(var i=0; i<data.activities.length; i++){
+            if (data.success && data.activities && data.activities.length > 0) {
+                /* FIX 1: DOM-based rendering instead of innerHTML */
+                activityContainer.innerHTML = '';
+                for (var i = 0; i < data.activities.length; i++) {
                     var act = data.activities[i];
                     var isDeposit = act.type === 'deposit';
                     var statusColor = act.status === 'completed' ? 'var(--green)' : (act.status === 'failed' ? 'var(--red)' : 'var(--gold)');
-                    var iconSvg = isDeposit
+
+                    var item = document.createElement('div');
+                    item.className = 'act-item';
+
+                    /* Icon */
+                    var iconDiv = document.createElement('div');
+                    iconDiv.className = 'act-icon ' + (isDeposit ? 'deposit' : 'withdraw');
+                    iconDiv.innerHTML = isDeposit
                         ? '<svg width="18" height="18" fill="none" stroke="var(--green)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7-7 7 7"/></svg>'
                         : '<svg width="18" height="18" fill="none" stroke="var(--red)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7 7 7-7"/></svg>';
 
-                    html += '<div class="act-item">' +
-                        '<div class="act-icon ' + (isDeposit ? 'deposit' : 'withdraw') + '">' + iconSvg + '</div>' +
-                        '<div class="act-mid"><div class="act-type">' + act.type + '</div>' +
-                        '<div class="act-date">' + new Date(act.date).toLocaleDateString() + ' - <span class="act-status" style="color:' + statusColor + ';">' + act.status.replace('_',' ') + '</span></div></div>' +
-                        '<div class="act-amt ' + (isDeposit ? 'plus' : 'minus') + '">' + (isDeposit ? '+' : '-') + '$' + act.amount.toFixed(2) + '</div>' +
-                        '</div>';
+                    /* Middle section */
+                    var midDiv = document.createElement('div');
+                    midDiv.className = 'act-mid';
+
+                    var typeDiv = document.createElement('div');
+                    typeDiv.className = 'act-type';
+                    typeDiv.textContent = safeStr(act.type);
+
+                    var dateDiv = document.createElement('div');
+                    dateDiv.className = 'act-date';
+                    var dateText = act.date ? new Date(act.date).toLocaleDateString() : 'N/A';
+                    dateDiv.textContent = dateText + ' - ';
+
+                    var statusSpan = document.createElement('span');
+                    statusSpan.className = 'act-status';
+                    statusSpan.style.color = statusColor;
+                    statusSpan.textContent = safeStr(act.status).replace('_', ' ');
+                    dateDiv.appendChild(statusSpan);
+
+                    midDiv.appendChild(typeDiv);
+                    midDiv.appendChild(dateDiv);
+
+                    /* Amount */
+                    var amtDiv = document.createElement('div');
+                    amtDiv.className = 'act-amt ' + (isDeposit ? 'plus' : 'minus');
+                    amtDiv.textContent = (isDeposit ? '+' : '-') + '$' + safeFixed(act.amount, 2);
+
+                    item.appendChild(iconDiv);
+                    item.appendChild(midDiv);
+                    item.appendChild(amtDiv);
+                    activityContainer.appendChild(item);
                 }
-                activityContainer.innerHTML = html;
             } else {
                 activityContainer.innerHTML = '<p class="msg-empty">No recent activity found.</p>';
             }
+        })
+        .catch(function(err) {
+            console.error('Activity error:', err);
+            activityLoading.style.display = 'none';
+            activityContainer.innerHTML = '<p class="msg-error">Failed to load activity.</p>';
         });
     }
 
     function fetchMyReferrals() {
-        fetch('/api/user/my-referrals',{headers:headers})
-        .then(function(r){return r.json();})
-        .then(function(data){
+        fetch('/api/user/my-referrals', { headers: headers })
+        .then(function(r) {
+            if (handleAuth(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
             referralListLoading.style.display = 'none';
-            if(data.success && data.referrals.length > 0){
-                var html = '';
-                for(var i=0; i<data.referrals.length; i++){
+            if (data.success && data.referrals && data.referrals.length > 0) {
+                /* FIX 1: DOM-based rendering */
+                referralListContainer.innerHTML = '';
+                for (var i = 0; i < data.referrals.length; i++) {
                     var ref = data.referrals[i];
-                    var joinDate = new Date(ref.createdAt).toLocaleDateString();
-                    var displayName = ref.firstName || ref.username;
-                    html += '<div class="ref-user"><span class="ref-user-name">' + displayName + '</span><span class="ref-user-date">Joined: ' + joinDate + '</span></div>';
+                    var joinDate = ref.createdAt ? new Date(ref.createdAt).toLocaleDateString() : 'N/A';
+                    var displayName = safeStr(ref.firstName) || safeStr(ref.username) || 'User';
+
+                    var userDiv = document.createElement('div');
+                    userDiv.className = 'ref-user';
+
+                    var nameSpan = document.createElement('span');
+                    nameSpan.className = 'ref-user-name';
+                    nameSpan.textContent = displayName;
+
+                    var dateSpan = document.createElement('span');
+                    dateSpan.className = 'ref-user-date';
+                    dateSpan.textContent = 'Joined: ' + joinDate;
+
+                    userDiv.appendChild(nameSpan);
+                    userDiv.appendChild(dateSpan);
+                    referralListContainer.appendChild(userDiv);
                 }
-                referralListContainer.innerHTML = html;
             } else {
                 referralListContainer.innerHTML = '<p class="msg-empty">You have not referred any users yet.</p>';
             }
+        })
+        .catch(function(err) {
+            console.error('Referrals error:', err);
+            referralListLoading.style.display = 'none';
+            referralListContainer.innerHTML = '<p class="msg-error">Failed to load referrals.</p>';
         });
     }
 
-    copyBtn.addEventListener('click', function(){
-        refLinkInput.select();
-        document.execCommand('copy');
-        copyBtn.textContent = 'Copied!';
-        setTimeout(function(){copyBtn.textContent = 'Copy';}, 2000);
+    /* FIX 5: Modern clipboard API with fallback */
+    copyBtn.addEventListener('click', function() {
+        var linkValue = refLinkInput.value;
+
+        function onSuccess() {
+            copyBtn.textContent = 'Copied!';
+            setTimeout(function(){ copyBtn.textContent = 'Copy'; }, 2000);
+        }
+        function onFail() {
+            /* Fallback: select the input text */
+            try {
+                refLinkInput.select();
+                refLinkInput.setSelectionRange(0, 99999);
+                document.execCommand('copy');
+                onSuccess();
+            } catch(e) {
+                copyBtn.textContent = 'Failed';
+                setTimeout(function(){ copyBtn.textContent = 'Copy'; }, 2000);
+            }
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(linkValue).then(onSuccess).catch(onFail);
+        } else {
+            onFail();
+        }
     });
 
+    /* Init: all API calls */
     fetchUserInfo();
     fetchReferralInfo();
     fetchAccountSummary();
