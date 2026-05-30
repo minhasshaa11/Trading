@@ -13,7 +13,6 @@
         :root{--cream:#FBF8F3;--cream-dark:#F2EDE4;--cream-border:#E8DFD0;--brown-dark:#2D1F0E;--brown-mid:#4A3020;--brown-light:#8B6040;--gold:#C9832A;--gold-light:#E8A84A;--gold-pale:#F5E8D0;--green:#3D7A52;--text-main:#1E140A;--text-muted:#9A8070;--white:#FFFFFF;}
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
         body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-main);min-height:100vh;padding-bottom:90px;overflow-x:hidden;}
-        /* Overlay */
         .ov{position:fixed;inset:0;background:var(--brown-dark);display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;z-index:9999;transition:opacity .4s;}
         .ov-logo{font-family:'Cormorant Garamond',serif;font-size:32px;font-style:italic;color:var(--gold);letter-spacing:4px;margin-bottom:24px;}
         .ov-spin{width:36px;height:36px;border:2px solid rgba(201,131,42,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:16px;}
@@ -21,7 +20,6 @@
         .ov-title{font-size:16px;font-weight:500;color:#F5EDD8;margin-bottom:6px;}
         .ov-msg{font-size:13px;color:#6B5830;max-width:260px;line-height:1.5;}
         .ov-btn{margin-top:20px;padding:11px 28px;background:var(--gold);color:var(--brown-dark);border:none;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:none;}
-        /* Header */
         .hdr{background:var(--brown-dark);padding:20px 20px 0;position:relative;overflow:hidden;}
         .hdr::before{content:'';position:absolute;top:-60px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(201,131,42,.15),transparent 70%);}
         .hdr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
@@ -36,7 +34,6 @@
         .pill{font-size:11px;padding:4px 12px;border-radius:20px;font-weight:500;}
         .pill-p{background:rgba(201,131,42,.15);border:1px solid rgba(201,131,42,.3);color:var(--gold-light);}
         .pill-g{background:rgba(61,122,82,.15);border:1px solid rgba(61,122,82,.3);color:#5DBD80;}
-        /* Body */
         .bdy{padding:0 16px;}
         .wel{padding:18px 0 4px;}
         .wel-sub{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;}
@@ -75,7 +72,6 @@
         .no-pkg-t{font-family:'Cormorant Garamond',serif;font-size:20px;margin-bottom:8px;}
         .no-pkg-m{font-size:13px;color:var(--text-muted);margin-bottom:18px;line-height:1.5;}
         .no-pkg-b{display:inline-block;background:var(--gold);color:var(--brown-dark);text-decoration:none;border-radius:12px;padding:13px 28px;font-size:13px;font-weight:600;letter-spacing:1px;}
-        /* Nav */
         .nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:420px;background:var(--brown-dark);border-radius:22px;padding:12px 8px;display:flex;justify-content:space-around;z-index:1000;box-shadow:0 8px 32px rgba(45,31,14,.25);border:1px solid rgba(201,131,42,.15);}
         .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;transition:all .2s;}
         .ni svg{color:#9A8060;transition:color .2s;}
@@ -140,80 +136,207 @@
 <script>
 var ov=document.getElementById('ov'),ovT=document.getElementById('ov-title'),ovM=document.getElementById('ov-msg'),ovS=document.getElementById('ov-spin'),ovB=document.getElementById('ov-btn');
 var profitMap = {"Bronze":1,"Silver":4,"Gold":9,"Platinum":23,"Diamond":50};
+
+/* FIX 1: XSS protection - sanitize all user input */
+function esc(str) {
+    if (typeof str !== 'string') return '';
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+/* FIX 6: Track socket instance to prevent memory leaks */
+var currentSocket = null;
+
 function showLoad(m){ovT.textContent='Authenticating...';ovM.textContent=m||'Please wait...';ovS.style.display='block';ovB.style.display='none';ov.style.display='flex';}
 function showErr(t,m){ovT.textContent=t;ovM.textContent=m;ovS.style.display='none';ovB.style.display='block';}
 function hideOv(){ov.style.opacity='0';setTimeout(function(){ov.style.display='none';},400);}
 function forceLogout(){localStorage.removeItem('authToken');window.location.reload();}
+
+/* FIX 2: Dynamic progress calculation */
+function calcProgress(d) {
+    if (!d.packageExpiry || !d.packageStartDate) return { percent: 0, left: 100 };
+    var now = Date.now();
+    var start = new Date(d.packageStartDate).getTime();
+    var end = new Date(d.packageExpiry).getTime();
+    var total = end - start;
+    if (total <= 0) return { percent: 100, left: 0 };
+    var elapsed = now - start;
+    var pct = Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
+    return { percent: pct, left: 100 - pct };
+}
+
 function render(d){
-    var n=d.username||'User';
+    var n = d.username || 'User';
     var dailyProfit = d.activePackage ? (profitMap[d.activePackage] || 0) : 0;
-    document.getElementById('hdr-av').textContent=n.substring(0,2).toUpperCase();
-    document.getElementById('uname').textContent=n;
-    document.getElementById('bal-sk').style.display='none';
-    document.getElementById('bal-v').style.display='inline';
-    document.getElementById('bal-n').textContent=(d.balance||0).toFixed(2);
-    document.getElementById('pills').style.display='flex';
-    document.getElementById('pill-p').textContent=d.activePackage?d.activePackage+' Active':'No Package';
+
+    /* FIX 1: Use textContent instead of innerHTML for user data */
+    document.getElementById('hdr-av').textContent = n.substring(0,2).toUpperCase();
+    document.getElementById('uname').textContent = n;
+    document.getElementById('bal-sk').style.display = 'none';
+    document.getElementById('bal-v').style.display = 'inline';
+    document.getElementById('bal-n').textContent = (d.balance || 0).toFixed(2);
+    document.getElementById('pills').style.display = 'flex';
+    document.getElementById('pill-p').textContent = d.activePackage ? d.activePackage + ' Active' : 'No Package';
+
     if(d.activePackage){
-        document.getElementById('pill-g').textContent='$'+dailyProfit+'/day returns';
+        document.getElementById('pill-g').textContent = '$' + dailyProfit + '/day returns';
     } else {
-        document.getElementById('pill-g').textContent='No active returns';
+        document.getElementById('pill-g').textContent = 'No active returns';
     }
-    document.getElementById('pkg-st').textContent=d.activePackage||'None';
-    document.getElementById('ret-st').textContent=d.activePackage?'$'+dailyProfit+'/day':'--';
-    if(d.activePackage)document.getElementById('ret-sb').style.display='block';
-    var sec=document.getElementById('dyn');
+
+    document.getElementById('pkg-st').textContent = d.activePackage || 'None';
+    document.getElementById('ret-st').textContent = d.activePackage ? '$' + dailyProfit + '/day' : '--';
+    if(d.activePackage) document.getElementById('ret-sb').style.display = 'block';
+
+    var sec = document.getElementById('dyn');
+
     if(d.activePackage){
-        var exp=d.packageExpiry?new Date(d.packageExpiry).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'}):'N/A';
-        sec.innerHTML='<div class="pkg"><div class="pkg-hd"><span class="pkg-nm">'+d.activePackage+'</span><span class="pkg-bg">Active</span></div><div class="pkg-rw"><span class="pkg-k">Daily Return</span><span class="pkg-v">$'+dailyProfit+'</span></div><div class="pkg-rw"><span class="pkg-k">Total Return (90d)</span><span class="pkg-v">$'+(dailyProfit*90)+'</span></div><div class="pkg-rw"><span class="pkg-k">Expires On</span><span class="pkg-v">'+exp+'</span></div><div class="pkg-rw"><span class="pkg-k">Balance</span><span class="pkg-v">$'+(d.balance||0).toFixed(2)+'</span></div><div class="pkg-pr"><div class="pkg-pf" style="width:65%;"></div></div><div class="pkg-pl"><span>65% completed</span><span>35% left</span></div><a href="earning.html" class="pkg-cb">Claim Daily Profit</a></div>';
-    }else{
-        sec.innerHTML='<div class="no-pkg"><div class="no-pkg-ic"><svg width="28" height="28" fill="none" stroke="var(--gold)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div><div class="no-pkg-t">Start Earning Today</div><div class="no-pkg-m">Purchase a package to start receiving daily profits.</div><a href="packages.html" class="no-pkg-b">View Packages</a></div>';
+        /* FIX 2: Calculate real progress */
+        var prog = calcProgress(d);
+        var exp = d.packageExpiry ? new Date(d.packageExpiry).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'}) : 'N/A';
+
+        /* FIX 1: Use esc() for all dynamic values in innerHTML */
+        sec.innerHTML = '<div class="pkg">'
+            + '<div class="pkg-hd"><span class="pkg-nm">' + esc(d.activePackage) + '</span><span class="pkg-bg">Active</span></div>'
+            + '<div class="pkg-rw"><span class="pkg-k">Daily Return</span><span class="pkg-v">$' + esc(String(dailyProfit)) + '</span></div>'
+            + '<div class="pkg-rw"><span class="pkg-k">Total Return (90d)</span><span class="pkg-v">$' + esc(String(dailyProfit * 90)) + '</span></div>'
+            + '<div class="pkg-rw"><span class="pkg-k">Expires On</span><span class="pkg-v">' + esc(exp) + '</span></div>'
+            + '<div class="pkg-rw"><span class="pkg-k">Balance</span><span class="pkg-v">$' + esc((d.balance || 0).toFixed(2)) + '</span></div>'
+            + '<div class="pkg-pr"><div class="pkg-pf" style="width:' + prog.percent + '%;"></div></div>'
+            + '<div class="pkg-pl"><span>' + prog.percent + '% completed</span><span>' + prog.left + '% left</span></div>'
+            + '<a href="earning.html" class="pkg-cb">Claim Daily Profit</a></div>';
+    } else {
+        sec.innerHTML = '<div class="no-pkg">'
+            + '<div class="no-pkg-ic"><svg width="28" height="28" fill="none" stroke="var(--gold)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div>'
+            + '<div class="no-pkg-t">Start Earning Today</div>'
+            + '<div class="no-pkg-m">Purchase a package to start receiving daily profits.</div>'
+            + '<a href="packages.html" class="no-pkg-b">View Packages</a></div>';
     }
 }
-function initDash(token,init){
+
+function initDash(token, init){
     hideOv();
-    if(init)render(init);
-    var s=io({auth:{token:token}});
-    s.on('connect',function(){s.emit('request_dashboard_data');});
-    s.on('dashboard_data',function(r){if(r&&r.success)render(r.data);});
-    s.on('auth_error',function(){forceLogout();});
-    s.on('connect_error',function(e){
-        console.error('Socket:',e.message);
-        if(e.message.indexOf('Authentication')!==-1){forceLogout();}
+    if(init) render(init);
+
+    /* FIX 6: Close existing socket before creating new one */
+    if (currentSocket) {
+        currentSocket.disconnect();
+        currentSocket = null;
+    }
+
+    var s = io({
+        auth: { token: token },
+        /* FIX 5: Reconnection handling */
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 2000
+    });
+    currentSocket = s;
+
+    s.on('connect', function(){
+        s.emit('request_dashboard_data');
+    });
+
+    s.on('dashboard_data', function(r){
+        if(r && r.success) render(r.data);
+    });
+
+    s.on('auth_error', function(){
+        forceLogout();
+    });
+
+    s.on('connect_error', function(e){
+        console.error('Socket:', e.message);
+        if(e.message.indexOf('Authentication') !== -1){
+            forceLogout();
+        }
+    });
+
+    /* FIX 5: Handle disconnect gracefully */
+    s.on('disconnect', function(reason){
+        console.warn('Socket disconnected:', reason);
+        if (reason === 'io server disconnect') {
+            forceLogout();
+        }
     });
 }
+
+/* FIX 4: Token expiry check */
+function isTokenExpired(token) {
+    try {
+        var payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.exp ? (payload.exp * 1000 < Date.now()) : false;
+    } catch(e) {
+        return true;
+    }
+}
+
 function doLogin(id){
     showLoad('Verifying your account...');
-    fetch('/api/auth/telegram-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:id})})
-    .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
+    fetch('/api/auth/telegram-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: id })
+    })
+    .then(function(r){
+        return r.json().then(function(d){ return { ok: r.ok, data: d }; });
+    })
     .then(function(res){
-        if(!res.ok){showErr('Login Failed',res.data.message||'Server error.');return;}
-        localStorage.setItem('authToken',res.data.token);
-        initDash(res.data.token,res.data.user);
-    }).catch(function(){showErr('Connection Error','Could not reach server. Please try again.');});
+        if(!res.ok){
+            showErr('Login Failed', res.data.message || 'Server error.');
+            return;
+        }
+        localStorage.setItem('authToken', res.data.token);
+        initDash(res.data.token, res.data.user);
+    })
+    .catch(function(){
+        showErr('Connection Error', 'Could not reach server. Please try again.');
+    });
 }
-function retryAuth(){localStorage.removeItem('authToken');start();}
+
+function retryAuth(){
+    localStorage.removeItem('authToken');
+    start();
+}
+
 function start(){
-    var t=localStorage.getItem('authToken');
-    if(t){hideOv();initDash(t);}
-    else{
+    var t = localStorage.getItem('authToken');
+
+    /* FIX 4: Check token expiry before using */
+    if(t && !isTokenExpired(t)){
+        hideOv();
+        initDash(t);
+    } else {
+        if(t) localStorage.removeItem('authToken');
+
         showLoad('Connecting to Telegram...');
-        var a=0;
+        var a = 0;
         function chk(){
             a++;
-            if(window.Telegram&&window.Telegram.WebApp){
-                var tg=window.Telegram.WebApp;tg.ready();tg.expand();
-                var id=tg.initData;
-                if(id){doLogin(id);}
-                else if(a<150){setTimeout(chk,100);}
-                else{showErr('Failed','Telegram data empty. Reopen app.');}
-            }else if(a<150){setTimeout(chk,100);}
-            else{showErr('Failed','Could not connect to Telegram. Reopen app.');}
+            if(window.Telegram && window.Telegram.WebApp){
+                var tg = window.Telegram.WebApp;
+                tg.ready();
+                tg.expand();
+                var id = tg.initData;
+                if(id){
+                    doLogin(id);
+                } else if(a < 150){
+                    setTimeout(chk, 100);
+                } else {
+                    showErr('Failed', 'Telegram data empty. Reopen app.');
+                }
+            } else if(a < 150){
+                setTimeout(chk, 100);
+            } else {
+                showErr('Failed', 'Could not connect to Telegram. Reopen app.');
+            }
         }
         chk();
     }
 }
-document.readyState==='loading'?document.addEventListener('DOMContentLoaded',start):start();
+
+document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
 </script>
 </body>
 </html>
