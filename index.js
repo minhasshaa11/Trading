@@ -77,10 +77,12 @@ io.on('connection', (socket) => {
     socket.on('request_dashboard_data', async () => {
         try {
             const userId = socket.decoded.id;
+            console.log(`Fetching dashboard data for user: ${userId}`);
             const dashboardData = await getDashboardData(userId);
+            console.log(`Dashboard data fetched:`, dashboardData);
             socket.emit('dashboard_data', { success: true, data: dashboardData });
         } catch (error) {
-            console.error('Dashboard data error:', error.message);
+            console.error('Dashboard data error:', error.message, error.stack);
             socket.emit('dashboard_data', { success: false, message: 'Could not fetch dashboard data.' });
         }
     });
