@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Daily Earning - Bond 1x</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" as="style">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script defer src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root{--cream:#FBF8F3;--cream-dark:#F2EDE4;--cream-border:#E8DFD0;--brown-dark:#2D1F0E;--brown-mid:#4A3020;--brown-light:#8B6040;--gold:#C9832A;--gold-light:#E8A84A;--gold-pale:#F5E8D0;--green:#3D7A52;--text-main:#1E140A;--text-muted:#9A8070;--white:#FFFFFF;}
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -57,11 +58,12 @@
         .earn-err-msg{font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.5;}
         .earn-err-link{font-size:13px;font-weight:600;color:var(--gold);text-decoration:none;background:var(--gold-pale);padding:10px 24px;border-radius:12px;display:inline-block;}
 
-        /* Loading */
-        .loading-text{font-size:13px;color:var(--text-muted);}
-
-        /* No package icon */
+        /* Icon container */
         .earn-icon{width:64px;height:64px;border-radius:18px;background:var(--gold-pale);margin:0 auto 18px;display:flex;align-items:center;justify-content:center;}
+
+        /* Skeleton */
+        .skel{background:linear-gradient(90deg,var(--cream-dark) 25%,var(--cream-border) 50%,var(--cream-dark) 75%);background-size:200% 100%;animation:sh 1.4s infinite;border-radius:6px;display:block;}
+        @keyframes sh{to{background-position:-200% 0}}
 
         /* Nav */
         .nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:420px;background:var(--brown-dark);border-radius:22px;padding:12px 8px;display:flex;justify-content:space-around;z-index:1000;box-shadow:0 8px 32px rgba(45,31,14,.25);border:1px solid rgba(201,131,42,.15);}
@@ -75,8 +77,7 @@
 </head>
 <body>
 <script>
-    var token = localStorage.getItem('authToken');
-    if (!token) window.location.href = '/login.html';
+    if (!localStorage.getItem('authToken')) window.location.href = '/login.html';
 </script>
 
 <div class="hdr">
@@ -91,7 +92,12 @@
 
 <div class="bdy">
     <div class="earn-card" id="earning-card">
-        <p class="loading-text">Loading your earning status...</p>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+            <span class="skel" style="width:64px;height:64px;border-radius:18px;"></span>
+            <span class="skel" style="width:200px;height:24px;"></span>
+            <span class="skel" style="width:160px;height:14px;"></span>
+            <span class="skel" style="width:100%;height:50px;border-radius:14px;margin-top:8px;"></span>
+        </div>
     </div>
 </div>
 
@@ -115,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showReadyToClaim(profitAmount, upgradeMessage) {
         earningCard.innerHTML =
-            '<div class="earn-icon"><svg width="28" height="28" fill="none" stroke="' + 'var(--gold)' + '" stroke-width="1.5" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>' +
+            '<div class="earn-icon"><svg width="28" height="28" fill="none" stroke="var(--gold)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>' +
             '<div class="earn-title">Claim Your Daily Profit</div>' +
             '<p class="earn-sub">Your profit of <span class="earn-profit">$' + profitAmount.toLocaleString() + '</span> is ready.</p>' +
             '<button id="claim-btn" class="claim-btn">Claim Now</button>' +
@@ -126,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showWaiting(nextClaimTime) {
         earningCard.innerHTML =
-            '<div class="earn-icon"><svg width="28" height="28" fill="none" stroke="' + 'var(--green)' + '" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>' +
+            '<div class="earn-icon" style="background:rgba(61,122,82,.12);"><svg width="28" height="28" fill="none" stroke="var(--green)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>' +
             '<div class="earn-title">Profit Claimed</div>' +
             '<p class="earn-sub">Your next claim will be available in:</p>' +
             '<div id="countdown" class="countdown">--:--:--</div>';
