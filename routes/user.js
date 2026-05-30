@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const User = require('../models/User');
-const ChatThread = require('../models/Chat'); // <--- NEW REQUIREMENT
+const ChatThread = require('../models/Chat');
 const authMiddleware = require('../middleware/auth');
 
 // --- PACKAGE DEFINITIONS (Unchanged) ---
@@ -15,11 +15,16 @@ const PACKAGES = {
 };
 // -----------------------------------
 
+// FIX: Helper function - 401 return karta hai agar user DB mein nahi milta
+function handleUserNotFound(res) {
+    return res.status(401).json({ success: false, message: 'Session expired. Please login again.', authError: true });
+}
+
 // GET api/user/info - Provides basic user info
 router.get('/info', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
-        if (!user) { return res.status(404).json({ success: false, message: 'User not found.' }); }
+        if (!user) { return handleUserNotFound(res); }
         res.json({ success: true, user: user });
     } catch (error) {
         console.error("Error fetching user info:", error);
@@ -32,7 +37,7 @@ router.get('/referral-info', authMiddleware, async (req, res) => {
     try {
         const userId = new mongoose.Types.ObjectId(req.user.id);
         const user = await User.findById(userId).select('referralCode referralCommissions');
-        if (!user) { return res.status(404).json({ success: false, message: 'User not found.' }); }
+        if (!user) { return handleUserNotFound(res); }
         
         const referralCount = await User.countDocuments({ referredBy: userId });
         
@@ -61,7 +66,7 @@ router.post('/purchase-package', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (!user) {
-            return res.status(404).json({ success: false, message: "User not found." });
+            return handleUserNotFound(res);
         }
         if (user.balance < selectedPackage.price) {
             return res.status(400).json({ success: false, message: "Insufficient balance to purchase this package." });
@@ -87,7 +92,7 @@ router.post('/claim-earnings', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (!user) {
-            return res.status(404).json({ success: false, message: "User not found." });
+            return handleUserNotFound(res);
         }
         if (!user.active_package) {
             return res.status(400).json({ success: false, message: "You do not have an active package." });
@@ -109,7 +114,7 @@ router.post('/claim-earnings', authMiddleware, async (req, res) => {
         user.last_claim_timestamp = now;
         
         await user.save();
-        res.json({ success: true, message: `Successfully claimed ${dailyProfit} PKR!`, newBalance: user.balance });
+        res.json({ success: true, message: `Successfully claimed $${dailyProfit}!`, newBalance: user.balance });
 
     } catch (error) {
         console.error("Claim earnings error:", error);
@@ -117,12 +122,18 @@ router.post('/claim-earnings', authMiddleware, async (req, res) => {
     }
 });
 
-// --- NEW ROUTES FOR CUSTOMER SUPPORT CHAT ---
+// --- CUSTOMER SUPPORT CHAT ROUTES ---
 
 // GET api/user/support/initialize-chat
 router.get('/support/initialize-chat', authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
+
+        // FIX: Pehle check karo user exist karta hai ya nahi
+        const userExists = await User.findById(userId).select('_id');
+        if (!userExists) {
+            return handleUserNotFound(res);
+        }
         
         // Find existing thread or create a new one
         let thread = await ChatThread.findOne({ userId });
@@ -157,6 +168,12 @@ router.post('/support/send-message', authMiddleware, async (req, res) => {
     
     try {
         const userId = req.user.id;
+
+        // FIX: Pehle check karo user exist karta hai ya nahi
+        const userExists = await User.findById(userId).select('_id');
+        if (!userExists) {
+            return handleUserNotFound(res);
+        }
         
         // Find the thread and ensure it belongs to the user
         const thread = await ChatThread.findOne({ _id: chatId, userId });
@@ -192,7 +209,7 @@ router.get('/account-summary', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+            return handleUserNotFound(res);
         }
         const totalWithdrawals = user.transactions
             .filter(tx => tx.type === 'withdrawal' && tx.status === 'completed')
@@ -208,7 +225,7 @@ router.get('/account-summary', authMiddleware, async (req, res) => {
         });
     } catch (err) {
         console.error('Error fetching account summary:', err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ success: false, message: 'Server error.' });
     }
 });
 
@@ -217,7 +234,7 @@ router.get('/recent-activity', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
+            return handleUserNotFound(res);
         }
         const recentActivities = user.transactions
             .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -226,13 +243,19 @@ router.get('/recent-activity', authMiddleware, async (req, res) => {
         res.json({ success: true, activities: recentActivities });
     } catch (err) {
         console.error('Error fetching recent activity:', err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ success: false, message: 'Server error.' });
     }
 });
 
 // --- RESTORED: ROUTE TO GET A USER'S REFERRALS LIST ---
 router.get('/my-referrals', authMiddleware, async (req, res) => {
     try {
+        // FIX: Pehle check karo user exist karta hai
+        const userExists = await User.findById(req.user.id).select('_id');
+        if (!userExists) {
+            return handleUserNotFound(res);
+        }
+
         // Use the primary display name (firstName or username) for the list
         const referrals = await User.find({ referredBy: req.user.id })
                                     .select('username firstName createdAt') 
