@@ -323,7 +323,6 @@
         socket.on('connect_error', function(err) { console.error('Socket error:', err.message); });
     }
 
-    // KEY FIX: Poll for both window.Telegram AND initData
     function performFullAuthentication() {
         showLoading('Connecting to Telegram...');
         var attempts = 0;
@@ -335,17 +334,21 @@
                 tg.ready();
                 tg.expand();
                 var initData = tg.initData;
+                // DEBUG: show status on screen
+                authTitle.textContent = 'Debug';
+                authMessage.textContent = 'Telegram OK. initData: ' + (initData ? 'YES ' + initData.length + ' chars' : 'EMPTY');
                 if (initData) {
-                    doLogin(initData);
+                    setTimeout(function() { doLogin(initData); }, 1000);
                 } else if (attempts < 150) {
                     setTimeout(checkTelegram, 100);
                 } else {
-                    showError('Initialization Failed', 'Telegram data is empty. Please close and reopen the app from your bot.', '');
+                    showError('Failed', 'initData empty. Open via t.me/bond1xbot/App', '');
                 }
             } else if (attempts < 150) {
+                authMessage.textContent = 'Waiting for Telegram... ' + attempts;
                 setTimeout(checkTelegram, 100);
             } else {
-                showError('Initialization Failed', 'Could not connect to Telegram. Please close the app completely and reopen.', '');
+                showError('Failed', 'window.Telegram not found. Try reopening app.', '');
             }
         }
         checkTelegram();
