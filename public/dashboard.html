@@ -3,134 +3,264 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Bond 1X - Investment Platform</title>
-    
+    <title>Dashboard - Investment Platform</title>
+    <!-- KEY FIX: Local copy of Telegram script - loads faster than CDN -->
     <script src="/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        serif: ['Playfair Display', 'serif'],
-                    }
-                }
-            }
-        }
-    </script>
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        .spinner {
-            width: 48px; height: 48px;
-            border: 4px solid #C5A059;
-            border-top-color: transparent;
+        :root {
+            --bg-dark-navy: #0A0D14;
+            --text-off-white: #F0F0F0;
+            --accent-magenta: #BE38F3;
+            --accent-magenta-rgb: 190, 56, 243;
+            --accent-teal: #00F5D4;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark-navy);
+            color: var(--text-off-white);
+            padding-bottom: 100px;
+            overflow-x: hidden;
+        }
+
+        .aurora-background {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .aurora-background::before,
+        .aurora-background::after {
+            content: '';
+            position: absolute;
+            width: 800px; height: 800px;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px auto;
+            opacity: 0.2;
+            mix-blend-mode: screen;
+            filter: blur(100px);
+            will-change: transform;
+        }
+
+        .aurora-background::before {
+            background: radial-gradient(circle, var(--accent-magenta), transparent 60%);
+            top: -20%; left: -20%;
+            animation: moveGradientOne 25s ease-in-out infinite alternate;
+        }
+
+        .aurora-background::after {
+            background: radial-gradient(circle, var(--accent-teal), transparent 60%);
+            bottom: -20%; right: -20%;
+            animation: moveGradientTwo 30s ease-in-out infinite alternate;
+        }
+
+        @keyframes moveGradientOne {
+            from { transform: translate(-20%, -20%) rotate(0deg); }
+            to   { transform: translate(20%, 20%) rotate(180deg); }
+        }
+
+        @keyframes moveGradientTwo {
+            from { transform: translate(20%, 20%) rotate(0deg); }
+            to   { transform: translate(-20%, -20%) rotate(360deg); }
+        }
+
+        .card {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 32px);
+            max-width: 400px;
+            display: flex;
+            justify-content: space-around;
+            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 12px 0;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.2);
+        }
+
+        .nav-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            text-decoration: none;
+            color: #A0A0A0;
+            font-weight: 500;
+            font-size: 0.75rem;
+            transition: all 0.2s ease-in-out;
+            gap: 4px;
+        }
+
+        .nav-link svg { width: 24px; height: 24px; }
+
+        .nav-link.active {
+            color: var(--accent-magenta);
+            font-weight: 700;
+            transform: translateY(-2px);
+        }
+
+        .skeleton {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 0.25rem;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse { 50% { opacity: .5; } }
+
+        .status-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            z-index: 2000;
+            background-color: var(--bg-dark-navy);
+        }
+
+        /* Spinner for loading state */
+        .spinner {
+            width: 40px; height: 40px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: var(--accent-teal);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px auto;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .skeleton {
-            background-color: rgba(92,74,61,0.1); border-radius: 0.25rem;
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        /* Retry button */
+        .retry-btn {
+            margin-top: 16px;
+            padding: 10px 28px;
+            background: var(--accent-magenta);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95rem;
         }
-        @keyframes pulse { 50% { opacity: .4; } }
-        
-        * { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
-<body class="font-sans antialiased" style="background-color: #FDFBF7; color: #5C4A3D; padding-bottom: 100px; overflow-x: hidden;">
+<body>
 
-<div id="auth-status-overlay" class="fixed inset-0 flex-col items-center justify-center text-center z-[2000] px-4" style="background-color: #FDFBF7; display: flex;">
-    <div id="loading-spinner" class="spinner"></div>
-    <h1 id="auth-status-title" class="text-2xl font-serif font-bold text-[#332415] mb-2">Authenticating</h1>
-    <p id="auth-status-message" class="text-gray-500 text-sm">Securing your connection...</p>
-    <button id="retry-btn" class="mt-5 px-8 py-3 bg-[#332415] text-white border-none rounded-xl font-semibold text-sm shadow-lg" style="display:none;" onclick="retryAuth()">Retry Connection</button>
+<!-- Auth / Loading Overlay -->
+<div id="auth-status-overlay" class="status-overlay">
+    <div>
+        <div id="loading-spinner" class="spinner"></div>
+        <h1 id="auth-status-title" class="text-2xl font-bold text-white">Authenticating...</h1>
+        <p id="auth-status-message" class="text-gray-400 mt-2">Please wait while we log you in securely.</p>
+        <button id="retry-btn" class="retry-btn" style="display:none;" onclick="retryAuth()">Retry</button>
+    </div>
 </div>
 
-<div id="dashboard-content" class="max-w-md mx-auto p-5 pt-8 relative z-10" style="display: none;">
-    
-    <header class="flex justify-between items-center mb-8">
-        <div>
-            <h1 class="text-2xl tracking-widest font-serif font-bold text-[#332415]">BOND <span class="text-[#C5A059]">1X</span></h1>
-            <p class="text-sm text-gray-500 mt-1">Welcome, <span id="username-display" class="font-semibold text-[#5C4A3D]">...</span></p>
-        </div>
-        <div class="bg-[#C5A059] text-white font-bold text-sm w-11 h-11 rounded-full flex items-center justify-center shadow-md border-2 border-white">
-            MS
-        </div>
+<div class="aurora-background"></div>
+
+<div id="dashboard-content" class="container mx-auto p-4 max-w-4xl relative z-10" style="display: none;">
+    <header class="mb-8">
+        <p class="text-gray-400">Welcome back,</p>
+        <h1 class="text-3xl font-bold text-white"><span id="username-display">...</span></h1>
     </header>
 
-    <main class="space-y-6">
-        <div class="bg-[#332415] text-white rounded-3xl p-7 shadow-2xl relative overflow-hidden">
-            <div class="relative z-10">
-                <p class="text-xs tracking-widest text-[#C5A059] mb-2 uppercase opacity-90 font-semibold">Total Balance</p>
-                <h2 id="balance-display" class="text-5xl font-serif text-[#C5A059] mb-4 hidden">$0.00</h2>
-                <div id="balance-skeleton" class="skeleton h-12 w-40 mb-4"></div>
-                
-                <div class="flex justify-between items-end mt-6">
-                    <div>
-                        <p class="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Status</p>
-                        <span id="package-display" class="bg-[#C5A059]/20 text-[#C5A059] text-xs px-3 py-1.5 rounded-lg border border-[#C5A059]/30 hidden">None</span>
-                        <div id="package-skeleton" class="skeleton h-6 w-20"></div>
-                    </div>
+    <main class="space-y-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <!-- Balance Card -->
+            <div class="card p-6 rounded-2xl flex items-center space-x-4">
+                <div class="bg-blue-500/10 p-3 rounded-full border border-blue-500/20">
+                    <svg class="w-6 h-6 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-gray-400 text-sm">Total Balance</p>
+                    <p id="balance-display" class="text-2xl font-bold hidden" style="color: var(--accent-teal);">$0.00</p>
+                    <div id="balance-skeleton" class="skeleton h-8 w-32 mt-1"></div>
                 </div>
             </div>
-            <div class="absolute -right-12 -top-12 w-48 h-48 bg-white opacity-5 rounded-full blur-3xl"></div>
+            <!-- Package Card -->
+            <div class="card p-6 rounded-2xl flex items-center space-x-4">
+                <div class="bg-purple-500/10 p-3 rounded-full border border-purple-500/20">
+                    <svg class="w-6 h-6" style="color: var(--accent-magenta);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-gray-400 text-sm">Active Package</p>
+                    <p id="package-display" class="text-2xl font-bold text-white hidden">None</p>
+                    <div id="package-skeleton" class="skeleton h-8 w-28 mt-1"></div>
+                </div>
+            </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-3">
-            <a href="wallet.html" class="bg-white border border-gray-100 rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm text-[#5C4A3D] hover:border-[#C5A059] transition-colors">
-                <svg class="w-6 h-6 mb-2 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                <span class="text-[10px] font-bold tracking-widest uppercase">Deposit</span>
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-3 gap-4 sm:gap-6">
+            <a href="wallet.html" class="flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-blue-500/30">
+                <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                <span class="font-semibold text-sm sm:text-base">Deposit</span>
             </a>
-            <a href="wallet.html" class="bg-white border border-gray-100 rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm text-[#5C4A3D] hover:border-[#C5A059] transition-colors">
-                <svg class="w-6 h-6 mb-2 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                <span class="text-[10px] font-bold tracking-widest uppercase">Withdraw</span>
+            <a href="wallet.html" class="flex flex-col items-center justify-center bg-gray-700 hover:bg-gray-800 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-gray-500/30">
+                <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                <span class="font-semibold text-sm sm:text-base">Withdraw</span>
             </a>
-            <a href="packages.html" class="bg-white border border-gray-100 rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm text-[#5C4A3D] hover:border-[#C5A059] transition-colors">
-                <svg class="w-6 h-6 mb-2 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                <span class="text-[10px] font-bold tracking-widest uppercase">Packages</span>
+            <a href="packages.html" class="flex flex-col items-center justify-center bg-yellow-500 hover:bg-yellow-600 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-yellow-500/30">
+                <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <span class="font-semibold text-sm sm:text-base">Packages</span>
             </a>
         </div>
 
-        <div id="dynamic-action-section" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 text-center mt-2">
-            <div class="skeleton h-6 w-3/4 mx-auto mb-4"></div>
-            <div class="skeleton h-10 w-full rounded-xl"></div>
-        </div>
+        <div id="dynamic-action-section" class="card p-6 rounded-2xl shadow-lg text-center"></div>
     </main>
 </div>
 
-<nav class="fixed bottom-0 left-0 w-full border-t border-gray-200 z-[1000] flex justify-around py-3" style="background-color: #FDFBF7;">
-    <a href="dashboard.html" class="flex flex-col items-center justify-center gap-1 text-[#C5A059]" style="text-decoration: none;">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-        <span class="text-[10px] font-bold tracking-widest">HOME</span>
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+    <a href="dashboard.html" class="nav-link" id="nav-dashboard">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        <span>Dashboard</span>
     </a>
-    <a href="packages.html" class="flex flex-col items-center justify-center gap-1 text-[#A09E9C]" style="text-decoration: none;">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-        <span class="text-[10px] font-bold tracking-widest">PLANS</span>
+    <a href="packages.html" class="nav-link" id="nav-packages">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <span>Packages</span>
     </a>
-    <a href="earning.html" class="flex flex-col items-center justify-center gap-1 text-[#A09E9C]" style="text-decoration: none;">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        <span class="text-[10px] font-bold tracking-widest">EARN</span>
+    <a href="earning.html" class="nav-link" id="nav-earning">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <span>Earn</span>
     </a>
-    <a href="wallet.html" class="flex flex-col items-center justify-center gap-1 text-[#A09E9C]" style="text-decoration: none;">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-        <span class="text-[10px] font-bold tracking-widest">WALLET</span>
+    <a href="wallet.html" class="nav-link" id="nav-wallet">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+        <span>Wallet</span>
     </a>
-    <a href="profile.html" class="flex flex-col items-center justify-center gap-1 text-[#A09E9C]" style="text-decoration: none;">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-        <span class="text-[10px] font-bold tracking-widest">PROFILE</span>
+    <a href="profile.html" class="nav-link" id="nav-profile">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        <span>Profile</span>
     </a>
 </nav>
 
 <script>
+    // ─── UI Elements ────────────────────────────────────────────────
     const authOverlay  = document.getElementById('auth-status-overlay');
     const authTitle    = document.getElementById('auth-status-title');
     const authMessage  = document.getElementById('auth-status-message');
@@ -146,7 +276,7 @@
     }
 
     function showLoading(msg) {
-        authTitle.textContent   = 'Authenticating';
+        authTitle.textContent   = 'Authenticating...';
         authMessage.textContent = msg || 'Please wait...';
         spinner.style.display   = 'block';
         retryBtn.style.display  = 'none';
@@ -159,6 +289,7 @@
 
     function initializeDashboard(token, initialUserData) {
         document.getElementById('dashboard-content').style.display = 'block';
+        document.getElementById('nav-dashboard').classList.add('active');
 
         var socket          = io({ auth: { token: token } });
         var usernameDisplay = document.getElementById('username-display');
@@ -170,7 +301,7 @@
 
         function renderData(data) {
             usernameDisplay.textContent = data.username || 'User';
-            balanceDisplay.textContent  = '$' + (data.balance || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            balanceDisplay.textContent  = '$' + (data.balance || 0).toFixed(2);
             packageDisplay.textContent  = data.activePackage || 'None';
             balanceSkeleton.style.display = 'none';
             packageSkeleton.style.display = 'none';
@@ -179,9 +310,9 @@
 
             if (data.activePackage) {
                 var expiry = new Date(data.packageExpiry).toLocaleDateString();
-                dynamicSection.innerHTML = '<div class="flex items-center justify-between mb-4"><h3 class="font-serif text-lg font-bold text-[#332415]">Active Task Ready</h3><span class="text-xs px-2 py-1 bg-green-50 text-green-600 rounded border border-green-100">Live</span></div><div class="flex justify-between text-sm mb-6"><span class="text-gray-500">Contract Expiry</span><span class="font-semibold text-[#332415]">' + expiry + '</span></div><a href="earning.html" class="block w-full py-3 rounded-xl font-bold text-white bg-[#332415] border border-[#332415] shadow-md transition-colors text-center">Claim Daily Profit</a>';
+                dynamicSection.innerHTML = '<h2 class="text-xl font-semibold text-white">Your Daily Task is Ready</h2><p class="text-gray-400 mt-2 mb-4">Click below to claim your daily profit. Package expires on ' + expiry + '.</p><a href="earning.html" class="inline-block font-bold py-3 px-8 rounded-lg shadow-lg" style="background-color:var(--accent-teal);color:#0A0D14;">Go to Earning Page</a>';
             } else {
-                dynamicSection.innerHTML = '<div class="py-2"><h3 class="font-serif text-xl font-bold text-[#332415] mb-2">Start Earning Today</h3><p class="text-gray-500 text-sm mb-6 px-4">You don\'t have an active investment package. Purchase one to start earning daily.</p><a href="packages.html" class="block w-full py-3 rounded-xl font-bold text-[#332415] bg-white border-2 border-[#332415] shadow-sm transition-colors text-center">View Packages</a></div>';
+                dynamicSection.innerHTML = '<h2 class="text-xl font-semibold text-white">Start Earning Today</h2><p class="text-gray-400 mt-2 mb-4">You don\'t have an active investment package. Purchase one to start earning daily profits.</p><a href="packages.html" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg">View Packages</a>';
             }
         }
 
@@ -256,6 +387,7 @@
         }
     }
 
+    // Start on DOMContentLoaded — don't wait for images/fonts to load
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', startApp);
     } else {
