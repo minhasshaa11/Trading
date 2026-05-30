@@ -96,6 +96,22 @@
         var sendBtn = document.getElementById('send-btn');
 
         var chatId = null;
+        var isSending = false;
+
+        function handleAuthError(status) {
+            if (status === 401) {
+                localStorage.removeItem('authToken');
+                window.location.href = '/login.html';
+                return true;
+            }
+            return false;
+        }
+
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
         function scrollToBottom() {
             chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -105,9 +121,16 @@
             var isUser = message.sender === 'user';
             var messageEl = document.createElement('div');
             messageEl.className = 'message ' + (isUser ? 'user-message' : 'admin-message');
-            messageEl.innerHTML =
-                '<p>' + message.content + '</p>' +
-                '<span class="msg-time">' + new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '</span>';
+
+            var contentP = document.createElement('p');
+            contentP.textContent = message.content;
+
+            var timeSpan = document.createElement('span');
+            timeSpan.className = 'msg-time';
+            timeSpan.textContent = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            messageEl.appendChild(contentP);
+            messageEl.appendChild(timeSpan);
             chatContainer.prepend(messageEl);
         }
 
@@ -117,6 +140,7 @@
 
             fetch('/api/user/support/initialize-chat', { headers: headers })
             .then(function(res) {
+                if (handleAuthError(res.status)) return;
                 if (!res.ok) {
                     return res.text().then(function(errorDetails) {
                         try {
@@ -153,8 +177,9 @@
 
         function sendMessage() {
             var content = messageInput.value.trim();
-            if (!content || !chatId) return;
+            if (!content || !chatId || isSending) return;
 
+            isSending = true;
             messageInput.value = '';
             sendBtn.disabled = true;
 
@@ -168,6 +193,7 @@
                 body: JSON.stringify({ chatId: chatId, content: content })
             })
             .then(function(res) {
+                if (handleAuthError(res.status)) return;
                 if (!res.ok) {
                     alert('Message failed to send. Please try refreshing.');
                 }
@@ -176,6 +202,7 @@
                 alert('Network error while sending message.');
             })
             .finally(function() {
+                isSending = false;
                 sendBtn.disabled = false;
                 messageInput.focus();
             });
