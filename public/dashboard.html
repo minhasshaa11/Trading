@@ -3,614 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Bond 1x — Dashboard</title>
+    <title>Bond 1x</title>
     <script src="/telegram-web-app.js"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" as="style">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --cream:       #FBF8F3;
-            --cream-dark:  #F2EDE4;
-            --cream-border:#E8DFD0;
-            --brown-dark:  #2D1F0E;
-            --brown-mid:   #4A3020;
-            --brown-light: #8B6040;
-            --gold:        #C9832A;
-            --gold-light:  #E8A84A;
-            --gold-pale:   #F5E8D0;
-            --green:       #3D7A52;
-            --text-main:   #1E140A;
-            --text-muted:  #9A8070;
-            --white:       #FFFFFF;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--cream);
-            color: var(--text-main);
-            min-height: 100vh;
-            padding-bottom: 90px;
-            overflow-x: hidden;
-        }
-
-        /* ── Loading Overlay ── */
-        .overlay {
-            position: fixed; inset: 0;
-            background: var(--brown-dark);
-            display: flex; align-items: center; justify-content: center;
-            flex-direction: column; text-align: center;
-            z-index: 9999;
-            transition: opacity 0.4s ease;
-        }
-        .overlay-logo {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 32px; font-style: italic;
-            color: var(--gold); letter-spacing: 4px;
-            margin-bottom: 24px;
-        }
-        .overlay-spinner {
-            width: 36px; height: 36px;
-            border: 2px solid rgba(201,131,42,0.2);
-            border-top-color: var(--gold);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 16px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .overlay-title { font-size: 16px; font-weight: 500; color: #F5EDD8; margin-bottom: 6px; }
-        .overlay-msg   { font-size: 13px; color: #6B5830; max-width: 260px; line-height: 1.5; }
-        .overlay-retry {
-            margin-top: 20px; padding: 11px 28px;
-            background: var(--gold); color: var(--brown-dark);
-            border: none; border-radius: 50px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 13px; font-weight: 600;
-            letter-spacing: 1px; cursor: pointer; display: none;
-        }
-
-        /* ── Header ── */
-        .header {
-            background: var(--brown-dark);
-            padding: 20px 20px 0;
-            position: relative; overflow: hidden;
-        }
-        .header::before {
-            content: '';
-            position: absolute; top: -60px; right: -40px;
-            width: 180px; height: 180px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(201,131,42,0.15), transparent 70%);
-        }
-        .header-top {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 24px;
-        }
-        .header-logo {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 20px; font-style: italic;
-            color: var(--gold); letter-spacing: 3px;
-        }
-        .header-avatar {
-            width: 38px; height: 38px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--gold), var(--gold-light));
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 700; color: var(--brown-dark);
-        }
-
-        /* Hero balance card */
-        .hero-card {
-            background: var(--brown-mid);
-            border-radius: 18px 18px 0 0;
-            padding: 20px;
-            border: 1px solid rgba(201,131,42,0.15);
-            border-bottom: none;
-            position: relative; overflow: hidden;
-        }
-        .hero-card::after {
-            content: '';
-            position: absolute; top: 0; left: 0; right: 0; height: 1px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-        }
-        .hero-label {
-            font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
-            color: #6B5030; margin-bottom: 8px;
-        }
-        .hero-amount {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 44px; font-weight: 600;
-            color: var(--gold-light); line-height: 1;
-            margin-bottom: 12px;
-        }
-        .hero-amount span { font-size: 22px; color: var(--gold); vertical-align: top; margin-top: 8px; display: inline-block; }
-        .hero-pills { display: flex; gap: 8px; flex-wrap: wrap; }
-        .pill {
-            font-size: 11px; padding: 4px 12px; border-radius: 20px;
-            font-weight: 500;
-        }
-        .pill-pkg  { background: rgba(201,131,42,0.15); border: 1px solid rgba(201,131,42,0.3); color: var(--gold-light); }
-        .pill-gain { background: rgba(61,122,82,0.15);  border: 1px solid rgba(61,122,82,0.3);  color: #5DBD80; }
-
-        /* ── Body ── */
-        .body { padding: 0 16px; }
-
-        /* Stats row */
-        .stats-row {
-            display: grid; grid-template-columns: 1fr 1fr;
-            gap: 10px; margin-top: 16px; margin-bottom: 16px;
-        }
-        .stat-card {
-            background: var(--white);
-            border: 1px solid var(--cream-border);
-            border-radius: 14px; padding: 14px;
-            box-shadow: 0 2px 12px rgba(45,31,14,0.05);
-            animation: fadeUp 0.4s ease both;
-        }
-        .stat-card:nth-child(2) { animation-delay: 0.08s; }
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(12px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        .stat-lbl {
-            font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-            color: var(--text-muted); margin-bottom: 6px;
-        }
-        .stat-val {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 22px; color: var(--text-main);
-        }
-        .stat-sub { font-size: 11px; color: var(--green); margin-top: 3px; }
-
-        /* Skeleton */
-        .skeleton {
-            background: linear-gradient(90deg, var(--cream-dark) 25%, var(--cream-border) 50%, var(--cream-dark) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.4s infinite;
-            border-radius: 6px;
-        }
-        @keyframes shimmer { to { background-position: -200% 0; } }
-
-        /* Section label */
-        .section-lbl {
-            font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
-            color: var(--text-muted); margin-bottom: 10px; padding-left: 2px;
-        }
-
-        /* Action buttons */
-        .actions { display: flex; gap: 8px; margin-bottom: 20px; }
-        .action-btn {
-            flex: 1; background: var(--white);
-            border: 1px solid var(--cream-border);
-            border-radius: 14px; padding: 14px 8px;
-            display: flex; flex-direction: column; align-items: center; gap: 7px;
-            cursor: pointer; transition: all 0.2s ease;
-            box-shadow: 0 2px 8px rgba(45,31,14,0.04);
-            text-decoration: none; color: inherit;
-        }
-        .action-btn:active { transform: scale(0.96); }
-        .action-btn.primary { background: var(--gold); border-color: var(--gold); }
-        .action-icon {
-            width: 36px; height: 36px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .action-lbl {
-            font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
-            font-weight: 500; color: var(--text-muted);
-        }
-        .action-btn.primary .action-lbl { color: var(--brown-dark); }
-
-        /* Package card */
-        .pkg-card {
-            background: var(--white);
-            border: 1px solid var(--cream-border);
-            border-radius: 16px; padding: 18px;
-            border-left: 4px solid var(--gold);
-            box-shadow: 0 4px 20px rgba(45,31,14,0.06);
-            margin-bottom: 20px;
-            animation: fadeUp 0.5s ease both;
-        }
-        .pkg-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 14px;
-        }
-        .pkg-name {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 20px; font-style: italic; color: var(--text-main);
-        }
-        .pkg-badge {
-            font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
-            padding: 4px 10px; border-radius: 20px;
-            background: rgba(61,122,82,0.12); border: 1px solid rgba(61,122,82,0.3);
-            color: var(--green); font-weight: 500;
-        }
-        .pkg-row {
-            display: flex; justify-content: space-between;
-            margin-bottom: 8px; font-size: 13px;
-        }
-        .pkg-key { color: var(--text-muted); }
-        .pkg-val { color: var(--text-main); font-weight: 500; }
-        .pkg-progress {
-            height: 5px; background: var(--cream-dark);
-            border-radius: 5px; margin: 14px 0 6px;
-        }
-        .pkg-progress-fill {
-            height: 100%; border-radius: 5px;
-            background: linear-gradient(90deg, var(--gold), var(--gold-light));
-            transition: width 1s ease;
-        }
-        .pkg-progress-labels {
-            display: flex; justify-content: space-between;
-            font-size: 10px; color: var(--text-muted); margin-bottom: 14px;
-        }
-        .pkg-claim-btn {
-            width: 100%; background: var(--gold); border: none;
-            border-radius: 12px; padding: 14px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 13px; letter-spacing: 1px; font-weight: 600;
-            color: var(--brown-dark); cursor: pointer;
-            transition: all 0.2s ease;
-            text-decoration: none; display: block; text-align: center;
-        }
-        .pkg-claim-btn:active { transform: scale(0.98); background: var(--gold-light); }
-
-        /* No package card */
-        .no-pkg-card {
-            background: var(--white);
-            border: 1px solid var(--cream-border);
-            border-radius: 16px; padding: 24px;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(45,31,14,0.06);
-            margin-bottom: 20px;
-        }
-        .no-pkg-icon {
-            width: 56px; height: 56px; border-radius: 16px;
-            background: var(--gold-pale); margin: 0 auto 14px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .no-pkg-title {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 20px; margin-bottom: 8px;
-        }
-        .no-pkg-msg { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5; }
-        .no-pkg-btn {
-            display: inline-block; background: var(--gold);
-            color: var(--brown-dark); text-decoration: none;
-            border-radius: 12px; padding: 13px 28px;
-            font-size: 13px; font-weight: 600; letter-spacing: 1px;
-        }
-
-        /* ── Bottom Nav ── */
-        .bottom-nav {
-            position: fixed; bottom: 12px;
-            left: 50%; transform: translateX(-50%);
-            width: calc(100% - 32px); max-width: 420px;
-            background: var(--brown-dark);
-            border-radius: 22px; padding: 12px 8px;
-            display: flex; justify-content: space-around;
-            z-index: 1000;
-            box-shadow: 0 8px 32px rgba(45,31,14,0.25);
-            border: 1px solid rgba(201,131,42,0.15);
-        }
-        .nav-item {
-            flex: 1; display: flex; flex-direction: column;
-            align-items: center; gap: 4px;
-            text-decoration: none; cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .nav-item svg { color: #3A2A18; transition: color 0.2s; }
-        .nav-item span {
-            font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
-            color: #3A2A18; transition: color 0.2s; font-weight: 500;
-        }
-        .nav-item.active svg { color: var(--gold); }
-        .nav-item.active span { color: var(--gold); }
-        .nav-dot {
-            width: 3px; height: 3px; border-radius: 50%;
-            background: var(--gold); margin-top: 2px;
-            display: none;
-        }
-        .nav-item.active .nav-dot { display: block; }
+        :root{--cream:#FBF8F3;--cream-dark:#F2EDE4;--cream-border:#E8DFD0;--brown-dark:#2D1F0E;--brown-mid:#4A3020;--brown-light:#8B6040;--gold:#C9832A;--gold-light:#E8A84A;--gold-pale:#F5E8D0;--green:#3D7A52;--text-main:#1E140A;--text-muted:#9A8070;--white:#FFFFFF;}
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+        body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-main);min-height:100vh;padding-bottom:90px;overflow-x:hidden;}
+        /* Overlay */
+        .ov{position:fixed;inset:0;background:var(--brown-dark);display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;z-index:9999;transition:opacity .4s;}
+        .ov-logo{font-family:'Cormorant Garamond',serif;font-size:32px;font-style:italic;color:var(--gold);letter-spacing:4px;margin-bottom:24px;}
+        .ov-spin{width:36px;height:36px;border:2px solid rgba(201,131,42,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:16px;}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .ov-title{font-size:16px;font-weight:500;color:#F5EDD8;margin-bottom:6px;}
+        .ov-msg{font-size:13px;color:#6B5830;max-width:260px;line-height:1.5;}
+        .ov-btn{margin-top:20px;padding:11px 28px;background:var(--gold);color:var(--brown-dark);border:none;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:none;}
+        /* Header */
+        .hdr{background:var(--brown-dark);padding:20px 20px 0;position:relative;overflow:hidden;}
+        .hdr::before{content:'';position:absolute;top:-60px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(201,131,42,.15),transparent 70%);}
+        .hdr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+        .hdr-logo{font-family:'Cormorant Garamond',serif;font-size:20px;font-style:italic;color:var(--gold);letter-spacing:3px;}
+        .hdr-av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-light));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--brown-dark);}
+        .hero{background:var(--brown-mid);border-radius:18px 18px 0 0;padding:20px;border:1px solid rgba(201,131,42,.15);border-bottom:none;position:relative;overflow:hidden;}
+        .hero::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+        .hero-lbl{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#D4B896;margin-bottom:8px;}
+        .hero-amt{font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:var(--gold-light);line-height:1;margin-bottom:12px;}
+        .hero-amt sup{font-size:22px;color:var(--gold);vertical-align:top;margin-top:8px;display:inline-block;}
+        .pills{display:flex;gap:8px;flex-wrap:wrap;}
+        .pill{font-size:11px;padding:4px 12px;border-radius:20px;font-weight:500;}
+        .pill-p{background:rgba(201,131,42,.15);border:1px solid rgba(201,131,42,.3);color:var(--gold-light);}
+        .pill-g{background:rgba(61,122,82,.15);border:1px solid rgba(61,122,82,.3);color:#5DBD80;}
+        /* Body */
+        .bdy{padding:0 16px;}
+        .wel{padding:18px 0 4px;}
+        .wel-sub{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;}
+        .wel-name{font-family:'Cormorant Garamond',serif;font-size:26px;font-style:italic;}
+        .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 18px;}
+        .sc{background:var(--white);border:1px solid var(--cream-border);border-radius:14px;padding:14px;box-shadow:0 2px 12px rgba(45,31,14,.05);animation:fu .4s ease both;}
+        .sc:nth-child(2){animation-delay:.08s;}
+        @keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .sc-lbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
+        .sc-val{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--text-main);}
+        .sc-sub{font-size:11px;color:var(--green);margin-top:3px;}
+        .skel{background:linear-gradient(90deg,var(--cream-dark) 25%,var(--cream-border) 50%,var(--cream-dark) 75%);background-size:200% 100%;animation:sh 1.4s infinite;border-radius:6px;display:block;}
+        @keyframes sh{to{background-position:-200% 0}}
+        .sec-lbl{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;}
+        .acts{display:flex;gap:8px;margin-bottom:20px;}
+        .act{flex:1;background:var(--white);border:1px solid var(--cream-border);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(45,31,14,.04);text-decoration:none;color:inherit;}
+        .act:active{transform:scale(.96);}
+        .act.prim{background:var(--gold);border-color:var(--gold);}
+        .act-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+        .act-lb{font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:500;color:var(--text-muted);}
+        .act.prim .act-lb{color:var(--brown-dark);}
+        .pkg{background:var(--white);border:1px solid var(--cream-border);border-radius:16px;padding:18px;border-left:4px solid var(--gold);box-shadow:0 4px 20px rgba(45,31,14,.06);margin-bottom:20px;animation:fu .5s ease both;}
+        .pkg-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+        .pkg-nm{font-family:'Cormorant Garamond',serif;font-size:20px;font-style:italic;}
+        .pkg-bg{font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:20px;background:rgba(61,122,82,.12);border:1px solid rgba(61,122,82,.3);color:var(--green);font-weight:500;}
+        .pkg-rw{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;}
+        .pkg-k{color:var(--text-muted);}
+        .pkg-v{color:var(--text-main);font-weight:500;}
+        .pkg-pr{height:5px;background:var(--cream-dark);border-radius:5px;margin:14px 0 6px;}
+        .pkg-pf{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--gold),var(--gold-light));}
+        .pkg-pl{display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-bottom:14px;}
+        .pkg-cb{width:100%;background:var(--gold);border:none;border-radius:12px;padding:14px;font-family:'DM Sans',sans-serif;font-size:13px;letter-spacing:1px;font-weight:600;color:var(--brown-dark);cursor:pointer;text-decoration:none;display:block;text-align:center;transition:all .2s;}
+        .pkg-cb:active{background:var(--gold-light);}
+        .no-pkg{background:var(--white);border:1px solid var(--cream-border);border-radius:16px;padding:24px;text-align:center;box-shadow:0 4px 20px rgba(45,31,14,.06);margin-bottom:20px;}
+        .no-pkg-ic{width:56px;height:56px;border-radius:16px;background:var(--gold-pale);margin:0 auto 14px;display:flex;align-items:center;justify-content:center;}
+        .no-pkg-t{font-family:'Cormorant Garamond',serif;font-size:20px;margin-bottom:8px;}
+        .no-pkg-m{font-size:13px;color:var(--text-muted);margin-bottom:18px;line-height:1.5;}
+        .no-pkg-b{display:inline-block;background:var(--gold);color:var(--brown-dark);text-decoration:none;border-radius:12px;padding:13px 28px;font-size:13px;font-weight:600;letter-spacing:1px;}
+        /* Nav */
+        .nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:420px;background:var(--brown-dark);border-radius:22px;padding:12px 8px;display:flex;justify-content:space-around;z-index:1000;box-shadow:0 8px 32px rgba(45,31,14,.25);border:1px solid rgba(201,131,42,.15);}
+        .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;transition:all .2s;}
+        .ni svg{color:#9A8060;transition:color .2s;}
+        .ni span{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#9A8060;transition:color .2s;font-weight:500;}
+        .ni.active svg,.ni.active span{color:var(--gold);}
+        .nd{width:3px;height:3px;border-radius:50%;background:var(--gold);margin-top:1px;display:none;}
+        .ni.active .nd{display:block;}
     </style>
 </head>
 <body>
-
-<!-- Overlay -->
-<div id="overlay" class="overlay">
-    <div class="overlay-logo">Bond 1x</div>
-    <div class="overlay-spinner" id="overlay-spinner"></div>
-    <div class="overlay-title" id="overlay-title">Authenticating...</div>
-    <div class="overlay-msg" id="overlay-msg">Please wait while we log you in securely.</div>
-    <button class="overlay-retry" id="overlay-retry" onclick="retryAuth()">Try Again</button>
+<div id="ov" class="ov">
+    <div class="ov-logo">Bond 1x</div>
+    <div class="ov-spin" id="ov-spin"></div>
+    <div class="ov-title" id="ov-title">Authenticating...</div>
+    <div class="ov-msg" id="ov-msg">Please wait while we log you in securely.</div>
+    <button class="ov-btn" id="ov-btn" onclick="retryAuth()">Try Again</button>
 </div>
-
-<!-- Header -->
-<div class="header">
-    <div class="header-top">
-        <div class="header-logo">Bond 1x</div>
-        <div class="header-avatar" id="avatar-initials">–</div>
+<div class="hdr">
+    <div class="hdr-top">
+        <div class="hdr-logo">Bond 1x</div>
+        <div class="hdr-av" id="hdr-av">–</div>
     </div>
-    <div class="hero-card">
-        <div class="hero-label">Total Balance</div>
-        <div class="hero-amount" id="balance-display">
-            <span id="balance-skeleton" class="skeleton" style="display:inline-block;width:140px;height:40px;border-radius:8px;"></span>
-            <span id="balance-value" style="display:none;"><span>$</span><span id="balance-num">0.00</span></span>
+    <div class="hero">
+        <div class="hero-lbl">Total Balance</div>
+        <div class="hero-amt">
+            <span id="bal-sk" class="skel" style="width:140px;height:42px;border-radius:8px;margin-bottom:4px;"></span>
+            <span id="bal-v" style="display:none;"><sup>$</sup><span id="bal-n">0.00</span></span>
         </div>
-        <div class="hero-pills" id="hero-pills" style="display:none;">
-            <span class="pill pill-pkg" id="pill-pkg">Loading...</span>
-            <span class="pill pill-gain">↑ Daily returns active</span>
+        <div class="pills" id="pills" style="display:none;">
+            <span class="pill pill-p" id="pill-p">Loading...</span>
+            <span class="pill pill-g" id="pill-g">Daily returns active</span>
         </div>
     </div>
 </div>
-
-<!-- Body -->
-<div class="body">
-    <!-- Welcome -->
-    <div style="padding: 18px 0 4px;">
-        <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Welcome back</div>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-style:italic;" id="username-display">
-            <span class="skeleton" style="display:inline-block;width:120px;height:28px;border-radius:6px;"></span>
-        </div>
+<div class="bdy">
+    <div class="wel">
+        <div class="wel-sub">Welcome back</div>
+        <div class="wel-name" id="uname"><span class="skel" style="width:120px;height:28px;border-radius:6px;"></span></div>
     </div>
-
-    <!-- Stats -->
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="stat-lbl">Package</div>
-            <div class="stat-val" id="pkg-stat">
-                <span class="skeleton" style="display:block;width:80px;height:22px;border-radius:4px;"></span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-lbl">Daily Return</div>
-            <div class="stat-val" id="return-stat">
-                <span class="skeleton" style="display:block;width:60px;height:22px;border-radius:4px;"></span>
-            </div>
-            <div class="stat-sub" id="return-sub" style="display:none;">active</div>
-        </div>
+    <div class="stats">
+        <div class="sc"><div class="sc-lbl">Package</div><div class="sc-val" id="pkg-st"><span class="skel" style="width:80px;height:22px;border-radius:4px;"></span></div></div>
+        <div class="sc"><div class="sc-lbl">Daily Return</div><div class="sc-val" id="ret-st"><span class="skel" style="width:60px;height:22px;border-radius:4px;"></span></div><div class="sc-sub" id="ret-sb" style="display:none;">active</div></div>
     </div>
-
-    <!-- Actions -->
-    <div class="section-lbl">Quick Actions</div>
-    <div class="actions">
-        <a href="wallet.html" class="action-btn primary">
-            <div class="action-icon" style="background:rgba(45,31,14,0.15);">
-                <svg width="18" height="18" fill="none" stroke="var(--brown-dark)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
-            </div>
-            <span class="action-lbl">Deposit</span>
-        </a>
-        <a href="wallet.html" class="action-btn">
-            <div class="action-icon" style="background:var(--cream-dark);">
-                <svg width="18" height="18" fill="none" stroke="var(--brown-light)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7 7 7-7"/></svg>
-            </div>
-            <span class="action-lbl">Withdraw</span>
-        </a>
-        <a href="packages.html" class="action-btn">
-            <div class="action-icon" style="background:var(--cream-dark);">
-                <svg width="18" height="18" fill="none" stroke="var(--brown-light)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
-            </div>
-            <span class="action-lbl">Packages</span>
-        </a>
+    <div class="sec-lbl">Quick Actions</div>
+    <div class="acts">
+        <a href="wallet.html" class="act prim"><div class="act-ic" style="background:rgba(45,31,14,.15);"><svg width="18" height="18" fill="none" stroke="var(--brown-dark)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7-7 7 7"/></svg></div><span class="act-lb">Deposit</span></a>
+        <a href="wallet.html" class="act"><div class="act-ic" style="background:var(--cream-dark);"><svg width="18" height="18" fill="none" stroke="var(--brown-light)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7 7 7-7"/></svg></div><span class="act-lb">Withdraw</span></a>
+        <a href="packages.html" class="act"><div class="act-ic" style="background:var(--cream-dark);"><svg width="18" height="18" fill="none" stroke="var(--brown-light)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div><span class="act-lb">Packages</span></a>
     </div>
-
-    <!-- Dynamic section -->
-    <div class="section-lbl">Your Investment</div>
-    <div id="dynamic-section">
-        <!-- skeleton -->
-        <div class="pkg-card">
-            <div class="pkg-header">
-                <span class="skeleton" style="display:block;width:140px;height:22px;border-radius:4px;"></span>
-                <span class="skeleton" style="display:block;width:60px;height:20px;border-radius:20px;"></span>
-            </div>
-            <span class="skeleton" style="display:block;width:100%;height:14px;border-radius:4px;margin-bottom:8px;"></span>
-            <span class="skeleton" style="display:block;width:80%;height:14px;border-radius:4px;margin-bottom:8px;"></span>
-            <span class="skeleton" style="display:block;width:90%;height:14px;border-radius:4px;margin-bottom:14px;"></span>
-            <span class="skeleton" style="display:block;width:100%;height:48px;border-radius:12px;"></span>
-        </div>
+    <div class="sec-lbl">Your Investment</div>
+    <div id="dyn">
+        <div class="pkg"><div class="pkg-hd"><span class="skel" style="width:140px;height:22px;border-radius:4px;"></span><span class="skel" style="width:60px;height:20px;border-radius:20px;"></span></div><span class="skel" style="width:100%;height:13px;border-radius:4px;margin-bottom:8px;"></span><span class="skel" style="width:80%;height:13px;border-radius:4px;margin-bottom:8px;"></span><span class="skel" style="width:90%;height:13px;border-radius:4px;margin-bottom:14px;"></span><span class="skel" style="width:100%;height:48px;border-radius:12px;"></span></div>
     </div>
 </div>
-
-<!-- Bottom Nav -->
-<nav class="bottom-nav">
-    <a href="dashboard.html" class="nav-item active" id="nav-dashboard">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg>
-        <span>Home</span>
-        <div class="nav-dot"></div>
-    </a>
-    <a href="packages.html" class="nav-item" id="nav-packages">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
-        <span>Packages</span>
-        <div class="nav-dot"></div>
-    </a>
-    <a href="earning.html" class="nav-item" id="nav-earning">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-        <span>Earn</span>
-        <div class="nav-dot"></div>
-    </a>
-    <a href="wallet.html" class="nav-item" id="nav-wallet">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v9a2 2 0 002 2z"/></svg>
-        <span>Wallet</span>
-        <div class="nav-dot"></div>
-    </a>
-    <a href="profile.html" class="nav-item" id="nav-profile">
-        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0114 0"/></svg>
-        <span>Profile</span>
-        <div class="nav-dot"></div>
-    </a>
+<nav class="nav">
+    <a href="dashboard.html" class="ni active"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg><span>Home</span><div class="nd"></div></a>
+    <a href="packages.html" class="ni"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg><span>Packages</span><div class="nd"></div></a>
+    <a href="earning.html" class="ni"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><span>Earn</span><div class="nd"></div></a>
+    <a href="wallet.html" class="ni"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v9a2 2 0 002 2z"/></svg><span>Wallet</span><div class="nd"></div></a>
+    <a href="profile.html" class="ni"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0114 0"/></svg><span>Profile</span><div class="nd"></div></a>
 </nav>
-
 <script>
-    var overlay        = document.getElementById('overlay');
-    var overlayTitle   = document.getElementById('overlay-title');
-    var overlayMsg     = document.getElementById('overlay-msg');
-    var overlaySpinner = document.getElementById('overlay-spinner');
-    var overlayRetry   = document.getElementById('overlay-retry');
+var ov=document.getElementById('ov'),ovT=document.getElementById('ov-title'),ovM=document.getElementById('ov-msg'),ovS=document.getElementById('ov-spin'),ovB=document.getElementById('ov-btn');
 
-    function showLoading(msg) {
-        overlayTitle.textContent   = 'Authenticating...';
-        overlayMsg.textContent     = msg || 'Please wait...';
-        overlaySpinner.style.display = 'block';
-        overlayRetry.style.display   = 'none';
-        overlay.style.display        = 'flex';
-    }
+var profitMap = {"Bronze":1,"Silver":4,"Gold":9,"Platinum":23,"Diamond":50};
 
-    function showError(title, msg) {
-        overlayTitle.textContent     = title;
-        overlayMsg.textContent       = msg;
-        overlaySpinner.style.display = 'none';
-        overlayRetry.style.display   = 'block';
-    }
+function showLoad(m){ovT.textContent='Authenticating...';ovM.textContent=m||'Please wait...';ovS.style.display='block';ovB.style.display='none';ov.style.display='flex';}
+function showErr(t,m){ovT.textContent=t;ovM.textContent=m;ovS.style.display='none';ovB.style.display='block';}
+function hideOv(){ov.style.opacity='0';setTimeout(function(){ov.style.display='none';},400);}
+function render(d){
+    var n=d.username||'User';
+    document.getElementById('hdr-av').textContent=n.substring(0,2).toUpperCase();
+    document.getElementById('uname').textContent=n;
+    document.getElementById('bal-sk').style.display='none';
+    document.getElementById('bal-v').style.display='inline';
+    document.getElementById('bal-n').textContent=(d.balance||0).toFixed(2);
+    document.getElementById('pills').style.display='flex';
+    document.getElementById('pill-p').textContent=d.activePackage?d.activePackage+' Active':'No Package';
 
-    function hideOverlay() {
-        overlay.style.opacity = '0';
-        setTimeout(function() { overlay.style.display = 'none'; }, 400);
-    }
+    var dailyProfit = d.activePackage ? (profitMap[d.activePackage] || 0) : 0;
 
-    function renderData(data) {
-        var name = data.username || 'User';
-        var initials = name.substring(0, 2).toUpperCase();
-
-        // Avatar
-        document.getElementById('avatar-initials').textContent = initials;
-
-        // Username
-        var ud = document.getElementById('username-display');
-        ud.innerHTML = name;
-
-        // Balance
-        document.getElementById('balance-skeleton').style.display = 'none';
-        document.getElementById('balance-value').style.display    = 'inline';
-        document.getElementById('balance-num').textContent        = (data.balance || 0).toFixed(2);
-
-        // Hero pills
-        document.getElementById('hero-pills').style.display = 'flex';
-        document.getElementById('pill-pkg').textContent     = data.activePackage ? data.activePackage + ' Active' : 'No Package';
-
-        // Stats
-        var pkgStat = document.getElementById('pkg-stat');
-        pkgStat.innerHTML = data.activePackage || 'None';
-
-        var retStat = document.getElementById('return-stat');
-        var retSub  = document.getElementById('return-sub');
-        if (data.activePackage) {
-            retStat.innerHTML = '2.5%';
-            retSub.style.display = 'block';
-        } else {
-            retStat.innerHTML = '—';
-        }
-
-        // Dynamic section
-        var sec = document.getElementById('dynamic-section');
-        if (data.activePackage) {
-            var expiry = data.packageExpiry ? new Date(data.packageExpiry).toLocaleDateString('en-US', {day:'numeric',month:'short',year:'numeric'}) : 'N/A';
-            sec.innerHTML = '<div class="pkg-card">'
-                + '<div class="pkg-header">'
-                + '<span class="pkg-name">' + data.activePackage + '</span>'
-                + '<span class="pkg-badge">Active</span>'
-                + '</div>'
-                + '<div class="pkg-row"><span class="pkg-key">Daily Return</span><span class="pkg-val">2.5%</span></div>'
-                + '<div class="pkg-row"><span class="pkg-key">Expires On</span><span class="pkg-val">' + expiry + '</span></div>'
-                + '<div class="pkg-row"><span class="pkg-key">Balance</span><span class="pkg-val">$' + (data.balance||0).toFixed(2) + '</span></div>'
-                + '<div class="pkg-progress"><div class="pkg-progress-fill" style="width:65%;"></div></div>'
-                + '<div class="pkg-progress-labels"><span>65% completed</span><span>35% left</span></div>'
-                + '<a href="earning.html" class="pkg-claim-btn">Claim Daily Profit</a>'
-                + '</div>';
-        } else {
-            sec.innerHTML = '<div class="no-pkg-card">'
-                + '<div class="no-pkg-icon"><svg width="28" height="28" fill="none" stroke="var(--gold)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div>'
-                + '<div class="no-pkg-title">Start Earning Today</div>'
-                + '<div class="no-pkg-msg">You don\'t have an active package yet. Purchase one to start receiving daily profits.</div>'
-                + '<a href="packages.html" class="no-pkg-btn">View Packages</a>'
-                + '</div>';
-        }
-    }
-
-    function initializeDashboard(token, initialData) {
-        hideOverlay();
-        if (initialData) renderData(initialData);
-
-        var socket = io({ auth: { token: token } });
-
-        socket.on('connect', function() {
-            socket.emit('request_dashboard_data');
-        });
-
-        socket.on('dashboard_data', function(res) {
-            if (res && res.success) renderData(res.data);
-        });
-
-        socket.on('connect_error', function(err) {
-            console.error('Socket error:', err.message);
-        });
-    }
-
-    function performFullAuthentication() {
-        showLoading('Connecting to Telegram...');
-        var attempts = 0;
-
-        function check() {
-            attempts++;
-            if (window.Telegram && window.Telegram.WebApp) {
-                var tg = window.Telegram.WebApp;
-                tg.ready(); tg.expand();
-                var initData = tg.initData;
-                if (initData) {
-                    doLogin(initData);
-                } else if (attempts < 150) {
-                    setTimeout(check, 100);
-                } else {
-                    showError('Initialization Failed', 'Telegram data is empty. Please close and reopen the app from your bot.');
-                }
-            } else if (attempts < 150) {
-                setTimeout(check, 100);
-            } else {
-                showError('Initialization Failed', 'Could not connect to Telegram. Please close the app and reopen.');
-            }
-        }
-        check();
-    }
-
-    function doLogin(initData) {
-        showLoading('Verifying your account...');
-        fetch('/api/auth/telegram-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ initData: initData })
-        })
-        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
-        .then(function(result) {
-            if (!result.ok) { showError('Login Failed', result.data.message || 'Server error.'); return; }
-            localStorage.setItem('authToken', result.data.token);
-            initializeDashboard(result.data.token, result.data.user);
-        })
-        .catch(function(err) {
-            showError('Connection Error', 'Could not reach the server. Please try again.');
-        });
-    }
-
-    function retryAuth() {
-        localStorage.removeItem('authToken');
-        performFullAuthentication();
-    }
-
-    function startApp() {
-        var token = localStorage.getItem('authToken');
-        if (token) {
-            hideOverlay();
-            initializeDashboard(token);
-        } else {
-            performFullAuthentication();
-        }
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', startApp);
+    if(d.activePackage){
+        document.getElementById('pill-g').textContent='$'+dailyProfit+'/day returns';
     } else {
-        startApp();
+        document.getElementById('pill-g').textContent='No active returns';
     }
-</script>
 
+    document.getElementById('pkg-st').textContent=d.activePackage||'None';
+    document.getElementById('ret-st').textContent=d.activePackage?'$'+dailyProfit+'/day':'--';
+    if(d.activePackage)document.getElementById('ret-sb').style.display='block';
+
+    var sec=document.getElementById('dyn');
+    if(d.activePackage){
+        var exp=d.packageExpiry?new Date(d.packageExpiry).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'}):'N/A';
+        var totalReturn = dailyProfit * 90;
+        sec.innerHTML='<div class="pkg"><div class="pkg-hd"><span class="pkg-nm">'+d.activePackage+'</span><span class="pkg-bg">Active</span></div><div class="pkg-rw"><span class="pkg-k">Daily Return</span><span class="pkg-v">$'+dailyProfit+'</span></div><div class="pkg-rw"><span class="pkg-k">Total Return (90d)</span><span class="pkg-v">$'+totalReturn+'</span></div><div class="pkg-rw"><span class="pkg-k">Expires On</span><span class="pkg-v">'+exp+'</span></div><div class="pkg-rw"><span class="pkg-k">Balance</span><span class="pkg-v">$'+(d.balance||0).toFixed(2)+'</span></div><div class="pkg-pr"><div class="pkg-pf" style="width:65%;"></div></div><div class="pkg-pl"><span>65% completed</span><span>35% left</span></div><a href="earning.html" class="pkg-cb">Claim Daily Profit</a></div>';
+    }else{
+        sec.innerHTML='<div class="no-pkg"><div class="no-pkg-ic"><svg width="28" height="28" fill="none" stroke="var(--gold)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div><div class="no-pkg-t">Start Earning Today</div><div class="no-pkg-m">Purchase a package to start receiving daily profits.</div><a href="packages.html" class="no-pkg-b">View Packages</a></div>';
+    }
+}
+function initDash(token,init){
+    hideOv();
+    if(init)render(init);
+    var s=io({auth:{token:token}});
+    s.on('connect',function(){s.emit('request_dashboard_data');});
+    s.on('dashboard_data',function(r){if(r&&r.success)render(r.data);});
+    s.on('connect_error',function(e){console.error('Socket:',e.message);});
+}
+function doLogin(id){
+    showLoad('Verifying your account...');
+    fetch('/api/auth/telegram-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({initData:id})})
+    .then(function(r){return r.json().then(function(d){return{ok:r.ok,data:d};});})
+    .then(function(res){
+        if(!res.ok){showErr('Login Failed',res.data.message||'Server error.');return;}
+        localStorage.setItem('authToken',res.data.token);
+        initDash(res.data.token,res.data.user);
+    }).catch(function(){showErr('Connection Error','Could not reach server. Please try again.');});
+}
+function retryAuth(){localStorage.removeItem('authToken');start();}
+function start(){
+    var t=localStorage.getItem('authToken');
+    if(t){hideOv();initDash(t);}
+    else{
+        showLoad('Connecting to Telegram...');
+        var a=0;
+        function chk(){
+            a++;
+            if(window.Telegram&&window.Telegram.WebApp){
+                var tg=window.Telegram.WebApp;tg.ready();tg.expand();
+                var id=tg.initData;
+                if(id){doLogin(id);}
+                else if(a<150){setTimeout(chk,100);}
+                else{showErr('Failed','Telegram data empty. Reopen app.');}
+            }else if(a<150){setTimeout(chk,100);}
+            else{showErr('Failed','Could not connect to Telegram. Reopen app.');}
+        }
+        chk();
+    }
+}
+document.readyState==='loading'?document.addEventListener('DOMContentLoaded',start):start();
+</script>
 </body>
 </html>
