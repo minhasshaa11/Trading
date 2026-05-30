@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Packages - Bond 1x</title>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" as="style">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -19,13 +20,12 @@
         .hdr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
         .hdr-logo{font-family:'Cormorant Garamond',serif;font-size:20px;font-style:italic;color:var(--gold);letter-spacing:3px;}
         .hdr-bal{text-align:right;}
-        .hdr-bal-lbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#6B5030;}
+        .hdr-bal-lbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#D4B896;}
         .hdr-bal-val{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--gold-light);}
         .hero{background:var(--brown-mid);border-radius:18px 18px 0 0;padding:20px;border:1px solid rgba(201,131,42,.15);border-bottom:none;position:relative;overflow:hidden;}
         .hero::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
         .hero-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-style:italic;color:var(--gold-light);margin-bottom:4px;}
         .hero-sub{font-size:13px;color:#D4B896;}
-
 
         /* Body */
         .bdy{padding:16px;}
@@ -55,6 +55,7 @@
         .pkg-card-btn:active{transform:scale(.97);}
         .pkg-card-btn.primary{background:var(--gold);color:var(--brown-dark);}
         .pkg-card-btn.primary:active{background:var(--gold-light);}
+        .pkg-card-btn.primary:disabled{opacity:.6;cursor:not-allowed;transform:none;}
         .pkg-card-btn.active-plan{background:var(--green);color:var(--white);cursor:default;}
         .pkg-card-btn.disabled{background:var(--cream-dark);color:var(--text-muted);cursor:not-allowed;}
 
@@ -78,6 +79,10 @@
         .modal-btn-cancel{background:var(--cream-dark);color:var(--text-main);}
         .modal-btn-confirm{background:var(--gold);color:var(--brown-dark);}
 
+        /* Skeleton */
+        .skel{background:linear-gradient(90deg,var(--cream-dark) 25%,var(--cream-border) 50%,var(--cream-dark) 75%);background-size:200% 100%;animation:sh 1.4s infinite;border-radius:6px;display:block;}
+        @keyframes sh{to{background-position:-200% 0}}
+
         /* Nav */
         .nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:420px;background:var(--brown-dark);border-radius:22px;padding:12px 8px;display:flex;justify-content:space-around;z-index:1000;box-shadow:0 8px 32px rgba(45,31,14,.25);border:1px solid rgba(201,131,42,.15);}
         .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;transition:all .2s;}
@@ -86,10 +91,6 @@
         .ni.active svg,.ni.active span{color:var(--gold);}
         .nd{width:3px;height:3px;border-radius:50%;background:var(--gold);margin-top:1px;display:none;}
         .ni.active .nd{display:block;}
-
-        /* Skeleton */
-        .skel{background:linear-gradient(90deg,var(--cream-dark) 25%,var(--cream-border) 50%,var(--cream-dark) 75%);background-size:200% 100%;animation:sh 1.4s infinite;border-radius:6px;display:block;}
-        @keyframes sh{to{background-position:-200% 0}}
     </style>
 </head>
 <body>
@@ -165,9 +166,15 @@ document.addEventListener('DOMContentLoaded', function() {
         "Diamond":  {price:1000, dailyProfit:50,  durationDays:90}
     };
 
+    // FIX: 401 auth error handler
+    function handleAuth(r){
+        if(r.status===401){localStorage.removeItem('authToken');window.location.reload();return true;}
+        return false;
+    }
+
     function showCustomConfirm(packageName, onConfirm) {
         modalTitle.textContent = 'Confirm Purchase';
-        modalText.textContent = 'Are you sure you want to purchase the ' + packageName + ' Plan?';
+        modalText.textContent = 'Are you sure you want to purchase the ' + packageName + ' Plan for $' + packages[packageName].price + ' USDT?';
         modal.style.display = 'flex';
         function confirmHandler(){onConfirm();cleanup();}
         function cancelHandler(){cleanup();}
@@ -187,8 +194,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function fetchUserStatus() {
         fetch('/api/user/info',{headers:headers})
-        .then(function(r){return r.json();})
+        .then(function(r){
+            if(handleAuth(r))return;
+            return r.json();
+        })
         .then(function(result){
+            if(!result)return;
             if(result.success){
                 userBalance = result.user.balance;
                 balanceDisplay.innerHTML = '<sup>$</sup>' + userBalance.toFixed(2);
@@ -196,21 +207,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 renderPackages();
             } else { throw new Error(result.message); }
         })
-        .catch(function(){
-            showStatus('Could not load user data. Please try again.', true);
+        .catch(function(err){
+            if(err)showStatus('Could not load user data. Please try again.', true);
         });
     }
 
     function purchasePackage(packageName) {
         showCustomConfirm(packageName, function(){
             showStatus('Processing your purchase...', false);
+            // FIX: Find and disable the clicked button immediately
+            var allBtns = packagesContainer.querySelectorAll('.purchase-btn');
+            for(var b=0; b<allBtns.length; b++){allBtns[b].disabled=true;}
+
             fetch('/api/user/purchase-package',{
                 method:'POST',
                 headers:headers,
                 body:JSON.stringify({packageName:packageName})
             })
-            .then(function(r){return r.json();})
+            .then(function(r){
+                if(handleAuth(r))return;
+                return r.json();
+            })
             .then(function(result){
+                if(!result)return;
                 if(result.success){
                     showStatus(result.message, false);
                     confetti({particleCount:150,spread:90,origin:{y:0.6},colors:['#C9832A','#E8A84A','#3D7A52']});
@@ -219,8 +238,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     showStatus(result.message, true);
                 }
             })
-            .catch(function(){
-                showStatus('An error occurred. Please try again.', true);
+            .catch(function(err){
+                if(err)showStatus('An error occurred. Please try again.', true);
+            })
+            // FIX: .finally() added - buttons re-enable honge chahe error aaye ya success
+            .finally(function(){
+                var allBtns = packagesContainer.querySelectorAll('.purchase-btn');
+                for(var b=0; b<allBtns.length; b++){allBtns[b].disabled=false;}
             });
         });
     }
@@ -252,10 +276,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             card.innerHTML = '<div class="pkg-card-hd"><span class="pkg-card-nm">' + name + ' Plan</span>' + badgeHtml + '</div>' +
-                '<div class="pkg-card-hd" style="margin-bottom:14px;"><span class="pkg-card-price"><sup>$</sup>' + details.price.toLocaleString() + '</span></div>' +
-                '<div class="pkg-card-row"><span class="pkg-card-k">Daily Profit</span><span class="pkg-card-v">$' + details.dailyProfit.toLocaleString() + '</span></div>' +
+                '<div class="pkg-card-hd" style="margin-bottom:14px;"><span class="pkg-card-price"><sup>$</sup>' + details.price.toLocaleString() + ' <span style="font-size:12px;color:var(--text-muted);font-family:DM Sans,sans-serif;">USDT</span></span></div>' +
+                '<div class="pkg-card-row"><span class="pkg-card-k">Daily Profit</span><span class="pkg-card-v">$' + details.dailyProfit.toLocaleString() + ' USDT</span></div>' +
                 '<div class="pkg-card-row"><span class="pkg-card-k">Duration</span><span class="pkg-card-v">' + details.durationDays + ' Days</span></div>' +
-                '<div class="pkg-card-row"><span class="pkg-card-k">Total Return</span><span class="pkg-card-v">$' + (details.dailyProfit * details.durationDays).toLocaleString() + '</span></div>' +
+                '<div class="pkg-card-row"><span class="pkg-card-k">Total Return</span><span class="pkg-card-v">$' + (details.dailyProfit * details.durationDays).toLocaleString() + ' USDT</span></div>' +
                 btnHtml;
 
             if(canInteract){
