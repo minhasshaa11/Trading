@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Packages - Bond 1x</title>
     <script defer src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" as="style">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -13,8 +12,6 @@
         :root{--cream:#FBF8F3;--cream-dark:#F2EDE4;--cream-border:#E8DFD0;--brown-dark:#2D1F0E;--brown-mid:#4A3020;--brown-light:#8B6040;--gold:#C9832A;--gold-light:#E8A84A;--gold-pale:#F5E8D0;--green:#3D7A52;--text-main:#1E140A;--text-muted:#9A8070;--white:#FFFFFF;}
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
         body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-main);min-height:100vh;padding-bottom:90px;overflow-x:hidden;}
-
-        /* Header */
         .hdr{background:var(--brown-dark);padding:20px 20px 0;position:relative;overflow:hidden;}
         .hdr::before{content:'';position:absolute;top:-60px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(201,131,42,.15),transparent 70%);}
         .hdr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
@@ -26,12 +23,8 @@
         .hero::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
         .hero-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-style:italic;color:var(--gold-light);margin-bottom:4px;}
         .hero-sub{font-size:13px;color:#D4B896;}
-
-        /* Body */
         .bdy{padding:16px;}
         .sec-lbl{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px;margin-top:4px;}
-
-        /* Package Cards */
         .pkg-grid{display:flex;flex-direction:column;gap:14px;}
         .pkg-card{background:var(--white);border:1px solid var(--cream-border);border-radius:16px;padding:20px;border-left:4px solid var(--gold);box-shadow:0 4px 20px rgba(45,31,14,.06);animation:fu .4s ease both;transition:transform .2s;}
         .pkg-card:nth-child(2){animation-delay:.06s;}
@@ -41,16 +34,13 @@
         .pkg-card:active{transform:scale(.98);}
         .pkg-card.dimmed{opacity:.5;}
         @keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-
         .pkg-card-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
         .pkg-card-nm{font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;color:var(--text-main);}
         .pkg-card-price{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--gold);}
         .pkg-card-price sup{font-size:14px;vertical-align:top;margin-top:4px;display:inline-block;}
-
         .pkg-card-row{display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;}
         .pkg-card-k{color:var(--text-muted);}
         .pkg-card-v{color:var(--text-main);font-weight:500;}
-
         .pkg-card-btn{width:100%;border:none;border-radius:12px;padding:14px;font-family:'DM Sans',sans-serif;font-size:13px;letter-spacing:1px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:14px;display:block;text-align:center;}
         .pkg-card-btn:active{transform:scale(.97);}
         .pkg-card-btn.primary{background:var(--gold);color:var(--brown-dark);}
@@ -58,17 +48,12 @@
         .pkg-card-btn.primary:disabled{opacity:.6;cursor:not-allowed;transform:none;}
         .pkg-card-btn.active-plan{background:var(--green);color:var(--white);cursor:default;}
         .pkg-card-btn.disabled{background:var(--cream-dark);color:var(--text-muted);cursor:not-allowed;}
-
         .pkg-card-badge{font-size:10px;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:20px;font-weight:500;}
         .badge-active{background:rgba(61,122,82,.12);border:1px solid rgba(61,122,82,.3);color:var(--green);}
         .badge-popular{background:rgba(201,131,42,.12);border:1px solid rgba(201,131,42,.3);color:var(--gold);}
-
-        /* Status */
         .status-msg{text-align:center;margin-top:16px;min-height:24px;font-size:13px;font-weight:500;}
         .status-msg.error{color:#C0392B;}
         .status-msg.success{color:var(--green);}
-
-        /* Modal */
         .modal-ov{position:fixed;inset:0;background:rgba(45,31,14,.6);display:none;align-items:center;justify-content:center;z-index:2000;backdrop-filter:blur(4px);}
         .modal-box{background:var(--white);border:1px solid var(--cream-border);border-radius:20px;padding:28px;text-align:center;width:calc(100% - 48px);max-width:340px;box-shadow:0 12px 40px rgba(45,31,14,.15);}
         .modal-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;margin-bottom:10px;}
@@ -78,12 +63,8 @@
         .modal-btn:active{transform:scale(.96);}
         .modal-btn-cancel{background:var(--cream-dark);color:var(--text-main);}
         .modal-btn-confirm{background:var(--gold);color:var(--brown-dark);}
-
-        /* Skeleton */
         .skel{background:linear-gradient(90deg,var(--cream-dark) 25%,var(--cream-border) 50%,var(--cream-dark) 75%);background-size:200% 100%;animation:sh 1.4s infinite;border-radius:6px;display:block;}
         @keyframes sh{to{background-position:-200% 0}}
-
-        /* Nav */
         .nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:420px;background:var(--brown-dark);border-radius:22px;padding:12px 8px;display:flex;justify-content:space-around;z-index:1000;box-shadow:0 8px 32px rgba(45,31,14,.25);border:1px solid rgba(201,131,42,.15);}
         .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;transition:all .2s;}
         .ni svg{color:#9A8060;transition:color .2s;}
@@ -115,14 +96,12 @@
 <div class="bdy">
     <div class="sec-lbl">Available Plans</div>
     <div class="pkg-grid" id="packages-container">
-        <!-- Skeleton cards -->
         <div class="pkg-card"><div class="pkg-card-hd"><span class="skel" style="width:100px;height:24px;"></span><span class="skel" style="width:70px;height:28px;"></span></div><span class="skel" style="width:100%;height:13px;margin-bottom:8px;"></span><span class="skel" style="width:80%;height:13px;margin-bottom:14px;"></span><span class="skel" style="width:100%;height:48px;border-radius:12px;"></span></div>
         <div class="pkg-card"><div class="pkg-card-hd"><span class="skel" style="width:100px;height:24px;"></span><span class="skel" style="width:70px;height:28px;"></span></div><span class="skel" style="width:100%;height:13px;margin-bottom:8px;"></span><span class="skel" style="width:80%;height:13px;margin-bottom:14px;"></span><span class="skel" style="width:100%;height:48px;border-radius:12px;"></span></div>
     </div>
     <div class="status-msg" id="status-message"></div>
 </div>
 
-<!-- Confirm Modal -->
 <div id="custom-confirm-modal" class="modal-ov">
     <div class="modal-box">
         <div class="modal-title" id="modal-title">Confirm Purchase</div>
@@ -157,6 +136,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     var activeUserPackage = null;
     var userBalance = 0;
+    /* FIX 2: Purchase in-progress flag to prevent double clicks */
+    var isPurchasing = false;
 
     var packages = {
         "Bronze":   {price:30,   dailyProfit:1,   durationDays:90},
@@ -166,9 +147,20 @@ document.addEventListener('DOMContentLoaded', function() {
         "Diamond":  {price:1000, dailyProfit:50,  durationDays:90}
     };
 
-    // FIX: 401 auth error handler
+    /* FIX 1: XSS protection helper */
+    function esc(str) {
+        if (typeof str !== 'string') return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
     function handleAuth(r){
-        if(r.status===401){localStorage.removeItem('authToken');window.location.reload();return true;}
+        if(r.status === 401){
+            localStorage.removeItem('authToken');
+            window.location.href = '/login.html';
+            return true;
+        }
         return false;
     }
 
@@ -176,15 +168,22 @@ document.addEventListener('DOMContentLoaded', function() {
         modalTitle.textContent = 'Confirm Purchase';
         modalText.textContent = 'Are you sure you want to purchase the ' + packageName + ' Plan for $' + packages[packageName].price + ' USDT?';
         modal.style.display = 'flex';
-        function confirmHandler(){onConfirm();cleanup();}
-        function cancelHandler(){cleanup();}
-        function cleanup(){
-            modal.style.display='none';
-            modalConfirmBtn.removeEventListener('click',confirmHandler);
-            modalCancelBtn.removeEventListener('click',cancelHandler);
+
+        function confirmHandler(){ cleanup(); onConfirm(); }
+        function cancelHandler(){ cleanup(); }
+        /* FIX 3: Backdrop click to close modal */
+        function backdropHandler(e){
+            if(e.target === modal) cleanup();
         }
-        modalConfirmBtn.addEventListener('click',confirmHandler);
-        modalCancelBtn.addEventListener('click',cancelHandler);
+        function cleanup(){
+            modal.style.display = 'none';
+            modalConfirmBtn.removeEventListener('click', confirmHandler);
+            modalCancelBtn.removeEventListener('click', cancelHandler);
+            modal.removeEventListener('click', backdropHandler);
+        }
+        modalConfirmBtn.addEventListener('click', confirmHandler);
+        modalCancelBtn.addEventListener('click', cancelHandler);
+        modal.addEventListener('click', backdropHandler);
     }
 
     function showStatus(message, isError) {
@@ -193,58 +192,75 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function fetchUserStatus() {
-        fetch('/api/user/info',{headers:headers})
+        fetch('/api/user/info', { headers: headers })
         .then(function(r){
-            if(handleAuth(r))return;
+            if(handleAuth(r)) return null;
             return r.json();
         })
         .then(function(result){
-            if(!result)return;
+            if(!result) return;
             if(result.success){
                 userBalance = result.user.balance;
-                balanceDisplay.innerHTML = '<sup>$</sup>' + userBalance.toFixed(2);
+                /* FIX 1: Use textContent for balance display */
+                balanceDisplay.textContent = '';
+                var sup = document.createElement('sup');
+                sup.textContent = '$';
+                balanceDisplay.appendChild(sup);
+                balanceDisplay.appendChild(document.createTextNode(userBalance.toFixed(2)));
                 activeUserPackage = result.user.active_package;
                 renderPackages();
-            } else { throw new Error(result.message); }
+            } else {
+                showStatus(result.message || 'Could not load user data.', true);
+            }
         })
         .catch(function(err){
-            if(err)showStatus('Could not load user data. Please try again.', true);
+            console.error('Fetch user error:', err);
+            showStatus('Could not load user data. Please try again.', true);
         });
     }
 
     function purchasePackage(packageName) {
-        showCustomConfirm(packageName, function(){
-            showStatus('Processing your purchase...', false);
-            // FIX: Find and disable the clicked button immediately
-            var allBtns = packagesContainer.querySelectorAll('.purchase-btn');
-            for(var b=0; b<allBtns.length; b++){allBtns[b].disabled=true;}
+        /* FIX 2: Prevent double purchase */
+        if(isPurchasing) return;
 
-            fetch('/api/user/purchase-package',{
-                method:'POST',
-                headers:headers,
-                body:JSON.stringify({packageName:packageName})
+        showCustomConfirm(packageName, function(){
+            isPurchasing = true;
+            showStatus('Processing your purchase...', false);
+
+            var allBtns = packagesContainer.querySelectorAll('.purchase-btn');
+            for(var b = 0; b < allBtns.length; b++){ allBtns[b].disabled = true; }
+
+            fetch('/api/user/purchase-package', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ packageName: packageName })
             })
             .then(function(r){
-                if(handleAuth(r))return;
+                if(handleAuth(r)) return null;
                 return r.json();
             })
             .then(function(result){
-                if(!result)return;
+                if(!result) return;
                 if(result.success){
-                    showStatus(result.message, false);
-                    confetti({particleCount:150,spread:90,origin:{y:0.6},colors:['#C9832A','#E8A84A','#3D7A52']});
+                    showStatus(result.message || 'Package purchased successfully!', false);
+                    /* FIX 7: Check if confetti is loaded before calling */
+                    if(typeof confetti === 'function'){
+                        confetti({particleCount:150, spread:90, origin:{y:0.6}, colors:['#C9832A','#E8A84A','#3D7A52']});
+                    }
                     fetchUserStatus();
                 } else {
-                    showStatus(result.message, true);
+                    showStatus(result.message || 'Purchase failed.', true);
                 }
             })
             .catch(function(err){
-                if(err)showStatus('An error occurred. Please try again.', true);
+                console.error('Purchase error:', err);
+                showStatus('An error occurred. Please try again.', true);
             })
-            // FIX: .finally() added - buttons re-enable honge chahe error aaye ya success
             .finally(function(){
+                /* FIX 2: Reset purchasing flag */
+                isPurchasing = false;
                 var allBtns = packagesContainer.querySelectorAll('.purchase-btn');
-                for(var b=0; b<allBtns.length; b++){allBtns[b].disabled=false;}
+                for(var b = 0; b < allBtns.length; b++){ allBtns[b].disabled = false; }
             });
         });
     }
@@ -252,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderPackages() {
         packagesContainer.innerHTML = '';
         var names = Object.keys(packages);
-        for(var i=0; i<names.length; i++){
+        for(var i = 0; i < names.length; i++){
             var name = names[i];
             var details = packages[name];
             var isAffordable = userBalance >= details.price;
@@ -262,6 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var card = document.createElement('div');
             card.className = 'pkg-card' + (!isAffordable && !isCurrentPlan ? ' dimmed' : '');
 
+            /* FIX 1: Use esc() for all dynamic values */
             var badgeHtml = '';
             if(isCurrentPlan) badgeHtml = '<span class="pkg-card-badge badge-active">Active</span>';
             else if(name === 'Gold') badgeHtml = '<span class="pkg-card-badge badge-popular">Popular</span>';
@@ -275,16 +292,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnHtml = '<button class="pkg-card-btn primary purchase-btn">Activate Plan</button>';
             }
 
-            card.innerHTML = '<div class="pkg-card-hd"><span class="pkg-card-nm">' + name + ' Plan</span>' + badgeHtml + '</div>' +
-                '<div class="pkg-card-hd" style="margin-bottom:14px;"><span class="pkg-card-price"><sup>$</sup>' + details.price.toLocaleString() + ' <span style="font-size:12px;color:var(--text-muted);font-family:DM Sans,sans-serif;">USDT</span></span></div>' +
-                '<div class="pkg-card-row"><span class="pkg-card-k">Daily Profit</span><span class="pkg-card-v">$' + details.dailyProfit.toLocaleString() + ' USDT</span></div>' +
-                '<div class="pkg-card-row"><span class="pkg-card-k">Duration</span><span class="pkg-card-v">' + details.durationDays + ' Days</span></div>' +
-                '<div class="pkg-card-row"><span class="pkg-card-k">Total Return</span><span class="pkg-card-v">$' + (details.dailyProfit * details.durationDays).toLocaleString() + ' USDT</span></div>' +
+            card.innerHTML = '<div class="pkg-card-hd"><span class="pkg-card-nm">' + esc(name) + ' Plan</span>' + badgeHtml + '</div>' +
+                '<div class="pkg-card-hd" style="margin-bottom:14px;"><span class="pkg-card-price"><sup>$</sup>' + esc(details.price.toLocaleString()) + ' <span style="font-size:12px;color:var(--text-muted);font-family:DM Sans,sans-serif;">USDT</span></span></div>' +
+                '<div class="pkg-card-row"><span class="pkg-card-k">Daily Profit</span><span class="pkg-card-v">$' + esc(details.dailyProfit.toLocaleString()) + ' USDT</span></div>' +
+                '<div class="pkg-card-row"><span class="pkg-card-k">Duration</span><span class="pkg-card-v">' + esc(String(details.durationDays)) + ' Days</span></div>' +
+                '<div class="pkg-card-row"><span class="pkg-card-k">Total Return</span><span class="pkg-card-v">$' + esc((details.dailyProfit * details.durationDays).toLocaleString()) + ' USDT</span></div>' +
                 btnHtml;
 
             if(canInteract){
                 (function(n){
-                    card.querySelector('.purchase-btn').addEventListener('click', function(){purchasePackage(n);});
+                    card.querySelector('.purchase-btn').addEventListener('click', function(){ purchasePackage(n); });
                 })(name);
             }
             packagesContainer.appendChild(card);
