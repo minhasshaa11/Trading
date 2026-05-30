@@ -2,223 +2,192 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Support Chat - Investment App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Support Chat - Bond 1x</title>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" as="style">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-dark-navy: #0A0D14;
-            --text-off-white: #F0F0F0;
-            --accent-magenta: #BE38F3;
-            --accent-magenta-rgb: 190, 56, 243;
-            --accent-teal: #00F5D4;
-        }
+        :root{--cream:#FBF8F3;--cream-dark:#F2EDE4;--cream-border:#E8DFD0;--brown-dark:#2D1F0E;--brown-mid:#4A3020;--brown-light:#8B6040;--gold:#C9832A;--gold-light:#E8A84A;--gold-pale:#F5E8D0;--green:#3D7A52;--text-main:#1E140A;--text-muted:#9A8070;--white:#FFFFFF;}
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+        body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-main);min-height:100vh;overflow-x:hidden;display:flex;flex-direction:column;}
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark-navy);
-            color: var(--text-off-white);
-            padding-bottom: 100px;
-            overflow-x: hidden;
-        }
-        
-        .card {
-            background-color: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
+        /* Header */
+        .hdr{background:var(--brown-dark);padding:20px 20px 0;position:relative;overflow:hidden;}
+        .hdr::before{content:'';position:absolute;top:-60px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(201,131,42,.15),transparent 70%);}
+        .hdr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+        .hdr-logo{font-family:'Cormorant Garamond',serif;font-size:20px;font-style:italic;color:var(--gold);letter-spacing:3px;}
+        .hdr-back{font-size:12px;color:#D4B896;text-decoration:none;font-weight:500;transition:color .2s;}
+        .hdr-back:active{color:var(--gold-light);}
+        .hero{background:var(--brown-mid);border-radius:18px 18px 0 0;padding:20px;border:1px solid rgba(201,131,42,.15);border-bottom:none;position:relative;overflow:hidden;}
+        .hero::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+        .hero-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-style:italic;color:var(--gold-light);margin-bottom:4px;}
+        .hero-sub{font-size:13px;color:#D4B896;}
 
-        .chat-container {
-            max-height: calc(100vh - 180px);
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column-reverse;
-        }
-        
-        .message {
-            max-width: 80%;
-            padding: 10px 14px;
-            border-radius: 12px;
-            margin-bottom: 8px;
-            word-wrap: break-word;
-        }
+        /* Chat Area */
+        .chat-wrap{flex:1;padding:16px;display:flex;flex-direction:column;padding-bottom:80px;}
+        .chat-card{background:var(--white);border:1px solid var(--cream-border);border-radius:16px;padding:16px;box-shadow:0 4px 20px rgba(45,31,14,.06);flex:1;display:flex;flex-direction:column;}
+        .chat-container{flex:1;overflow-y:auto;display:flex;flex-direction:column-reverse;max-height:calc(100vh - 280px);}
 
-        .user-message {
-            align-self: flex-end;
-            background-color: rgba(var(--accent-magenta-rgb), 0.3);
-            margin-left: auto;
-        }
+        /* Messages */
+        .message{max-width:80%;padding:10px 14px;border-radius:14px;margin-bottom:8px;font-size:13px;line-height:1.5;word-wrap:break-word;animation:fu .3s ease both;}
+        @keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-        .admin-message {
-            align-self: flex-start;
-            background-color: rgba(255, 255, 255, 0.1);
-            margin-right: auto;
-        }
+        .user-message{align-self:flex-end;margin-left:auto;background:var(--gold);color:var(--brown-dark);border-bottom-right-radius:4px;}
+        .admin-message{align-self:flex-start;margin-right:auto;background:var(--cream-dark);color:var(--text-main);border:1px solid var(--cream-border);border-bottom-left-radius:4px;}
 
-        .chat-input-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 16px;
-            background-color: var(--bg-dark-navy);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 1000;
-        }
+        .msg-time{display:block;font-size:10px;margin-top:4px;opacity:.6;}
+        .user-message .msg-time{color:var(--brown-mid);}
+        .admin-message .msg-time{color:var(--text-muted);}
+
+        /* Status text */
+        .chat-status{text-align:center;color:var(--text-muted);padding:16px 0;font-size:13px;}
+
+        /* Input Bar */
+        .chat-input-bar{position:fixed;bottom:0;left:0;width:100%;padding:14px 16px;background:var(--white);border-top:1px solid var(--cream-border);z-index:1000;box-shadow:0 -4px 16px rgba(45,31,14,.06);}
+        .chat-input-inner{display:flex;gap:10px;max-width:600px;margin:0 auto;}
+        .chat-input{flex:1;background:var(--cream-dark);border:1px solid var(--cream-border);border-radius:12px;padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-main);outline:none;transition:border-color .2s;}
+        .chat-input:focus{border-color:var(--gold);}
+        .chat-input::placeholder{color:var(--text-muted);}
+        .chat-send-btn{background:var(--gold);border:none;border-radius:12px;padding:12px 20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--brown-dark);cursor:pointer;transition:all .2s;white-space:nowrap;}
+        .chat-send-btn:active{background:var(--gold-light);transform:scale(.96);}
+        .chat-send-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
     </style>
 </head>
 <body>
 
-    <div class="container mx-auto p-4 max-w-3xl relative z-10">
-
-        <header class="flex items-center justify-between mb-4">
-            <h1 class="text-2xl font-bold">Customer Support Chat</h1>
-            <a href="/profile.html" class="text-sm font-medium text-gray-400 hover:text-white transition-colors">&larr; Back to Profile</a>
-        </header>
-
-        <div class="card p-4">
-            <div id="chat-container" class="chat-container space-y-4">
-                <p id="chat-status" class="text-center text-gray-400 py-4">Loading chat history...</p>
-                </div>
-        </div>
-
+<div class="hdr">
+    <div class="hdr-top">
+        <div class="hdr-logo">Bond 1x</div>
+        <a href="profile.html" class="hdr-back">&larr; Back to Profile</a>
     </div>
+    <div class="hero">
+        <div class="hero-title">Customer Support</div>
+        <div class="hero-sub">We're here to help you</div>
+    </div>
+</div>
 
-    <div class="chat-input-bar">
-        <div class="container mx-auto max-w-3xl flex space-x-3">
-            <input type="text" id="message-input" placeholder="Type your message..." 
-                   class="flex-1 rounded-lg bg-black/20 p-3 text-gray-300 border border-white/10 focus:ring-2 focus:ring-offset-2 focus:ring-offset-bg-dark-navy focus:ring-blue-500 focus:outline-none"
-                   style="transition: all 0.2s ease-in-out;">
-            <button id="send-btn" 
-                    class="px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                Send
-            </button>
+<div class="chat-wrap">
+    <div class="chat-card">
+        <div id="chat-container" class="chat-container">
+            <p id="chat-status" class="chat-status">Loading chat history...</p>
         </div>
     </div>
+</div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!localStorage.getItem('authToken')) { window.location.href = '/login.html'; }
+<div class="chat-input-bar">
+    <div class="chat-input-inner">
+        <input type="text" id="message-input" class="chat-input" placeholder="Type your message...">
+        <button id="send-btn" class="chat-send-btn" disabled>Send</button>
+    </div>
+</div>
 
-            const token = localStorage.getItem('authToken');
-            const headers = { 'x-auth-token': token, 'Content-Type': 'application/json' };
-            
-            const chatContainer = document.getElementById('chat-container');
-            const chatStatus = document.getElementById('chat-status');
-            const messageInput = document.getElementById('message-input');
-            const sendBtn = document.getElementById('send-btn');
-            
-            let chatId = null;
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!localStorage.getItem('authToken')) { window.location.href = '/login.html'; }
 
-            const scrollToBottom = () => {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            };
+        var token = localStorage.getItem('authToken');
+        var headers = { 'x-auth-token': token, 'Content-Type': 'application/json' };
 
-            const renderMessage = (message) => {
-                const isUser = message.sender === 'user';
-                const messageEl = document.createElement('div');
-                messageEl.className = `message ${isUser ? 'user-message' : 'admin-message'} text-sm`;
-                messageEl.innerHTML = `
-                    <p>${message.content}</p>
-                    <span class="block text-xs mt-1 opacity-60">${new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                `;
-                // Prepend to maintain reverse-order structure
-                chatContainer.prepend(messageEl); 
-            };
-            
-            // --- UPDATED INITIALIZE FUNCTION FOR ROBUST ERROR HANDLING ---
-            const initializeChat = async () => {
-                chatStatus.textContent = 'Initializing chat thread...';
-                sendBtn.disabled = true;
+        var chatContainer = document.getElementById('chat-container');
+        var chatStatus = document.getElementById('chat-status');
+        var messageInput = document.getElementById('message-input');
+        var sendBtn = document.getElementById('send-btn');
 
-                try {
-                    const res = await fetch('/api/user/support/initialize-chat', { headers });
+        var chatId = null;
 
-                    if (!res.ok) {
-                        // Handle non-200 responses (401, 500, etc.)
-                        let errorDetails = await res.text();
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function renderMessage(message) {
+            var isUser = message.sender === 'user';
+            var messageEl = document.createElement('div');
+            messageEl.className = 'message ' + (isUser ? 'user-message' : 'admin-message');
+            messageEl.innerHTML =
+                '<p>' + message.content + '</p>' +
+                '<span class="msg-time">' + new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '</span>';
+            chatContainer.prepend(messageEl);
+        }
+
+        function initializeChat() {
+            chatStatus.textContent = 'Initializing chat thread...';
+            sendBtn.disabled = true;
+
+            fetch('/api/user/support/initialize-chat', { headers: headers })
+            .then(function(res) {
+                if (!res.ok) {
+                    return res.text().then(function(errorDetails) {
                         try {
-                            // Try to parse JSON if the server sent an error object
-                            const errorJson = JSON.parse(errorDetails);
+                            var errorJson = JSON.parse(errorDetails);
                             errorDetails = errorJson.message || errorDetails;
-                        } catch (e) {
-                            // If parsing failed, use the raw text
-                        }
-                        
-                        chatStatus.textContent = `Server Error (${res.status}): ${errorDetails}`;
-                        return; 
-                    }
-
-                    const data = await res.json();
-                    
+                        } catch (e) {}
+                        chatStatus.textContent = 'Server Error (' + res.status + '): ' + errorDetails;
+                    });
+                }
+                return res.json().then(function(data) {
                     if (data.success && data.chatId) {
-                        // SUCCESS PATH: Thread loaded
                         chatId = data.chatId;
                         chatStatus.style.display = 'none';
-                        data.messages.reverse().forEach(renderMessage); 
+                        var msgs = data.messages.slice().reverse();
+                        for (var i = 0; i < msgs.length; i++) {
+                            renderMessage(msgs[i]);
+                        }
                         scrollToBottom();
                         sendBtn.disabled = false;
                     } else if (data.success) {
-                        // NEW CHAT PATH: New thread created
-                        chatId = data.newChatId || data.chatId; 
+                        chatId = data.newChatId || data.chatId;
                         chatStatus.textContent = 'New chat started. Send your first message!';
                         sendBtn.disabled = false;
                     } else {
-                        // FALLBACK: Status 200, but success: false in JSON body
                         chatStatus.textContent = data.message || 'Error: Could not initialize chat.';
                     }
-
-                } catch (error) {
-                    console.error('Chat initialization failed:', error);
-                    chatStatus.textContent = 'A critical error occurred. Check your network or server console.';
-                }
-            };
-            
-            const sendMessage = async () => {
-                const content = messageInput.value.trim();
-                if (!content || !chatId) return;
-
-                messageInput.value = '';
-                sendBtn.disabled = true;
-
-                // Optimistically render the message (assume success)
-                const tempMessage = { content, sender: 'user', timestamp: new Date() };
-                renderMessage(tempMessage);
-                scrollToBottom();
-
-                try {
-                    const res = await fetch('/api/user/support/send-message', {
-                        method: 'POST',
-                        headers,
-                        body: JSON.stringify({ chatId, content })
-                    });
-                    
-                    if (!res.ok) {
-                         alert('Message failed to send. Please try refreshing.');
-                    }
-                } catch (error) {
-                    alert('Network error while sending message.');
-                } finally {
-                    sendBtn.disabled = false;
-                    messageInput.focus();
-                }
-            };
-
-            // Event Listeners
-            sendBtn.addEventListener('click', sendMessage);
-            messageInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') sendMessage();
+                });
+            })
+            .catch(function(error) {
+                console.error('Chat initialization failed:', error);
+                chatStatus.textContent = 'A critical error occurred. Check your network or server console.';
             });
+        }
 
-            // Start the process
-            initializeChat();
+        function sendMessage() {
+            var content = messageInput.value.trim();
+            if (!content || !chatId) return;
+
+            messageInput.value = '';
+            sendBtn.disabled = true;
+
+            var tempMessage = { content: content, sender: 'user', timestamp: new Date() };
+            renderMessage(tempMessage);
+            scrollToBottom();
+
+            fetch('/api/user/support/send-message', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ chatId: chatId, content: content })
+            })
+            .then(function(res) {
+                if (!res.ok) {
+                    alert('Message failed to send. Please try refreshing.');
+                }
+            })
+            .catch(function(error) {
+                alert('Network error while sending message.');
+            })
+            .finally(function() {
+                sendBtn.disabled = false;
+                messageInput.focus();
+            });
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendMessage();
         });
-    </script>
+
+        initializeChat();
+    });
+</script>
 </body>
 </html>
