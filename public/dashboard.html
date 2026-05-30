@@ -3,351 +3,573 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Dashboard - Investment Platform</title>
-    <!-- KEY FIX: Local copy of Telegram script - loads faster than CDN -->
+    <title>Bond 1x — Dashboard</title>
     <script src="/telegram-web-app.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark-navy: #0A0D14;
-            --text-off-white: #F0F0F0;
-            --accent-magenta: #BE38F3;
-            --accent-magenta-rgb: 190, 56, 243;
-            --accent-teal: #00F5D4;
+            --cream:       #FBF8F3;
+            --cream-dark:  #F2EDE4;
+            --cream-border:#E8DFD0;
+            --brown-dark:  #2D1F0E;
+            --brown-mid:   #4A3020;
+            --brown-light: #8B6040;
+            --gold:        #C9832A;
+            --gold-light:  #E8A84A;
+            --gold-pale:   #F5E8D0;
+            --green:       #3D7A52;
+            --text-main:   #1E140A;
+            --text-muted:  #9A8070;
+            --white:       #FFFFFF;
         }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark-navy);
-            color: var(--text-off-white);
-            padding-bottom: 100px;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-bottom: 90px;
             overflow-x: hidden;
         }
 
-        .aurora-background {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: -1;
-            overflow: hidden;
+        /* ── Loading Overlay ── */
+        .overlay {
+            position: fixed; inset: 0;
+            background: var(--brown-dark);
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column; text-align: center;
+            z-index: 9999;
+            transition: opacity 0.4s ease;
         }
-
-        .aurora-background::before,
-        .aurora-background::after {
-            content: '';
-            position: absolute;
-            width: 800px; height: 800px;
-            border-radius: 50%;
-            opacity: 0.2;
-            mix-blend-mode: screen;
-            filter: blur(100px);
-            will-change: transform;
+        .overlay-logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 32px; font-style: italic;
+            color: var(--gold); letter-spacing: 4px;
+            margin-bottom: 24px;
         }
-
-        .aurora-background::before {
-            background: radial-gradient(circle, var(--accent-magenta), transparent 60%);
-            top: -20%; left: -20%;
-            animation: moveGradientOne 25s ease-in-out infinite alternate;
-        }
-
-        .aurora-background::after {
-            background: radial-gradient(circle, var(--accent-teal), transparent 60%);
-            bottom: -20%; right: -20%;
-            animation: moveGradientTwo 30s ease-in-out infinite alternate;
-        }
-
-        @keyframes moveGradientOne {
-            from { transform: translate(-20%, -20%) rotate(0deg); }
-            to   { transform: translate(20%, 20%) rotate(180deg); }
-        }
-
-        @keyframes moveGradientTwo {
-            from { transform: translate(20%, 20%) rotate(0deg); }
-            to   { transform: translate(-20%, -20%) rotate(360deg); }
-        }
-
-        .card {
-            background-color: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-
-        .bottom-nav {
-            position: fixed;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: calc(100% - 32px);
-            max-width: 400px;
-            display: flex;
-            justify-content: space-around;
-            z-index: 1000;
-            background-color: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 12px 0;
-            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.2);
-        }
-
-        .nav-link {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex-grow: 1;
-            text-decoration: none;
-            color: #A0A0A0;
-            font-weight: 500;
-            font-size: 0.75rem;
-            transition: all 0.2s ease-in-out;
-            gap: 4px;
-        }
-
-        .nav-link svg { width: 24px; height: 24px; }
-
-        .nav-link.active {
-            color: var(--accent-magenta);
-            font-weight: 700;
-            transform: translateY(-2px);
-        }
-
-        .skeleton {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 0.25rem;
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-
-        @keyframes pulse { 50% { opacity: .5; } }
-
-        .status-overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            z-index: 2000;
-            background-color: var(--bg-dark-navy);
-        }
-
-        /* Spinner for loading state */
-        .spinner {
-            width: 40px; height: 40px;
-            border: 4px solid rgba(255,255,255,0.1);
-            border-top-color: var(--accent-teal);
+        .overlay-spinner {
+            width: 36px; height: 36px;
+            border: 2px solid rgba(201,131,42,0.2);
+            border-top-color: var(--gold);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            margin: 0 auto 16px auto;
+            margin-bottom: 16px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Retry button */
-        .retry-btn {
-            margin-top: 16px;
-            padding: 10px 28px;
-            background: var(--accent-magenta);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 0.95rem;
+        .overlay-title { font-size: 16px; font-weight: 500; color: #F5EDD8; margin-bottom: 6px; }
+        .overlay-msg   { font-size: 13px; color: #6B5830; max-width: 260px; line-height: 1.5; }
+        .overlay-retry {
+            margin-top: 20px; padding: 11px 28px;
+            background: var(--gold); color: var(--brown-dark);
+            border: none; border-radius: 50px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px; font-weight: 600;
+            letter-spacing: 1px; cursor: pointer; display: none;
         }
+
+        /* ── Header ── */
+        .header {
+            background: var(--brown-dark);
+            padding: 20px 20px 0;
+            position: relative; overflow: hidden;
+        }
+        .header::before {
+            content: '';
+            position: absolute; top: -60px; right: -40px;
+            width: 180px; height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(201,131,42,0.15), transparent 70%);
+        }
+        .header-top {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 24px;
+        }
+        .header-logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px; font-style: italic;
+            color: var(--gold); letter-spacing: 3px;
+        }
+        .header-avatar {
+            width: 38px; height: 38px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; color: var(--brown-dark);
+        }
+
+        /* Hero balance card */
+        .hero-card {
+            background: var(--brown-mid);
+            border-radius: 18px 18px 0 0;
+            padding: 20px;
+            border: 1px solid rgba(201,131,42,0.15);
+            border-bottom: none;
+            position: relative; overflow: hidden;
+        }
+        .hero-card::after {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+        .hero-label {
+            font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+            color: #6B5030; margin-bottom: 8px;
+        }
+        .hero-amount {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 44px; font-weight: 600;
+            color: var(--gold-light); line-height: 1;
+            margin-bottom: 12px;
+        }
+        .hero-amount span { font-size: 22px; color: var(--gold); vertical-align: top; margin-top: 8px; display: inline-block; }
+        .hero-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+        .pill {
+            font-size: 11px; padding: 4px 12px; border-radius: 20px;
+            font-weight: 500;
+        }
+        .pill-pkg  { background: rgba(201,131,42,0.15); border: 1px solid rgba(201,131,42,0.3); color: var(--gold-light); }
+        .pill-gain { background: rgba(61,122,82,0.15);  border: 1px solid rgba(61,122,82,0.3);  color: #5DBD80; }
+
+        /* ── Body ── */
+        .body { padding: 0 16px; }
+
+        /* Stats row */
+        .stats-row {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 10px; margin-top: 16px; margin-bottom: 16px;
+        }
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--cream-border);
+            border-radius: 14px; padding: 14px;
+            box-shadow: 0 2px 12px rgba(45,31,14,0.05);
+            animation: fadeUp 0.4s ease both;
+        }
+        .stat-card:nth-child(2) { animation-delay: 0.08s; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .stat-lbl {
+            font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+            color: var(--text-muted); margin-bottom: 6px;
+        }
+        .stat-val {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 22px; color: var(--text-main);
+        }
+        .stat-sub { font-size: 11px; color: var(--green); margin-top: 3px; }
+
+        /* Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, var(--cream-dark) 25%, var(--cream-border) 50%, var(--cream-dark) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            border-radius: 6px;
+        }
+        @keyframes shimmer { to { background-position: -200% 0; } }
+
+        /* Section label */
+        .section-lbl {
+            font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+            color: var(--text-muted); margin-bottom: 10px; padding-left: 2px;
+        }
+
+        /* Action buttons */
+        .actions { display: flex; gap: 8px; margin-bottom: 20px; }
+        .action-btn {
+            flex: 1; background: var(--white);
+            border: 1px solid var(--cream-border);
+            border-radius: 14px; padding: 14px 8px;
+            display: flex; flex-direction: column; align-items: center; gap: 7px;
+            cursor: pointer; transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(45,31,14,0.04);
+            text-decoration: none; color: inherit;
+        }
+        .action-btn:active { transform: scale(0.96); }
+        .action-btn.primary { background: var(--gold); border-color: var(--gold); }
+        .action-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .action-lbl {
+            font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+            font-weight: 500; color: var(--text-muted);
+        }
+        .action-btn.primary .action-lbl { color: var(--brown-dark); }
+
+        /* Package card */
+        .pkg-card {
+            background: var(--white);
+            border: 1px solid var(--cream-border);
+            border-radius: 16px; padding: 18px;
+            border-left: 4px solid var(--gold);
+            box-shadow: 0 4px 20px rgba(45,31,14,0.06);
+            margin-bottom: 20px;
+            animation: fadeUp 0.5s ease both;
+        }
+        .pkg-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 14px;
+        }
+        .pkg-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px; font-style: italic; color: var(--text-main);
+        }
+        .pkg-badge {
+            font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+            padding: 4px 10px; border-radius: 20px;
+            background: rgba(61,122,82,0.12); border: 1px solid rgba(61,122,82,0.3);
+            color: var(--green); font-weight: 500;
+        }
+        .pkg-row {
+            display: flex; justify-content: space-between;
+            margin-bottom: 8px; font-size: 13px;
+        }
+        .pkg-key { color: var(--text-muted); }
+        .pkg-val { color: var(--text-main); font-weight: 500; }
+        .pkg-progress {
+            height: 5px; background: var(--cream-dark);
+            border-radius: 5px; margin: 14px 0 6px;
+        }
+        .pkg-progress-fill {
+            height: 100%; border-radius: 5px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            transition: width 1s ease;
+        }
+        .pkg-progress-labels {
+            display: flex; justify-content: space-between;
+            font-size: 10px; color: var(--text-muted); margin-bottom: 14px;
+        }
+        .pkg-claim-btn {
+            width: 100%; background: var(--gold); border: none;
+            border-radius: 12px; padding: 14px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px; letter-spacing: 1px; font-weight: 600;
+            color: var(--brown-dark); cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none; display: block; text-align: center;
+        }
+        .pkg-claim-btn:active { transform: scale(0.98); background: var(--gold-light); }
+
+        /* No package card */
+        .no-pkg-card {
+            background: var(--white);
+            border: 1px solid var(--cream-border);
+            border-radius: 16px; padding: 24px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(45,31,14,0.06);
+            margin-bottom: 20px;
+        }
+        .no-pkg-icon {
+            width: 56px; height: 56px; border-radius: 16px;
+            background: var(--gold-pale); margin: 0 auto 14px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .no-pkg-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px; margin-bottom: 8px;
+        }
+        .no-pkg-msg { font-size: 13px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5; }
+        .no-pkg-btn {
+            display: inline-block; background: var(--gold);
+            color: var(--brown-dark); text-decoration: none;
+            border-radius: 12px; padding: 13px 28px;
+            font-size: 13px; font-weight: 600; letter-spacing: 1px;
+        }
+
+        /* ── Bottom Nav ── */
+        .bottom-nav {
+            position: fixed; bottom: 12px;
+            left: 50%; transform: translateX(-50%);
+            width: calc(100% - 32px); max-width: 420px;
+            background: var(--brown-dark);
+            border-radius: 22px; padding: 12px 8px;
+            display: flex; justify-content: space-around;
+            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(45,31,14,0.25);
+            border: 1px solid rgba(201,131,42,0.15);
+        }
+        .nav-item {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; gap: 4px;
+            text-decoration: none; cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .nav-item svg { color: #3A2A18; transition: color 0.2s; }
+        .nav-item span {
+            font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+            color: #3A2A18; transition: color 0.2s; font-weight: 500;
+        }
+        .nav-item.active svg { color: var(--gold); }
+        .nav-item.active span { color: var(--gold); }
+        .nav-dot {
+            width: 3px; height: 3px; border-radius: 50%;
+            background: var(--gold); margin-top: 2px;
+            display: none;
+        }
+        .nav-item.active .nav-dot { display: block; }
     </style>
 </head>
 <body>
 
-<!-- Auth / Loading Overlay -->
-<div id="auth-status-overlay" class="status-overlay">
-    <div>
-        <div id="loading-spinner" class="spinner"></div>
-        <h1 id="auth-status-title" class="text-2xl font-bold text-white">Authenticating...</h1>
-        <p id="auth-status-message" class="text-gray-400 mt-2">Please wait while we log you in securely.</p>
-        <button id="retry-btn" class="retry-btn" style="display:none;" onclick="retryAuth()">Retry</button>
+<!-- Overlay -->
+<div id="overlay" class="overlay">
+    <div class="overlay-logo">Bond 1x</div>
+    <div class="overlay-spinner" id="overlay-spinner"></div>
+    <div class="overlay-title" id="overlay-title">Authenticating...</div>
+    <div class="overlay-msg" id="overlay-msg">Please wait while we log you in securely.</div>
+    <button class="overlay-retry" id="overlay-retry" onclick="retryAuth()">Try Again</button>
+</div>
+
+<!-- Header -->
+<div class="header">
+    <div class="header-top">
+        <div class="header-logo">Bond 1x</div>
+        <div class="header-avatar" id="avatar-initials">–</div>
+    </div>
+    <div class="hero-card">
+        <div class="hero-label">Total Balance</div>
+        <div class="hero-amount" id="balance-display">
+            <span id="balance-skeleton" class="skeleton" style="display:inline-block;width:140px;height:40px;border-radius:8px;"></span>
+            <span id="balance-value" style="display:none;"><span>$</span><span id="balance-num">0.00</span></span>
+        </div>
+        <div class="hero-pills" id="hero-pills" style="display:none;">
+            <span class="pill pill-pkg" id="pill-pkg">Loading...</span>
+            <span class="pill pill-gain">↑ Daily returns active</span>
+        </div>
     </div>
 </div>
 
-<div class="aurora-background"></div>
+<!-- Body -->
+<div class="body">
+    <!-- Welcome -->
+    <div style="padding: 18px 0 4px;">
+        <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Welcome back</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-style:italic;" id="username-display">
+            <span class="skeleton" style="display:inline-block;width:120px;height:28px;border-radius:6px;"></span>
+        </div>
+    </div>
 
-<div id="dashboard-content" class="container mx-auto p-4 max-w-4xl relative z-10" style="display: none;">
-    <header class="mb-8">
-        <p class="text-gray-400">Welcome back,</p>
-        <h1 class="text-3xl font-bold text-white"><span id="username-display">...</span></h1>
-    </header>
-
-    <main class="space-y-8">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <!-- Balance Card -->
-            <div class="card p-6 rounded-2xl flex items-center space-x-4">
-                <div class="bg-blue-500/10 p-3 rounded-full border border-blue-500/20">
-                    <svg class="w-6 h-6 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-gray-400 text-sm">Total Balance</p>
-                    <p id="balance-display" class="text-2xl font-bold hidden" style="color: var(--accent-teal);">$0.00</p>
-                    <div id="balance-skeleton" class="skeleton h-8 w-32 mt-1"></div>
-                </div>
-            </div>
-            <!-- Package Card -->
-            <div class="card p-6 rounded-2xl flex items-center space-x-4">
-                <div class="bg-purple-500/10 p-3 rounded-full border border-purple-500/20">
-                    <svg class="w-6 h-6" style="color: var(--accent-magenta);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-gray-400 text-sm">Active Package</p>
-                    <p id="package-display" class="text-2xl font-bold text-white hidden">None</p>
-                    <div id="package-skeleton" class="skeleton h-8 w-28 mt-1"></div>
-                </div>
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-lbl">Package</div>
+            <div class="stat-val" id="pkg-stat">
+                <span class="skeleton" style="display:block;width:80px;height:22px;border-radius:4px;"></span>
             </div>
         </div>
-
-        <!-- Action Buttons -->
-        <div class="grid grid-cols-3 gap-4 sm:gap-6">
-            <a href="wallet.html" class="flex flex-col items-center justify-center bg-blue-600 hover:bg-blue-700 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-blue-500/30">
-                <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                <span class="font-semibold text-sm sm:text-base">Deposit</span>
-            </a>
-            <a href="wallet.html" class="flex flex-col items-center justify-center bg-gray-700 hover:bg-gray-800 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-gray-500/30">
-                <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                <span class="font-semibold text-sm sm:text-base">Withdraw</span>
-            </a>
-            <a href="packages.html" class="flex flex-col items-center justify-center bg-yellow-500 hover:bg-yellow-600 py-6 rounded-2xl shadow-lg transition-transform transform hover:-translate-y-1.5 hover:shadow-yellow-500/30">
-                <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                <span class="font-semibold text-sm sm:text-base">Packages</span>
-            </a>
+        <div class="stat-card">
+            <div class="stat-lbl">Daily Return</div>
+            <div class="stat-val" id="return-stat">
+                <span class="skeleton" style="display:block;width:60px;height:22px;border-radius:4px;"></span>
+            </div>
+            <div class="stat-sub" id="return-sub" style="display:none;">active</div>
         </div>
+    </div>
 
-        <div id="dynamic-action-section" class="card p-6 rounded-2xl shadow-lg text-center"></div>
-    </main>
+    <!-- Actions -->
+    <div class="section-lbl">Quick Actions</div>
+    <div class="actions">
+        <a href="wallet.html" class="action-btn primary">
+            <div class="action-icon" style="background:rgba(45,31,14,0.15);">
+                <svg width="18" height="18" fill="none" stroke="var(--brown-dark)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7-7 7 7"/></svg>
+            </div>
+            <span class="action-lbl">Deposit</span>
+        </a>
+        <a href="wallet.html" class="action-btn">
+            <div class="action-icon" style="background:var(--cream-dark);">
+                <svg width="18" height="18" fill="none" stroke="var(--brown-light)" stroke-width="2" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7 7 7-7"/></svg>
+            </div>
+            <span class="action-lbl">Withdraw</span>
+        </a>
+        <a href="packages.html" class="action-btn">
+            <div class="action-icon" style="background:var(--cream-dark);">
+                <svg width="18" height="18" fill="none" stroke="var(--brown-light)" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
+            </div>
+            <span class="action-lbl">Packages</span>
+        </a>
+    </div>
+
+    <!-- Dynamic section -->
+    <div class="section-lbl">Your Investment</div>
+    <div id="dynamic-section">
+        <!-- skeleton -->
+        <div class="pkg-card">
+            <div class="pkg-header">
+                <span class="skeleton" style="display:block;width:140px;height:22px;border-radius:4px;"></span>
+                <span class="skeleton" style="display:block;width:60px;height:20px;border-radius:20px;"></span>
+            </div>
+            <span class="skeleton" style="display:block;width:100%;height:14px;border-radius:4px;margin-bottom:8px;"></span>
+            <span class="skeleton" style="display:block;width:80%;height:14px;border-radius:4px;margin-bottom:8px;"></span>
+            <span class="skeleton" style="display:block;width:90%;height:14px;border-radius:4px;margin-bottom:14px;"></span>
+            <span class="skeleton" style="display:block;width:100%;height:48px;border-radius:12px;"></span>
+        </div>
+    </div>
 </div>
 
 <!-- Bottom Nav -->
 <nav class="bottom-nav">
-    <a href="dashboard.html" class="nav-link" id="nav-dashboard">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-        <span>Dashboard</span>
+    <a href="dashboard.html" class="nav-item active" id="nav-dashboard">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg>
+        <span>Home</span>
+        <div class="nav-dot"></div>
     </a>
-    <a href="packages.html" class="nav-link" id="nav-packages">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+    <a href="packages.html" class="nav-item" id="nav-packages">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
         <span>Packages</span>
+        <div class="nav-dot"></div>
     </a>
-    <a href="earning.html" class="nav-link" id="nav-earning">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    <a href="earning.html" class="nav-item" id="nav-earning">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
         <span>Earn</span>
+        <div class="nav-dot"></div>
     </a>
-    <a href="wallet.html" class="nav-link" id="nav-wallet">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+    <a href="wallet.html" class="nav-item" id="nav-wallet">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v9a2 2 0 002 2z"/></svg>
         <span>Wallet</span>
+        <div class="nav-dot"></div>
     </a>
-    <a href="profile.html" class="nav-link" id="nav-profile">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+    <a href="profile.html" class="nav-item" id="nav-profile">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0114 0"/></svg>
         <span>Profile</span>
+        <div class="nav-dot"></div>
     </a>
 </nav>
 
 <script>
-    // ─── UI Elements ────────────────────────────────────────────────
-    const authOverlay  = document.getElementById('auth-status-overlay');
-    const authTitle    = document.getElementById('auth-status-title');
-    const authMessage  = document.getElementById('auth-status-message');
-    const spinner      = document.getElementById('loading-spinner');
-    const retryBtn     = document.getElementById('retry-btn');
-
-    function showError(title, message, detail) {
-        authTitle.textContent   = title;
-        authMessage.textContent = message;
-        spinner.style.display   = 'none';
-        retryBtn.style.display  = 'inline-block';
-        authOverlay.style.display = 'flex';
-    }
+    var overlay        = document.getElementById('overlay');
+    var overlayTitle   = document.getElementById('overlay-title');
+    var overlayMsg     = document.getElementById('overlay-msg');
+    var overlaySpinner = document.getElementById('overlay-spinner');
+    var overlayRetry   = document.getElementById('overlay-retry');
 
     function showLoading(msg) {
-        authTitle.textContent   = 'Authenticating...';
-        authMessage.textContent = msg || 'Please wait...';
-        spinner.style.display   = 'block';
-        retryBtn.style.display  = 'none';
-        authOverlay.style.display = 'flex';
+        overlayTitle.textContent   = 'Authenticating...';
+        overlayMsg.textContent     = msg || 'Please wait...';
+        overlaySpinner.style.display = 'block';
+        overlayRetry.style.display   = 'none';
+        overlay.style.display        = 'flex';
+    }
+
+    function showError(title, msg) {
+        overlayTitle.textContent     = title;
+        overlayMsg.textContent       = msg;
+        overlaySpinner.style.display = 'none';
+        overlayRetry.style.display   = 'block';
     }
 
     function hideOverlay() {
-        authOverlay.style.display = 'none';
+        overlay.style.opacity = '0';
+        setTimeout(function() { overlay.style.display = 'none'; }, 400);
     }
 
-    function initializeDashboard(token, initialUserData) {
-        document.getElementById('dashboard-content').style.display = 'block';
-        document.getElementById('nav-dashboard').classList.add('active');
+    function renderData(data) {
+        var name = data.username || 'User';
+        var initials = name.substring(0, 2).toUpperCase();
 
-        var socket          = io({ auth: { token: token } });
-        var usernameDisplay = document.getElementById('username-display');
-        var balanceDisplay  = document.getElementById('balance-display');
-        var packageDisplay  = document.getElementById('package-display');
-        var balanceSkeleton = document.getElementById('balance-skeleton');
-        var packageSkeleton = document.getElementById('package-skeleton');
-        var dynamicSection  = document.getElementById('dynamic-action-section');
+        // Avatar
+        document.getElementById('avatar-initials').textContent = initials;
 
-        function renderData(data) {
-            usernameDisplay.textContent = data.username || 'User';
-            balanceDisplay.textContent  = '$' + (data.balance || 0).toFixed(2);
-            packageDisplay.textContent  = data.activePackage || 'None';
-            balanceSkeleton.style.display = 'none';
-            packageSkeleton.style.display = 'none';
-            balanceDisplay.style.display  = 'block';
-            packageDisplay.style.display  = 'block';
+        // Username
+        var ud = document.getElementById('username-display');
+        ud.innerHTML = name;
 
-            if (data.activePackage) {
-                var expiry = new Date(data.packageExpiry).toLocaleDateString();
-                dynamicSection.innerHTML = '<h2 class="text-xl font-semibold text-white">Your Daily Task is Ready</h2><p class="text-gray-400 mt-2 mb-4">Click below to claim your daily profit. Package expires on ' + expiry + '.</p><a href="earning.html" class="inline-block font-bold py-3 px-8 rounded-lg shadow-lg" style="background-color:var(--accent-teal);color:#0A0D14;">Go to Earning Page</a>';
-            } else {
-                dynamicSection.innerHTML = '<h2 class="text-xl font-semibold text-white">Start Earning Today</h2><p class="text-gray-400 mt-2 mb-4">You don\'t have an active investment package. Purchase one to start earning daily profits.</p><a href="packages.html" class="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg">View Packages</a>';
-            }
+        // Balance
+        document.getElementById('balance-skeleton').style.display = 'none';
+        document.getElementById('balance-value').style.display    = 'inline';
+        document.getElementById('balance-num').textContent        = (data.balance || 0).toFixed(2);
+
+        // Hero pills
+        document.getElementById('hero-pills').style.display = 'flex';
+        document.getElementById('pill-pkg').textContent     = data.activePackage ? data.activePackage + ' Active' : 'No Package';
+
+        // Stats
+        var pkgStat = document.getElementById('pkg-stat');
+        pkgStat.innerHTML = data.activePackage || 'None';
+
+        var retStat = document.getElementById('return-stat');
+        var retSub  = document.getElementById('return-sub');
+        if (data.activePackage) {
+            retStat.innerHTML = '2.5%';
+            retSub.style.display = 'block';
+        } else {
+            retStat.innerHTML = '—';
         }
 
-        if (initialUserData) renderData(initialUserData);
+        // Dynamic section
+        var sec = document.getElementById('dynamic-section');
+        if (data.activePackage) {
+            var expiry = data.packageExpiry ? new Date(data.packageExpiry).toLocaleDateString('en-US', {day:'numeric',month:'short',year:'numeric'}) : 'N/A';
+            sec.innerHTML = '<div class="pkg-card">'
+                + '<div class="pkg-header">'
+                + '<span class="pkg-name">' + data.activePackage + '</span>'
+                + '<span class="pkg-badge">Active</span>'
+                + '</div>'
+                + '<div class="pkg-row"><span class="pkg-key">Daily Return</span><span class="pkg-val">2.5%</span></div>'
+                + '<div class="pkg-row"><span class="pkg-key">Expires On</span><span class="pkg-val">' + expiry + '</span></div>'
+                + '<div class="pkg-row"><span class="pkg-key">Balance</span><span class="pkg-val">$' + (data.balance||0).toFixed(2) + '</span></div>'
+                + '<div class="pkg-progress"><div class="pkg-progress-fill" style="width:65%;"></div></div>'
+                + '<div class="pkg-progress-labels"><span>65% completed</span><span>35% left</span></div>'
+                + '<a href="earning.html" class="pkg-claim-btn">Claim Daily Profit</a>'
+                + '</div>';
+        } else {
+            sec.innerHTML = '<div class="no-pkg-card">'
+                + '<div class="no-pkg-icon"><svg width="28" height="28" fill="none" stroke="var(--gold)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div>'
+                + '<div class="no-pkg-title">Start Earning Today</div>'
+                + '<div class="no-pkg-msg">You don\'t have an active package yet. Purchase one to start receiving daily profits.</div>'
+                + '<a href="packages.html" class="no-pkg-btn">View Packages</a>'
+                + '</div>';
+        }
+    }
 
-        socket.on('connect', function() { socket.emit('request_dashboard_data'); });
-        socket.on('dashboard_data', function(res) { if (res && res.success) renderData(res.data); });
-        socket.on('connect_error', function(err) { console.error('Socket error:', err.message); });
+    function initializeDashboard(token, initialData) {
+        hideOverlay();
+        if (initialData) renderData(initialData);
+
+        var socket = io({ auth: { token: token } });
+
+        socket.on('connect', function() {
+            socket.emit('request_dashboard_data');
+        });
+
+        socket.on('dashboard_data', function(res) {
+            if (res && res.success) renderData(res.data);
+        });
+
+        socket.on('connect_error', function(err) {
+            console.error('Socket error:', err.message);
+        });
     }
 
     function performFullAuthentication() {
-        showLoading('Please wait while we log you in securely.');
+        showLoading('Connecting to Telegram...');
         var attempts = 0;
 
-        function checkTelegram() {
+        function check() {
             attempts++;
             if (window.Telegram && window.Telegram.WebApp) {
                 var tg = window.Telegram.WebApp;
-                tg.ready();
-                tg.expand();
+                tg.ready(); tg.expand();
                 var initData = tg.initData;
                 if (initData) {
                     doLogin(initData);
                 } else if (attempts < 150) {
-                    setTimeout(checkTelegram, 100);
+                    setTimeout(check, 100);
                 } else {
-                    showError('Initialization Failed', 'Could not get Telegram data. Please close and reopen the app.', '');
+                    showError('Initialization Failed', 'Telegram data is empty. Please close and reopen the app from your bot.');
                 }
             } else if (attempts < 150) {
-                setTimeout(checkTelegram, 100);
+                setTimeout(check, 100);
             } else {
-                showError('Initialization Failed', 'Could not connect to Telegram. Please close the app and reopen.', '');
+                showError('Initialization Failed', 'Could not connect to Telegram. Please close the app and reopen.');
             }
         }
-        checkTelegram();
+        check();
     }
 
     function doLogin(initData) {
@@ -357,18 +579,14 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ initData: initData })
         })
-        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, status: r.status, data: d }; }); })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
         .then(function(result) {
-            if (!result.ok) {
-                showError('Login Failed', result.data.message || 'Server error.', 'Status: ' + result.status);
-                return;
-            }
+            if (!result.ok) { showError('Login Failed', result.data.message || 'Server error.'); return; }
             localStorage.setItem('authToken', result.data.token);
-            hideOverlay();
             initializeDashboard(result.data.token, result.data.user);
         })
         .catch(function(err) {
-            showError('Connection Error', 'Could not reach the server.', err.message);
+            showError('Connection Error', 'Could not reach the server. Please try again.');
         });
     }
 
@@ -387,7 +605,6 @@
         }
     }
 
-    // Start on DOMContentLoaded — don't wait for images/fonts to load
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', startApp);
     } else {
