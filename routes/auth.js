@@ -5,31 +5,23 @@ const User = require('../models/User');
 const crypto = require('crypto');
 
 // =================================================================================
-// TELEGRAM LOGIN & REGISTRATION ROUTE
+// TELEGRAM LOGIN & REGISTRATION
 // =================================================================================
 router.post('/telegram-login', async (req, res) => {
     const { initData } = req.body;
-
-    // --- DEBUG LOG (remove after fixing) ---
-    console.log("=== /telegram-login called ===");
-    console.log("initData received:", initData ? initData.substring(0, 100) + "..." : "EMPTY / NULL");
-    console.log("BOT_TOKEN set:", !!process.env.BOT_TOKEN);
-    console.log("JWT_SECRET set:", !!process.env.JWT_SECRET);
 
     if (!initData) {
         return res.status(400).json({ message: 'Telegram initData is required.' });
     }
 
     try {
-        // --- 1. Validate Telegram Data ---
+        // 1. Validate
         const validationResult = validateTelegramData(initData);
-        console.log("Validation result:", validationResult);
-
         if (!validationResult.valid) {
             return res.status(401).json({ message: `Invalid Telegram data: ${validationResult.reason}` });
         }
 
-        // --- 2. Parse User Data ---
+        // 2. Parse user
         const params = new URLSearchParams(initData);
         const userParam = params.get('user');
         const startParam = params.get('start_param');
@@ -42,16 +34,14 @@ router.post('/telegram-login', async (req, res) => {
         try {
             telegramUser = JSON.parse(userParam);
         } catch (e) {
-            return res.status(400).json({ message: 'Could not parse user data from initData.' });
+            return res.status(400).json({ message: 'Could not parse user data.' });
         }
 
         if (!telegramUser || !telegramUser.id) {
             return res.status(400).json({ message: 'User ID not found in initData.' });
         }
 
-        console.log("Telegram user ID:", telegramUser.id);
-
-        // --- 3. Find or Create User ---
+        // 3. Find or create user
         let dbUser = await User.findOne({ telegramId: telegramUser.id.toString() });
 
         if (!dbUser) {
@@ -82,25 +72,21 @@ router.post('/telegram-login', async (req, res) => {
             });
 
             await dbUser.save();
-            console.log("New user created:", dbUser._id);
 
             if (referrer) {
                 referrer.referralCount += 1;
                 await referrer.save();
             }
-        } else {
-            console.log("Existing user found:", dbUser._id);
         }
 
-        // --- 4. Create JWT ---
-        const payload = {
-            id: dbUser._id,
-            telegramId: dbUser.telegramId
-        };
+        // 4. JWT
+        const token = jwt.sign(
+            { id: dbUser._id, telegramId: dbUser.telegramId },
+            process.env.JWT_SECRET,
+            { expiresIn: '30d' }
+        );
 
-        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
-
-        // --- 5. Send Response ---
+        // 5. Response
         return res.json({
             message: "Logged in successfully.",
             token,
@@ -115,30 +101,24 @@ router.post('/telegram-login', async (req, res) => {
 
     } catch (error) {
         console.error("Telegram Login Error:", error);
-        return res.status(500).json({ message: "Server error during authentication.", error: error.message });
+        return res.status(500).json({ message: "Server error during authentication." });
     }
 });
 
-
 // =================================================================================
 // VALIDATE TELEGRAM DATA
-// Returns { valid: true } or { valid: false, reason: "..." }
 // =================================================================================
 function validateTelegramData(initData) {
     const BOT_TOKEN = process.env.BOT_TOKEN;
 
     if (!BOT_TOKEN) {
-        console.error("FATAL: BOT_TOKEN is not set in environment variables!");
-        return { valid: false, reason: "BOT_TOKEN not configured on server." };
+        return { valid: false, reason: "BOT_TOKEN not configured." };
     }
 
     try {
         const params = new URLSearchParams(initData);
         const hash = params.get('hash');
-
-        if (!hash) {
-            return { valid: false, reason: "Hash missing from initData." };
-        }
+        if (!hash) return { valid: false, reason: "Hash missing." };
 
         params.delete('hash');
 
@@ -157,18 +137,13 @@ function validateTelegramData(initData) {
             .update(dataCheckString)
             .digest('hex');
 
-        if (hmac !== hash) {
-            console.error("Hash mismatch! Expected:", hmac, "Got:", hash);
-            return { valid: false, reason: "Hash mismatch - data may be tampered." };
-        }
+        if (hmac !== hash) return { valid: false, reason: "Hash mismatch." };
 
         return { valid: true };
 
     } catch (err) {
-        console.error("Validation error:", err);
         return { valid: false, reason: err.message };
     }
 }
-
 
 module.exports = router;
