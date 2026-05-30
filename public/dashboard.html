@@ -6,7 +6,6 @@
     <title>Bond 1x</title>
     <script src="/telegram-web-app.js"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" as="style">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -140,14 +139,14 @@
 </nav>
 <script>
 var ov=document.getElementById('ov'),ovT=document.getElementById('ov-title'),ovM=document.getElementById('ov-msg'),ovS=document.getElementById('ov-spin'),ovB=document.getElementById('ov-btn');
-
 var profitMap = {"Bronze":1,"Silver":4,"Gold":9,"Platinum":23,"Diamond":50};
-
 function showLoad(m){ovT.textContent='Authenticating...';ovM.textContent=m||'Please wait...';ovS.style.display='block';ovB.style.display='none';ov.style.display='flex';}
 function showErr(t,m){ovT.textContent=t;ovM.textContent=m;ovS.style.display='none';ovB.style.display='block';}
 function hideOv(){ov.style.opacity='0';setTimeout(function(){ov.style.display='none';},400);}
+function forceLogout(){localStorage.removeItem('authToken');window.location.reload();}
 function render(d){
     var n=d.username||'User';
+    var dailyProfit = d.activePackage ? (profitMap[d.activePackage] || 0) : 0;
     document.getElementById('hdr-av').textContent=n.substring(0,2).toUpperCase();
     document.getElementById('uname').textContent=n;
     document.getElementById('bal-sk').style.display='none';
@@ -155,24 +154,18 @@ function render(d){
     document.getElementById('bal-n').textContent=(d.balance||0).toFixed(2);
     document.getElementById('pills').style.display='flex';
     document.getElementById('pill-p').textContent=d.activePackage?d.activePackage+' Active':'No Package';
-
-    var dailyProfit = d.activePackage ? (profitMap[d.activePackage] || 0) : 0;
-
     if(d.activePackage){
         document.getElementById('pill-g').textContent='$'+dailyProfit+'/day returns';
     } else {
         document.getElementById('pill-g').textContent='No active returns';
     }
-
     document.getElementById('pkg-st').textContent=d.activePackage||'None';
     document.getElementById('ret-st').textContent=d.activePackage?'$'+dailyProfit+'/day':'--';
     if(d.activePackage)document.getElementById('ret-sb').style.display='block';
-
     var sec=document.getElementById('dyn');
     if(d.activePackage){
         var exp=d.packageExpiry?new Date(d.packageExpiry).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'}):'N/A';
-        var totalReturn = dailyProfit * 90;
-        sec.innerHTML='<div class="pkg"><div class="pkg-hd"><span class="pkg-nm">'+d.activePackage+'</span><span class="pkg-bg">Active</span></div><div class="pkg-rw"><span class="pkg-k">Daily Return</span><span class="pkg-v">$'+dailyProfit+'</span></div><div class="pkg-rw"><span class="pkg-k">Total Return (90d)</span><span class="pkg-v">$'+totalReturn+'</span></div><div class="pkg-rw"><span class="pkg-k">Expires On</span><span class="pkg-v">'+exp+'</span></div><div class="pkg-rw"><span class="pkg-k">Balance</span><span class="pkg-v">$'+(d.balance||0).toFixed(2)+'</span></div><div class="pkg-pr"><div class="pkg-pf" style="width:65%;"></div></div><div class="pkg-pl"><span>65% completed</span><span>35% left</span></div><a href="earning.html" class="pkg-cb">Claim Daily Profit</a></div>';
+        sec.innerHTML='<div class="pkg"><div class="pkg-hd"><span class="pkg-nm">'+d.activePackage+'</span><span class="pkg-bg">Active</span></div><div class="pkg-rw"><span class="pkg-k">Daily Return</span><span class="pkg-v">$'+dailyProfit+'</span></div><div class="pkg-rw"><span class="pkg-k">Total Return (90d)</span><span class="pkg-v">$'+(dailyProfit*90)+'</span></div><div class="pkg-rw"><span class="pkg-k">Expires On</span><span class="pkg-v">'+exp+'</span></div><div class="pkg-rw"><span class="pkg-k">Balance</span><span class="pkg-v">$'+(d.balance||0).toFixed(2)+'</span></div><div class="pkg-pr"><div class="pkg-pf" style="width:65%;"></div></div><div class="pkg-pl"><span>65% completed</span><span>35% left</span></div><a href="earning.html" class="pkg-cb">Claim Daily Profit</a></div>';
     }else{
         sec.innerHTML='<div class="no-pkg"><div class="no-pkg-ic"><svg width="28" height="28" fill="none" stroke="var(--gold)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div><div class="no-pkg-t">Start Earning Today</div><div class="no-pkg-m">Purchase a package to start receiving daily profits.</div><a href="packages.html" class="no-pkg-b">View Packages</a></div>';
     }
@@ -183,7 +176,11 @@ function initDash(token,init){
     var s=io({auth:{token:token}});
     s.on('connect',function(){s.emit('request_dashboard_data');});
     s.on('dashboard_data',function(r){if(r&&r.success)render(r.data);});
-    s.on('connect_error',function(e){console.error('Socket:',e.message);});
+    s.on('auth_error',function(){forceLogout();});
+    s.on('connect_error',function(e){
+        console.error('Socket:',e.message);
+        if(e.message.indexOf('Authentication')!==-1){forceLogout();}
+    });
 }
 function doLogin(id){
     showLoad('Verifying your account...');
