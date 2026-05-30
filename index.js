@@ -47,7 +47,11 @@ app.get('/health', (req, res) => res.status(200).send('OK'));
 // ------------------ DASHBOARD DATA ------------------
 async function getDashboardData(userId) {
     const user = await User.findById(userId).select('username firstName balance active_package package_expiry_date');
-    if (!user) throw new Error('User not found.');
+    if (!user) {
+        var err = new Error('User not found.');
+        err.code = 'USER_NOT_FOUND';
+        throw err;
+    }
     return {
         // FIX: username null ho to firstName use karo
         username: user.username || user.firstName || 'User',
@@ -83,7 +87,11 @@ io.on('connection', (socket) => {
             socket.emit('dashboard_data', { success: true, data: dashboardData });
         } catch (error) {
             console.error('Dashboard data error:', error.message, error.stack);
-            socket.emit('dashboard_data', { success: false, message: 'Could not fetch dashboard data.' });
+            if (error.code === 'USER_NOT_FOUND') {
+                socket.emit('auth_error', { message: 'User not found. Please login again.' });
+            } else {
+                socket.emit('dashboard_data', { success: false, message: 'Could not fetch dashboard data.' });
+            }
         }
     });
 
