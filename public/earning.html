@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Daily Earning - Bond 1x</title>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" as="style">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -13,8 +12,6 @@
         :root{--cream:#FBF8F3;--cream-dark:#F2EDE4;--cream-border:#E8DFD0;--brown-dark:#2D1F0E;--brown-mid:#4A3020;--brown-light:#8B6040;--gold:#C9832A;--gold-light:#E8A84A;--gold-pale:#F5E8D0;--green:#3D7A52;--text-main:#1E140A;--text-muted:#9A8070;--white:#FFFFFF;}
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
         body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-main);min-height:100vh;padding-bottom:90px;overflow-x:hidden;display:flex;flex-direction:column;}
-
-        /* Header */
         .hdr{background:var(--brown-dark);padding:20px 20px 0;position:relative;overflow:hidden;}
         .hdr::before{content:'';position:absolute;top:-60px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(201,131,42,.15),transparent 70%);}
         .hdr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
@@ -23,49 +20,28 @@
         .hero::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
         .hero-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-style:italic;color:var(--gold-light);margin-bottom:4px;}
         .hero-sub{font-size:13px;color:#D4B896;}
-
-        /* Body */
         .bdy{padding:16px;flex:1;display:flex;align-items:center;justify-content:center;}
-
-        /* Earning Card */
         .earn-card{background:var(--white);border:1px solid var(--cream-border);border-radius:20px;padding:32px 24px;text-align:center;box-shadow:0 4px 24px rgba(45,31,14,.08);width:100%;max-width:420px;animation:fu .4s ease both;}
         @keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-
         .earn-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-style:italic;color:var(--text-main);margin-bottom:8px;}
         .earn-sub{font-size:13px;color:var(--text-muted);margin-bottom:24px;line-height:1.5;}
         .earn-profit{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--gold);}
-
-        /* Countdown */
         .countdown{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:600;color:var(--gold);letter-spacing:2px;margin-top:8px;}
-
-        /* Claim Button */
         .claim-btn{width:100%;border:none;border-radius:14px;padding:16px;font-family:'DM Sans',sans-serif;font-size:14px;letter-spacing:1px;font-weight:600;cursor:pointer;transition:all .2s;background:var(--gold);color:var(--brown-dark);box-shadow:0 4px 16px rgba(201,131,42,.3);}
         .claim-btn:active{transform:scale(.97);background:var(--gold-light);}
         .claim-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;}
-
-        /* Status */
         .status-msg{font-size:12px;margin-top:14px;min-height:20px;}
         .status-msg.error{color:#C0392B;}
         .status-msg.success{color:var(--green);}
-
-        /* Upgrade hint */
         .upgrade-hint{margin-top:20px;padding-top:16px;border-top:1px solid var(--cream-border);}
         .upgrade-hint p{font-size:12px;color:var(--text-muted);margin-bottom:4px;}
         .upgrade-hint a{font-size:12px;font-weight:600;color:var(--gold);text-decoration:none;}
-
-        /* Error card */
         .earn-err-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;color:#C0392B;margin-bottom:8px;}
         .earn-err-msg{font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.5;}
         .earn-err-link{font-size:13px;font-weight:600;color:var(--gold);text-decoration:none;background:var(--gold-pale);padding:10px 24px;border-radius:12px;display:inline-block;}
-
-        /* Icon container */
         .earn-icon{width:64px;height:64px;border-radius:18px;background:var(--gold-pale);margin:0 auto 18px;display:flex;align-items:center;justify-content:center;}
-
-        /* Skeleton */
         .skel{background:linear-gradient(90deg,var(--cream-dark) 25%,var(--cream-border) 50%,var(--cream-dark) 75%);background-size:200% 100%;animation:sh 1.4s infinite;border-radius:6px;display:block;}
         @keyframes sh{to{background-position:-200% 0}}
-
-        /* Nav */
         .nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:420px;background:var(--brown-dark);border-radius:22px;padding:12px 8px;display:flex;justify-content:space-around;z-index:1000;box-shadow:0 8px 32px rgba(45,31,14,.25);border:1px solid rgba(201,131,42,.15);}
         .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;transition:all .2s;}
         .ni svg{color:#9A8060;transition:color .2s;}
@@ -114,16 +90,47 @@ document.addEventListener('DOMContentLoaded', function() {
     var token = localStorage.getItem('authToken');
     var headers = {'Content-Type':'application/json','x-auth-token':token};
     var earningCard = document.getElementById('earning-card');
-    var countdownInterval;
+    var countdownInterval = null;
+    /* FIX 5: Track claiming state */
+    var isClaiming = false;
 
     var profitMap = {"Bronze":1,"Silver":4,"Gold":9,"Platinum":23,"Diamond":50};
     var packageOrder = ["Bronze","Silver","Gold","Platinum","Diamond"];
 
+    /* FIX 1: XSS protection */
+    function esc(str) {
+        if (typeof str !== 'string') return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    /* FIX 2: Auth error handler */
+    function handleAuth(r) {
+        if (r.status === 401) {
+            localStorage.removeItem('authToken');
+            window.location.href = '/login.html';
+            return true;
+        }
+        return false;
+    }
+
+    /* FIX 4: Cleanup countdown on page unload */
+    function clearCountdown() {
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+    }
+    window.addEventListener('beforeunload', clearCountdown);
+
     function showReadyToClaim(profitAmount, upgradeMessage) {
+        clearCountdown();
+        /* FIX 1: Use esc() for dynamic values */
         earningCard.innerHTML =
             '<div class="earn-icon"><svg width="28" height="28" fill="none" stroke="var(--gold)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg></div>' +
             '<div class="earn-title">Claim Your Daily Profit</div>' +
-            '<p class="earn-sub">Your profit of <span class="earn-profit">$' + profitAmount.toLocaleString() + '</span> is ready.</p>' +
+            '<p class="earn-sub">Your profit of <span class="earn-profit">$' + esc(profitAmount.toLocaleString()) + '</span> is ready.</p>' +
             '<button id="claim-btn" class="claim-btn">Claim Now</button>' +
             '<div id="status-message" class="status-msg"></div>' +
             upgradeMessage;
@@ -131,6 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showWaiting(nextClaimTime) {
+        clearCountdown();
         earningCard.innerHTML =
             '<div class="earn-icon" style="background:rgba(61,122,82,.12);"><svg width="28" height="28" fill="none" stroke="var(--green)" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>' +
             '<div class="earn-title">Profit Claimed</div>' +
@@ -140,81 +148,126 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showError(message) {
+        clearCountdown();
+        /* FIX 1: Use esc() for error message */
         earningCard.innerHTML =
             '<div class="earn-icon" style="background:rgba(192,57,43,.1);"><svg width="28" height="28" fill="none" stroke="#C0392B" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>' +
             '<div class="earn-err-title">Unable to Claim</div>' +
-            '<p class="earn-err-msg">' + message + '</p>' +
+            '<p class="earn-err-msg">' + esc(message) + '</p>' +
             '<a href="packages.html" class="earn-err-link">View Packages</a>';
     }
 
     function startCountdown(endTime) {
-        if(countdownInterval) clearInterval(countdownInterval);
+        clearCountdown();
         var countdownElem = document.getElementById('countdown');
-        countdownInterval = setInterval(function(){
-            var distance = endTime - new Date().getTime();
-            if(distance < 0){clearInterval(countdownInterval);location.reload();return;}
-            var hours = Math.floor((distance % (1000*60*60*24)) / (1000*60*60));
-            var minutes = Math.floor((distance % (1000*60*60)) / (1000*60));
-            var seconds = Math.floor((distance % (1000*60)) / 1000);
-            countdownElem.textContent = hours.toString().padStart(2,'0') + ':' + minutes.toString().padStart(2,'0') + ':' + seconds.toString().padStart(2,'0');
-        }, 1000);
+        if (!countdownElem) return;
+
+        function updateCountdown() {
+            var distance = endTime - Date.now();
+            if (distance < 0) {
+                clearCountdown();
+                fetchUserStatus();
+                return;
+            }
+            var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            countdownElem.textContent =
+                hours.toString().padStart(2, '0') + ':' +
+                minutes.toString().padStart(2, '0') + ':' +
+                seconds.toString().padStart(2, '0');
+        }
+
+        updateCountdown();
+        countdownInterval = setInterval(updateCountdown, 1000);
     }
 
     function handleClaim() {
+        /* FIX 5: Prevent double claim */
+        if (isClaiming) return;
+        isClaiming = true;
+
         var claimBtn = document.getElementById('claim-btn');
         var statusMessage = document.getElementById('status-message');
         claimBtn.disabled = true;
         claimBtn.textContent = 'Processing...';
 
-        fetch('/api/user/claim-earnings',{method:'POST',headers:headers})
-        .then(function(r){return r.json();})
-        .then(function(result){
-            if(result.success){
-                confetti({particleCount:150,spread:90,origin:{y:0.6},colors:['#C9832A','#E8A84A','#3D7A52']});
-                setTimeout(fetchUserStatus, 1500);
+        fetch('/api/user/claim-earnings', { method: 'POST', headers: headers })
+        .then(function(r) {
+            /* FIX 2: Check auth */
+            if (handleAuth(r)) return null;
+            return r.json();
+        })
+        .then(function(result) {
+            if (!result) return;
+            if (result.success) {
+                /* FIX 7: Show success feedback immediately */
+                claimBtn.textContent = 'Claimed!';
+                statusMessage.className = 'status-msg success';
+                statusMessage.textContent = result.message || 'Profit claimed successfully!';
+
+                /* FIX 3: Safe confetti call */
+                if (typeof confetti === 'function') {
+                    confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ['#C9832A', '#E8A84A', '#3D7A52'] });
+                }
+                setTimeout(function() {
+                    isClaiming = false;
+                    fetchUserStatus();
+                }, 1500);
             } else {
                 statusMessage.className = 'status-msg error';
-                statusMessage.textContent = result.message;
+                statusMessage.textContent = result.message || 'Claim failed.';
                 claimBtn.disabled = false;
                 claimBtn.textContent = 'Claim Now';
+                isClaiming = false;
             }
         })
-        .catch(function(){
+        .catch(function(err) {
+            console.error('Claim error:', err);
             statusMessage.className = 'status-msg error';
-            statusMessage.textContent = 'An error occurred.';
+            statusMessage.textContent = 'An error occurred. Please try again.';
             claimBtn.disabled = false;
             claimBtn.textContent = 'Claim Now';
+            isClaiming = false;
         });
     }
 
     function fetchUserStatus() {
-        fetch('/api/user/info',{headers:headers})
-        .then(function(r){return r.json();})
-        .then(function(result){
-            if(!result.success) return showError("Could not verify your account status.");
+        fetch('/api/user/info', { headers: headers })
+        .then(function(r) {
+            /* FIX 2: Check auth */
+            if (handleAuth(r)) return null;
+            return r.json();
+        })
+        .then(function(result) {
+            if (!result) return;
+            if (!result.success) return showError('Could not verify your account status.');
             var user = result.user;
-            if(!user.active_package) return showError("You do not have an active investment package.");
-            if(new Date() > new Date(user.package_expiry_date)) return showError("Your investment package has expired.");
+            if (!user.active_package) return showError('You do not have an active investment package.');
+            if (new Date() > new Date(user.package_expiry_date)) return showError('Your investment package has expired.');
 
-            var todayReset = new Date();
-            todayReset.setUTCHours(0,0,0,0);
+            /* FIX 6: Consistent UTC time comparison */
+            var now = new Date();
+            var todayResetUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0);
 
-            if(user.last_claim_timestamp && new Date(user.last_claim_timestamp) > todayReset){
-                var tomorrowReset = new Date(todayReset.getTime() + 24*60*60*1000);
-                showWaiting(tomorrowReset.getTime());
+            if (user.last_claim_timestamp && new Date(user.last_claim_timestamp).getTime() > todayResetUTC) {
+                var tomorrowResetUTC = todayResetUTC + 24 * 60 * 60 * 1000;
+                showWaiting(tomorrowResetUTC);
             } else {
                 var currentPackageIndex = packageOrder.indexOf(user.active_package);
                 var upgradeMsg = '';
-                if(currentPackageIndex < packageOrder.length - 1){
+                if (currentPackageIndex >= 0 && currentPackageIndex < packageOrder.length - 1) {
                     var nextPackage = packageOrder[currentPackageIndex + 1];
                     var nextProfit = profitMap[nextPackage];
-                    upgradeMsg = '<div class="upgrade-hint"><p>' + nextPackage + ' members are claiming <strong style="color:var(--gold);">$' + nextProfit.toLocaleString() + '</strong> today.</p><a href="packages.html">Upgrade Plan &rarr;</a></div>';
+                    /* FIX 1: Use esc() for package names */
+                    upgradeMsg = '<div class="upgrade-hint"><p>' + esc(nextPackage) + ' members are claiming <strong style="color:var(--gold);">$' + esc(nextProfit.toLocaleString()) + '</strong> today.</p><a href="packages.html">Upgrade Plan &rarr;</a></div>';
                 }
                 showReadyToClaim(profitMap[user.active_package] || 0, upgradeMsg);
             }
         })
-        .catch(function(){
-            showError("Could not connect to the server.");
+        .catch(function(err) {
+            console.error('Fetch status error:', err);
+            showError('Could not connect to the server.');
         });
     }
 
