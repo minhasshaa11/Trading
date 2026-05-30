@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Wallet - Bond 1x</title>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" as="style">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -12,8 +11,6 @@
         :root{--cream:#FBF8F3;--cream-dark:#F2EDE4;--cream-border:#E8DFD0;--brown-dark:#2D1F0E;--brown-mid:#4A3020;--brown-light:#8B6040;--gold:#C9832A;--gold-light:#E8A84A;--gold-pale:#F5E8D0;--green:#3D7A52;--red:#C0392B;--text-main:#1E140A;--text-muted:#9A8070;--white:#FFFFFF;}
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
         body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-main);min-height:100vh;padding-bottom:90px;overflow-x:hidden;}
-
-        /* Header */
         .hdr{background:var(--brown-dark);padding:20px 20px 0;position:relative;overflow:hidden;}
         .hdr::before{content:'';position:absolute;top:-60px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(201,131,42,.15),transparent 70%);}
         .hdr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
@@ -22,39 +19,25 @@
         .hero::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
         .hero-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-style:italic;color:var(--gold-light);margin-bottom:4px;}
         .hero-sub{font-size:13px;color:#D4B896;}
-
-        /* Body */
         .bdy{padding:16px;}
-
-        /* Tabs */
         .tabs{display:flex;background:var(--white);border:1px solid var(--cream-border);border-radius:14px;padding:4px;margin-bottom:16px;box-shadow:0 2px 8px rgba(45,31,14,.04);}
         .tab-btn{flex:1;padding:12px 0;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--text-muted);background:transparent;border:none;cursor:pointer;border-radius:10px;transition:all .2s;letter-spacing:1px;text-transform:uppercase;}
         .tab-btn.active{background:var(--gold);color:var(--brown-dark);}
         .tab-btn:active{transform:scale(.97);}
-
         .tab-content{display:none;}
         .tab-content.active{display:block;}
-
-        /* Cards */
         .w-card{background:var(--white);border:1px solid var(--cream-border);border-radius:16px;padding:20px;box-shadow:0 4px 20px rgba(45,31,14,.06);margin-bottom:16px;animation:fu .4s ease both;}
         @keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-
         .sec-lbl{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;}
-
-        /* Balance box */
         .bal-box{display:flex;justify-content:space-between;align-items:center;background:var(--cream-dark);border:1px solid var(--cream-border);border-radius:14px;padding:16px;margin-bottom:16px;}
         .bal-box-lbl{font-size:12px;color:var(--text-muted);}
         .bal-box-val{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--green);}
-
-        /* Form */
         .form-group{margin-bottom:14px;}
         .form-label{display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
         .form-input{width:100%;background:var(--cream-dark);border:1px solid var(--cream-border);border-radius:12px;padding:14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-main);outline:none;transition:border-color .2s;}
         .form-input:focus{border-color:var(--gold);}
         .form-input::placeholder{color:var(--text-muted);}
         select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%239A8070' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
-
-        /* Buttons */
         .btn-primary{width:100%;border:none;border-radius:12px;padding:14px;font-family:'DM Sans',sans-serif;font-size:13px;letter-spacing:1px;font-weight:600;cursor:pointer;transition:all .2s;background:var(--gold);color:var(--brown-dark);box-shadow:0 4px 16px rgba(201,131,42,.3);}
         .btn-primary:active{transform:scale(.97);background:var(--gold-light);}
         .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none;}
@@ -63,13 +46,9 @@
         .btn-green{width:100%;border:none;border-radius:12px;padding:14px;font-family:'DM Sans',sans-serif;font-size:13px;letter-spacing:1px;font-weight:600;cursor:pointer;transition:all .2s;background:var(--green);color:var(--white);box-shadow:0 4px 16px rgba(61,122,82,.2);}
         .btn-green:active{transform:scale(.97);}
         .btn-green:disabled{opacity:.6;cursor:not-allowed;transform:none;}
-
-        /* QR Section */
         .qr-wrap{text-align:center;margin-bottom:16px;}
         .qr-wrap img{width:128px;height:128px;border-radius:12px;border:3px solid var(--cream-border);padding:6px;background:var(--white);}
         .qr-wrap p{font-size:11px;color:var(--text-muted);margin-top:6px;}
-
-        /* Invoice details */
         .inv-box{background:var(--cream-dark);border:1px solid var(--cream-border);border-radius:14px;padding:16px;}
         .inv-row{margin-bottom:12px;}
         .inv-row:last-child{margin-bottom:0;}
@@ -77,47 +56,29 @@
         .inv-val{font-size:14px;font-weight:500;color:var(--text-main);}
         .inv-val.amount{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--green);}
         .inv-val.currency{font-size:12px;color:var(--text-muted);text-transform:uppercase;}
-
         .addr-box{display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--cream-border);border-radius:10px;padding:10px;}
         .addr-text{flex:1;font-size:11px;color:var(--brown-light);word-break:break-all;font-family:monospace;}
         .btn-copy{background:var(--gold-pale);border:1px solid var(--cream-border);border-radius:8px;padding:6px 12px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;color:var(--gold);cursor:pointer;transition:all .2s;white-space:nowrap;}
         .btn-copy:active{background:var(--gold);color:var(--brown-dark);}
-
-        /* Warning box */
         .warn-box{background:var(--gold-pale);border:1px solid rgba(201,131,42,.3);border-radius:12px;padding:12px;margin-top:14px;}
         .warn-box p{font-size:11px;color:var(--brown-light);text-align:center;line-height:1.5;}
-
-        /* History items */
         .hist-item{display:flex;justify-content:space-between;align-items:center;background:var(--cream-dark);border:1px solid var(--cream-border);border-radius:12px;padding:12px 14px;margin-bottom:8px;}
         .hist-item:last-child{margin-bottom:0;}
-        .hist-left{}
         .hist-amt{font-size:14px;font-weight:500;color:var(--text-main);}
         .hist-date{font-size:11px;color:var(--text-muted);margin-top:2px;}
         .hist-badge{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:20px;}
         .badge-completed{background:rgba(61,122,82,.12);border:1px solid rgba(61,122,82,.3);color:var(--green);}
         .badge-pending{background:var(--gold-pale);border:1px solid rgba(201,131,42,.3);color:var(--gold);}
         .badge-failed,.badge-rejected{background:rgba(192,57,43,.1);border:1px solid rgba(192,57,43,.3);color:var(--red);}
-
-        /* Status & Error messages */
         .msg{text-align:center;font-size:12px;margin-top:10px;min-height:18px;}
         .msg-success{color:var(--green);}
         .msg-error{color:var(--red);}
         .msg-warn{color:var(--gold);}
         .msg-empty{color:var(--text-muted);font-size:12px;text-align:center;padding:12px 0;}
-
         .hidden{display:none!important;}
-
-        /* History scroll */
         .hist-scroll{max-height:240px;overflow-y:auto;}
-
-        /* Divider */
-        .divider{border:none;border-top:1px solid var(--cream-border);margin:20px 0 16px;}
-
-        /* Skeleton */
         .skel{background:linear-gradient(90deg,var(--cream-dark) 25%,var(--cream-border) 50%,var(--cream-dark) 75%);background-size:200% 100%;animation:sh 1.4s infinite;border-radius:6px;display:block;}
         @keyframes sh{to{background-position:-200% 0}}
-
-        /* Nav */
         .nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:420px;background:var(--brown-dark);border-radius:22px;padding:12px 8px;display:flex;justify-content:space-around;z-index:1000;box-shadow:0 8px 32px rgba(45,31,14,.25);border:1px solid rgba(201,131,42,.15);}
         .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;transition:all .2s;}
         .ni svg{color:#9A8060;transition:color .2s;}
@@ -125,6 +86,7 @@
         .ni.active svg,.ni.active span{color:var(--gold);}
         .nd{width:3px;height:3px;border-radius:50%;background:var(--gold);margin-top:1px;display:none;}
         .ni.active .nd{display:block;}
+        .form-error{font-size:11px;color:var(--red);margin-top:4px;display:none;}
     </style>
 </head>
 <body>
@@ -143,22 +105,21 @@
 </div>
 
 <div class="bdy">
-    <!-- Tabs -->
     <div class="tabs">
         <button id="deposit-tab-btn" class="tab-btn active">Deposit</button>
         <button id="withdraw-tab-btn" class="tab-btn">Withdraw</button>
     </div>
 
-    <!-- ===== DEPOSIT TAB ===== -->
+    <!-- DEPOSIT TAB -->
     <div id="deposit-content" class="tab-content active">
         <div class="w-card">
-            <!-- Phase 1: Create Deposit -->
             <div id="deposit-phase-1">
                 <div class="sec-lbl">Create New Deposit</div>
                 <form id="deposit-create-form">
                     <div class="form-group">
                         <label class="form-label">Amount (USD)</label>
-                        <input type="number" id="deposit-amount" class="form-input" placeholder="e.g. 100" required min="5">
+                        <input type="number" id="deposit-amount" class="form-input" placeholder="e.g. 100" required min="5" step="any">
+                        <div id="deposit-amount-error" class="form-error"></div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Select Currency</label>
@@ -175,13 +136,11 @@
                 <p id="create-error" class="msg msg-error hidden"></p>
             </div>
 
-            <!-- Phase 2: Invoice -->
             <div id="deposit-phase-2" class="hidden">
                 <div class="qr-wrap">
                     <img id="qr-code-img" src="" alt="QR Code">
                     <p>Scan to pay</p>
                 </div>
-
                 <div class="inv-box">
                     <div class="inv-row">
                         <div class="inv-lbl">Send Exactly</div>
@@ -199,21 +158,17 @@
                         <div class="inv-val" id="invoice-id" style="font-size:11px;color:var(--text-muted);font-family:monospace;">...</div>
                     </div>
                 </div>
-
                 <div class="warn-box">
-                    <p>⚠️ Send the <strong>exact amount</strong> shown above. Wait for the network to confirm.</p>
+                    <p>&#9888;&#65039; Send the <strong>exact amount</strong> shown above. Wait for the network to confirm.</p>
                 </div>
-
                 <div style="margin-top:16px;">
                     <button type="button" id="btn-check-status" class="btn-green">I Have Paid / Check Status</button>
                     <button type="button" id="btn-cancel-deposit" class="btn-secondary" style="margin-top:8px;">Cancel / New Deposit</button>
                 </div>
-
                 <p id="status-result" class="msg" style="margin-top:10px;"></p>
             </div>
         </div>
 
-        <!-- Deposit History -->
         <div class="w-card" style="animation-delay:.1s;">
             <div class="sec-lbl">Recent Deposits</div>
             <div id="deposit-history-list" class="hist-scroll">
@@ -225,29 +180,29 @@
         </div>
     </div>
 
-    <!-- ===== WITHDRAW TAB ===== -->
+    <!-- WITHDRAW TAB -->
     <div id="withdraw-content" class="tab-content">
         <div class="w-card">
             <div class="bal-box">
                 <span class="bal-box-lbl">Available Balance</span>
                 <span class="bal-box-val" id="withdraw-balance"><span class="skel" style="width:80px;height:26px;border-radius:4px;"></span></span>
             </div>
-
             <form id="withdraw-form">
                 <div class="form-group">
                     <label class="form-label">Withdraw Amount ($)</label>
-                    <input type="number" id="withdraw-amount" class="form-input" placeholder="Min $10" required min="10">
+                    <input type="number" id="withdraw-amount" class="form-input" placeholder="Min $10" required min="10" step="any">
+                    <div id="withdraw-amount-error" class="form-error"></div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Your Wallet Address (TRC20)</label>
                     <input type="text" id="withdraw-address" class="form-input" placeholder="T..." required>
+                    <div id="withdraw-address-error" class="form-error"></div>
                 </div>
                 <button type="submit" id="btn-withdraw" class="btn-primary">Request Withdrawal</button>
             </form>
             <p id="withdraw-msg" class="msg"></p>
         </div>
 
-        <!-- Withdraw History -->
         <div class="w-card" style="animation-delay:.1s;">
             <div class="sec-lbl">Withdrawal History</div>
             <div id="withdraw-history-list" class="hist-scroll">
@@ -273,6 +228,40 @@ document.addEventListener('DOMContentLoaded', function() {
     var token = localStorage.getItem('authToken');
     var headers = {'Content-Type':'application/json','x-auth-token':token};
 
+    /* FIX 1: XSS protection */
+    function esc(str) {
+        if (str === null || str === undefined) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(String(str)));
+        return div.innerHTML;
+    }
+
+    /* FIX 2: Auth error handler */
+    function handleAuth(r) {
+        if (r.status === 401) {
+            localStorage.removeItem('authToken');
+            window.location.href = '/login.html';
+            return true;
+        }
+        return false;
+    }
+
+    /* FIX 9: Safe number formatting */
+    function safeFixed(val, decimals) {
+        var num = parseFloat(val);
+        return isNaN(num) ? '0.00' : num.toFixed(decimals || 2);
+    }
+
+    /* FIX 8: Submission state tracking */
+    var isCreatingDeposit = false;
+    var isCheckingStatus = false;
+    var isWithdrawing = false;
+    var userBalance = 0;
+
+    /* FIX 10: Status check cooldown */
+    var lastStatusCheck = 0;
+    var STATUS_CHECK_COOLDOWN = 5000;
+
     // --- TABS ---
     var depositTab = document.getElementById('deposit-tab-btn');
     var withdrawTab = document.getElementById('withdraw-tab-btn');
@@ -280,7 +269,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var withdrawContent = document.getElementById('withdraw-content');
 
     function switchTab(mode) {
-        if(mode === 'deposit'){
+        if (mode === 'deposit') {
             depositTab.classList.add('active');
             withdrawTab.classList.remove('active');
             depositContent.classList.add('active');
@@ -292,8 +281,8 @@ document.addEventListener('DOMContentLoaded', function() {
             depositContent.classList.remove('active');
         }
     }
-    depositTab.addEventListener('click', function(){switchTab('deposit');});
-    withdrawTab.addEventListener('click', function(){switchTab('withdraw');});
+    depositTab.addEventListener('click', function(){ switchTab('deposit'); });
+    withdrawTab.addEventListener('click', function(){ switchTab('withdraw'); });
 
     // --- DEPOSIT ---
     var phase1 = document.getElementById('deposit-phase-1');
@@ -301,189 +290,376 @@ document.addEventListener('DOMContentLoaded', function() {
     var createForm = document.getElementById('deposit-create-form');
     var createBtn = document.getElementById('btn-create-deposit');
     var createError = document.getElementById('create-error');
+    var depositAmountError = document.getElementById('deposit-amount-error');
     var currentPaymentId = null;
+
+    /* FIX 7: Client-side deposit amount validation */
+    function validateDepositAmount() {
+        var amount = parseFloat(document.getElementById('deposit-amount').value);
+        if (isNaN(amount) || amount < 5) {
+            depositAmountError.textContent = 'Minimum deposit amount is $5';
+            depositAmountError.style.display = 'block';
+            return false;
+        }
+        if (amount > 100000) {
+            depositAmountError.textContent = 'Maximum deposit amount is $100,000';
+            depositAmountError.style.display = 'block';
+            return false;
+        }
+        depositAmountError.style.display = 'none';
+        return true;
+    }
 
     createForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        /* FIX 7 & 8: Validate and prevent double submit */
+        if (isCreatingDeposit) return;
+        if (!validateDepositAmount()) return;
+
+        isCreatingDeposit = true;
         createBtn.disabled = true;
-        createBtn.innerText = 'Generating Invoice...';
+        createBtn.textContent = 'Generating Invoice...';
         createError.classList.add('hidden');
 
         var amount = document.getElementById('deposit-amount').value;
         var currency = document.getElementById('deposit-currency').value;
 
-        fetch('/api/deposit/create_deposit',{
-            method:'POST', headers:headers,
-            body:JSON.stringify({amount:amount, currency:currency})
+        fetch('/api/deposit/create_deposit', {
+            method: 'POST', headers: headers,
+            body: JSON.stringify({ amount: amount, currency: currency })
         })
-        .then(function(r){return r.json();})
-        .then(function(data){
-            if(!data.success) throw new Error(data.message);
+        .then(function(r) {
+            if (handleAuth(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            if (!data.success) throw new Error(data.message || 'Failed to create deposit.');
 
             currentPaymentId = data.payment_id;
-            document.getElementById('invoice-amount').innerText = data.amount_expected;
-            document.getElementById('invoice-currency').innerText = currency;
-            document.getElementById('invoice-address').innerText = data.deposit_address;
-            document.getElementById('invoice-id').innerText = data.payment_id;
+            /* FIX 1: Use textContent for all dynamic values */
+            document.getElementById('invoice-amount').textContent = data.amount_expected;
+            document.getElementById('invoice-currency').textContent = currency;
+            document.getElementById('invoice-address').textContent = data.deposit_address;
+            document.getElementById('invoice-id').textContent = data.payment_id;
 
-            var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + data.deposit_address;
-            document.getElementById('qr-code-img').src = qrUrl;
+            /* FIX 6: QR code with error handling */
+            var qrImg = document.getElementById('qr-code-img');
+            var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(data.deposit_address);
+            qrImg.onerror = function() {
+                qrImg.alt = 'QR unavailable - use address below';
+                qrImg.style.display = 'none';
+            };
+            qrImg.src = qrUrl;
 
             phase1.classList.add('hidden');
             phase2.classList.remove('hidden');
         })
-        .catch(function(err){
-            createError.innerText = err.message;
+        .catch(function(err) {
+            createError.textContent = err.message || 'An error occurred.';
             createError.classList.remove('hidden');
         })
-        .finally(function(){
+        .finally(function() {
+            isCreatingDeposit = false;
             createBtn.disabled = false;
-            createBtn.innerText = 'Generate Deposit Address';
+            createBtn.textContent = 'Generate Deposit Address';
         });
     });
 
-    // COPY
-    document.getElementById('btn-copy').addEventListener('click', function(){
-        var addr = document.getElementById('invoice-address').innerText;
-        navigator.clipboard.writeText(addr);
+    /* FIX 3: Safe clipboard copy with fallback */
+    document.getElementById('btn-copy').addEventListener('click', function() {
+        var addr = document.getElementById('invoice-address').textContent;
         var btn = document.getElementById('btn-copy');
-        btn.innerText = 'Copied!';
-        setTimeout(function(){btn.innerText = 'Copy';}, 2000);
+
+        function onCopySuccess() {
+            btn.textContent = 'Copied!';
+            setTimeout(function(){ btn.textContent = 'Copy'; }, 2000);
+        }
+        function onCopyFail() {
+            /* Fallback: select text manually */
+            try {
+                var range = document.createRange();
+                range.selectNodeContents(document.getElementById('invoice-address'));
+                var sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+                btn.textContent = 'Selected!';
+                setTimeout(function(){ btn.textContent = 'Copy'; }, 2000);
+            } catch(e) {
+                btn.textContent = 'Failed';
+                setTimeout(function(){ btn.textContent = 'Copy'; }, 2000);
+            }
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(addr).then(onCopySuccess).catch(onCopyFail);
+        } else {
+            onCopyFail();
+        }
     });
 
     // CHECK STATUS
     var statusBtn = document.getElementById('btn-check-status');
     var statusMsg = document.getElementById('status-result');
 
-    statusBtn.addEventListener('click', function(){
-        if(!currentPaymentId) return;
-        statusBtn.disabled = true;
-        statusBtn.innerText = 'Checking Blockchain...';
-        statusMsg.innerText = '';
+    statusBtn.addEventListener('click', function() {
+        if (!currentPaymentId || isCheckingStatus) return;
 
-        fetch('/api/deposit/verify',{
-            method:'POST', headers:headers,
-            body:JSON.stringify({payment_id:currentPaymentId})
+        /* FIX 10: Rate limiting */
+        var now = Date.now();
+        if (now - lastStatusCheck < STATUS_CHECK_COOLDOWN) {
+            statusMsg.className = 'msg msg-warn';
+            statusMsg.textContent = 'Please wait a few seconds before checking again.';
+            return;
+        }
+        lastStatusCheck = now;
+
+        isCheckingStatus = true;
+        statusBtn.disabled = true;
+        statusBtn.textContent = 'Checking Blockchain...';
+        statusMsg.textContent = '';
+
+        fetch('/api/deposit/verify', {
+            method: 'POST', headers: headers,
+            body: JSON.stringify({ payment_id: currentPaymentId })
         })
-        .then(function(r){return r.json();})
-        .then(function(data){
-            if(data.status === 'completed' || data.status === 'finished'){
+        .then(function(r) {
+            if (handleAuth(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            if (data.status === 'completed' || data.status === 'finished') {
                 statusMsg.className = 'msg msg-success';
-                statusMsg.innerText = '✅ Payment Received! Balance Updated.';
-                setTimeout(function(){location.reload();}, 2000);
+                statusMsg.textContent = 'Payment Received! Balance Updated.';
+                setTimeout(function(){ location.reload(); }, 2000);
             } else {
                 statusMsg.className = 'msg msg-warn';
-                statusMsg.innerText = 'Status: ' + data.status + '. Please wait & try again.';
+                /* FIX 1: Sanitize status */
+                statusMsg.textContent = 'Status: ' + (data.status || 'unknown') + '. Please wait & try again.';
             }
         })
-        .catch(function(){
+        .catch(function() {
             statusMsg.className = 'msg msg-error';
-            statusMsg.innerText = 'Error checking status.';
+            statusMsg.textContent = 'Error checking status. Please try again.';
         })
-        .finally(function(){
+        .finally(function() {
+            isCheckingStatus = false;
             statusBtn.disabled = false;
-            statusBtn.innerText = 'I Have Paid / Check Status';
+            statusBtn.textContent = 'I Have Paid / Check Status';
         });
     });
 
     // CANCEL
-    document.getElementById('btn-cancel-deposit').addEventListener('click', function(){
+    document.getElementById('btn-cancel-deposit').addEventListener('click', function() {
         phase2.classList.add('hidden');
         phase1.classList.remove('hidden');
         createForm.reset();
-        statusMsg.innerText = '';
+        statusMsg.textContent = '';
+        currentPaymentId = null;
+        depositAmountError.style.display = 'none';
     });
 
     // DEPOSIT HISTORY
     function loadDepositHistory() {
         var list = document.getElementById('deposit-history-list');
-        fetch('/api/deposit/history',{headers:headers})
-        .then(function(r){return r.json();})
-        .then(function(data){
-            if(data.history && data.history.length > 0){
-                var html = '';
-                for(var i=0; i<data.history.length; i++){
+        fetch('/api/deposit/history', { headers: headers })
+        .then(function(r) {
+            if (handleAuth(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            if (data.history && data.history.length > 0) {
+                /* FIX 1: Build DOM elements instead of innerHTML with raw data */
+                list.innerHTML = '';
+                for (var i = 0; i < data.history.length; i++) {
                     var tx = data.history[i];
                     var badgeClass = tx.status === 'completed' ? 'badge-completed' : (tx.status === 'failed' ? 'badge-failed' : 'badge-pending');
                     var statusText = tx.status ? tx.status.toUpperCase() : 'PENDING';
-                    html += '<div class="hist-item"><div class="hist-left"><div class="hist-amt">' + tx.amount + ' <span style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">' + (tx.currency || 'USD') + '</span></div><div class="hist-date">' + new Date(tx.date).toLocaleDateString() + '</div></div><span class="hist-badge ' + badgeClass + '">' + statusText + '</span></div>';
+
+                    var item = document.createElement('div');
+                    item.className = 'hist-item';
+
+                    var left = document.createElement('div');
+                    left.className = 'hist-left';
+
+                    var amt = document.createElement('div');
+                    amt.className = 'hist-amt';
+                    /* FIX 9: Safe number display */
+                    amt.textContent = safeFixed(tx.amount, 2) + ' ' + (tx.currency || 'USD').toUpperCase();
+
+                    var date = document.createElement('div');
+                    date.className = 'hist-date';
+                    date.textContent = tx.date ? new Date(tx.date).toLocaleDateString() : 'N/A';
+
+                    var badge = document.createElement('span');
+                    badge.className = 'hist-badge ' + badgeClass;
+                    badge.textContent = statusText;
+
+                    left.appendChild(amt);
+                    left.appendChild(date);
+                    item.appendChild(left);
+                    item.appendChild(badge);
+                    list.appendChild(item);
                 }
-                list.innerHTML = html;
             } else {
                 list.innerHTML = '<p class="msg-empty">No deposits yet.</p>';
             }
         })
-        .catch(function(){
+        .catch(function() {
             list.innerHTML = '<p class="msg msg-error">Failed to load history</p>';
         });
     }
 
     // --- WITHDRAW ---
+    var withdrawAmountError = document.getElementById('withdraw-amount-error');
+    var withdrawAddressError = document.getElementById('withdraw-address-error');
+
     function loadUserBalance() {
-        fetch('/api/user/info',{headers:headers})
-        .then(function(r){return r.json();})
-        .then(function(data){
-            if(data.success){
-                document.getElementById('withdraw-balance').innerText = '$' + data.user.balance.toFixed(2);
+        fetch('/api/user/info', { headers: headers })
+        .then(function(r) {
+            if (handleAuth(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            if (data.success) {
+                userBalance = data.user.balance || 0;
+                document.getElementById('withdraw-balance').textContent = '$' + safeFixed(userBalance, 2);
             }
         })
-        .catch(function(){});
+        .catch(function() {
+            document.getElementById('withdraw-balance').textContent = 'Error';
+        });
     }
 
     function loadWithdrawHistory() {
         var list = document.getElementById('withdraw-history-list');
-        fetch('/api/withdraw/history',{headers:headers})
-        .then(function(r){return r.json();})
-        .then(function(data){
-            if(data.history && data.history.length > 0){
-                var html = '';
-                for(var i=0; i<data.history.length; i++){
+        fetch('/api/withdraw/history', { headers: headers })
+        .then(function(r) {
+            if (handleAuth(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            if (data.history && data.history.length > 0) {
+                /* FIX 1: DOM-based rendering */
+                list.innerHTML = '';
+                for (var i = 0; i < data.history.length; i++) {
                     var tx = data.history[i];
                     var badgeClass = tx.status === 'completed' ? 'badge-completed' : (tx.status === 'rejected' ? 'badge-rejected' : 'badge-pending');
                     var statusText = tx.status ? tx.status.toUpperCase() : 'PENDING';
-                    html += '<div class="hist-item"><div class="hist-left"><div class="hist-amt">$' + tx.amount.toFixed(2) + '</div><div class="hist-date">' + new Date(tx.date).toLocaleDateString() + '</div></div><span class="hist-badge ' + badgeClass + '">' + statusText + '</span></div>';
+
+                    var item = document.createElement('div');
+                    item.className = 'hist-item';
+
+                    var left = document.createElement('div');
+                    left.className = 'hist-left';
+
+                    var amt = document.createElement('div');
+                    amt.className = 'hist-amt';
+                    amt.textContent = '$' + safeFixed(tx.amount, 2);
+
+                    var date = document.createElement('div');
+                    date.className = 'hist-date';
+                    date.textContent = tx.date ? new Date(tx.date).toLocaleDateString() : 'N/A';
+
+                    var badge = document.createElement('span');
+                    badge.className = 'hist-badge ' + badgeClass;
+                    badge.textContent = statusText;
+
+                    left.appendChild(amt);
+                    left.appendChild(date);
+                    item.appendChild(left);
+                    item.appendChild(badge);
+                    list.appendChild(item);
                 }
-                list.innerHTML = html;
             } else {
                 list.innerHTML = '<p class="msg-empty">No withdrawals yet.</p>';
             }
         })
-        .catch(function(){});
+        .catch(function() {
+            list.innerHTML = '<p class="msg msg-error">Failed to load history</p>';
+        });
+    }
+
+    /* FIX 4: Wallet address validation */
+    function validateWalletAddress(address) {
+        if (!address || address.trim().length === 0) return false;
+        /* TRC20 addresses start with T and are 34 characters */
+        var trc20Regex = /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
+        return trc20Regex.test(address.trim());
     }
 
     var withdrawForm = document.getElementById('withdraw-form');
     var withdrawBtn = document.getElementById('btn-withdraw');
     var withdrawMsg = document.getElementById('withdraw-msg');
 
-    withdrawForm.addEventListener('submit', function(e){
+    withdrawForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        if (isWithdrawing) return;
+
+        var amount = parseFloat(document.getElementById('withdraw-amount').value);
+        var address = document.getElementById('withdraw-address').value.trim();
+        var hasError = false;
+
+        /* FIX 5: Client-side balance check */
+        if (isNaN(amount) || amount < 10) {
+            withdrawAmountError.textContent = 'Minimum withdrawal is $10';
+            withdrawAmountError.style.display = 'block';
+            hasError = true;
+        } else if (amount > userBalance) {
+            withdrawAmountError.textContent = 'Insufficient balance. Available: $' + safeFixed(userBalance, 2);
+            withdrawAmountError.style.display = 'block';
+            hasError = true;
+        } else {
+            withdrawAmountError.style.display = 'none';
+        }
+
+        /* FIX 4: Validate address */
+        if (!validateWalletAddress(address)) {
+            withdrawAddressError.textContent = 'Please enter a valid TRC20 wallet address (starts with T, 34 characters)';
+            withdrawAddressError.style.display = 'block';
+            hasError = true;
+        } else {
+            withdrawAddressError.style.display = 'none';
+        }
+
+        if (hasError) return;
+
+        isWithdrawing = true;
         withdrawBtn.disabled = true;
-        withdrawBtn.innerText = 'Processing...';
-        withdrawMsg.innerText = '';
+        withdrawBtn.textContent = 'Processing...';
+        withdrawMsg.textContent = '';
 
-        var amount = document.getElementById('withdraw-amount').value;
-        var address = document.getElementById('withdraw-address').value;
-
-        fetch('/api/withdraw/request',{
-            method:'POST', headers:headers,
-            body:JSON.stringify({amount:amount, address:address})
+        fetch('/api/withdraw/request', {
+            method: 'POST', headers: headers,
+            body: JSON.stringify({ amount: amount, address: address })
         })
-        .then(function(r){return r.json();})
-        .then(function(data){
-            if(!data.success) throw new Error(data.message);
+        .then(function(r) {
+            if (handleAuth(r)) return null;
+            return r.json();
+        })
+        .then(function(data) {
+            if (!data) return;
+            if (!data.success) throw new Error(data.message || 'Withdrawal failed.');
             withdrawMsg.className = 'msg msg-success';
-            withdrawMsg.innerText = data.message;
+            withdrawMsg.textContent = data.message || 'Withdrawal request submitted!';
             withdrawForm.reset();
+            withdrawAmountError.style.display = 'none';
+            withdrawAddressError.style.display = 'none';
             loadUserBalance();
             loadWithdrawHistory();
         })
-        .catch(function(err){
+        .catch(function(err) {
             withdrawMsg.className = 'msg msg-error';
-            withdrawMsg.innerText = err.message;
+            withdrawMsg.textContent = err.message || 'An error occurred.';
         })
-        .finally(function(){
+        .finally(function() {
+            isWithdrawing = false;
             withdrawBtn.disabled = false;
-            withdrawBtn.innerText = 'Request Withdrawal';
+            withdrawBtn.textContent = 'Request Withdrawal';
         });
     });
 
