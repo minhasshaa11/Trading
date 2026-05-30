@@ -5,13 +5,13 @@ const User = require('../models/User');
 const ChatThread = require('../models/Chat');
 const authMiddleware = require('../middleware/auth');
 
-// --- PACKAGE DEFINITIONS (Unchanged) ---
+// --- PACKAGE DEFINITIONS (FIX: durationDays 30 → 90 to match frontend) ---
 const PACKAGES = {
-    "Bronze": { price: 30, dailyProfit: 1, durationDays: 30 },
-    "Silver": { price: 100, dailyProfit: 4, durationDays: 30 },
-    "Gold": { price: 200, dailyProfit: 9, durationDays: 30 },
-    "Platinum": { price: 500, dailyProfit: 23, durationDays: 30 },
-    "Diamond": { price: 1000, dailyProfit: 50, durationDays: 30 },
+    "Bronze": { price: 30, dailyProfit: 1, durationDays: 90 },
+    "Silver": { price: 100, dailyProfit: 4, durationDays: 90 },
+    "Gold": { price: 200, dailyProfit: 9, durationDays: 90 },
+    "Platinum": { price: 500, dailyProfit: 23, durationDays: 90 },
+    "Diamond": { price: 1000, dailyProfit: 50, durationDays: 90 },
 };
 // -----------------------------------
 
@@ -114,7 +114,8 @@ router.post('/claim-earnings', authMiddleware, async (req, res) => {
         user.last_claim_timestamp = now;
         
         await user.save();
-        res.json({ success: true, message: `Successfully claimed $${dailyProfit}!`, newBalance: user.balance });
+        // FIX: PKR → USDT
+        res.json({ success: true, message: `Successfully claimed $${dailyProfit} USDT!`, newBalance: user.balance });
 
     } catch (error) {
         console.error("Claim earnings error:", error);
