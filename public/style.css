@@ -1,77 +1,95 @@
+/* public/style.css - Bond 1X Warm Cream Theme & Animations */
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background: #f0f2f5;
+    background-color: #FDFBF7;
+    color: #5C4A3D;
+    padding-bottom: 100px;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.container {
-  max-width: 1200px;
-  width: 95vw;
-  margin: 20px auto;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+/* Loading Overlay Styles */
+.status-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; z-index: 2000;
+    background-color: #FDFBF7;
+    backdrop-filter: blur(10px);
 }
 
-#candlestickContainer {
-  width: 100%;
-  height: 450px;
+.spinner {
+    width: 48px; height: 48px;
+    border: 4px solid #C5A059;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.retry-btn {
+    margin-top: 20px; padding: 12px 32px;
+    background: #332415; color: white;
+    border: none; border-radius: 12px; font-weight: 600;
+    cursor: pointer; font-size: 0.95rem; 
+    box-shadow: 0 4px 12px rgba(51,36,21,0.2);
 }
 
-.trade-buttons {
-  display: flex;
-  justify-content: space-between;
-}
-
-.trade-buttons button {
-  width: 48%;
-  padding: 15px 0;
-  font-size: 1.2em;
-  border: none;
-  border-radius: 5px;
-  color: white;
-  cursor: pointer;
-}
-
-#tradeUp { background-color: #28a745; }
-#tradeDown { background-color: #dc3545; }
-
-button:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
-}
-
-.info {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  padding: 10px;
-  font-size: 1.2em;
-  font-weight: bold;
-}
-
+/* Bottom Navigation */
 .bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background: #222;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0;
-  border-top: 2px solid #444;
+    position: fixed; bottom: 0; left: 0; width: 100%;
+    background-color: #FDFBF7;
+    border-top: 1px solid rgba(92,74,61,0.1);
+    display: flex; justify-content: space-around;
+    padding: 12px 0 24px 0; z-index: 1000;
 }
 
-.bottom-nav a {
-  color: white;
-  text-decoration: none;
-  text-align: center;
-  flex: 1;
-  font-size: 14px;
+.nav-link {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #A09E9C; text-decoration: none; font-size: 0.65rem; font-weight: 700; gap: 4px;
+    letter-spacing: 0.05em; transition: color 0.2s;
+}
+.nav-link svg { width: 22px; height: 22px; }
+.nav-link.active { color: #C5A059; }
+
+/* Skeleton Loading Animation */
+.skeleton {
+    background-color: rgba(92,74,61,0.1); 
+    border-radius: 0.25rem;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse { 50% { opacity: .4; } }
+
+/* --- PREMIUM ANIMATIONS --- */
+
+/* Page Load Animation (Smooth Slide Up) */
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+    transform: translateY(20px);
 }
 
-.bottom-nav a:hover {
-  color: #00bcd4;
+@keyframes fadeInUp {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Delays for smooth sequence */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+
+/* Subtle Gold Shine/Shimmer for Main Card */
+.gold-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+.gold-shimmer::after {
+    content: ''; position: absolute; top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(197, 160, 89, 0.1) 50%, rgba(255,255,255,0) 100%);
+    transform: rotate(30deg);
+    animation: shimmerEffect 6s infinite linear;
+}
+@keyframes shimmerEffect {
+    0% { transform: translateX(-100%) rotate(30deg); }
+    100% { transform: translateX(100%) rotate(30deg); }
 }
