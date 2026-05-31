@@ -367,7 +367,8 @@ router.get("/account-summary", authMiddleware, async function (req, res) {
     try {
         /* FIX 6: Only select needed fields, not entire transactions array */
         var user = await User.findById(req.user.id).select(
-            "balance totalDeposits transactions"
+    "balance totalDeposits transactions profit"
+);
         );
         if (!user) return handleUserNotFound(res);
 
@@ -381,8 +382,7 @@ router.get("/account-summary", authMiddleware, async function (req, res) {
             }
         }
 
-        var lifetimeProfit =
-            user.balance + totalWithdrawals - (user.totalDeposits || 0);
+        var lifetimeProfit = user.profit || 0;
 
         res.json({
             success: true,
