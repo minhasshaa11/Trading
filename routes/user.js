@@ -215,10 +215,7 @@ router.post("/claim-earnings", authMiddleware, async function (req, res) {
                 ],
             },
             {
-                $inc: {
-    balance: dailyProfit,
-    profit: dailyProfit
-},
+                $inc: { balance: dailyProfit },
                 $set: { last_claim_timestamp: now },
             },
             { new: true }
@@ -367,8 +364,7 @@ router.get("/account-summary", authMiddleware, async function (req, res) {
     try {
         /* FIX 6: Only select needed fields, not entire transactions array */
         var user = await User.findById(req.user.id).select(
-    "balance totalDeposits transactions profit"
-);
+            "balance totalDeposits transactions"
         );
         if (!user) return handleUserNotFound(res);
 
@@ -382,7 +378,8 @@ router.get("/account-summary", authMiddleware, async function (req, res) {
             }
         }
 
-        var lifetimeProfit = user.profit || 0;
+        var lifetimeProfit =
+            user.balance + totalWithdrawals - (user.totalDeposits || 0);
 
         res.json({
             success: true,
