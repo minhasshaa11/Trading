@@ -10,20 +10,16 @@
         .tab-button.active { background-color: #4A5568; color: #E2E8F0; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-
-        /* Custom styles for the Admin Chat */
         .admin-message {
-            background-color: #4C51BF; /* Indigo for admin */
+            background-color: #4C51BF;
             align-self: flex-end;
             margin-left: auto;
         }
-
         .user-message {
-            background-color: #4A5568; /* Gray for user */
+            background-color: #4A5568;
             align-self: flex-start;
             margin-right: auto;
         }
-        
         .message {
             max-width: 80%;
             padding: 10px 14px;
@@ -31,6 +27,7 @@
             margin-bottom: 8px;
             word-wrap: break-word;
         }
+        .btn-loading { opacity: 0.6; pointer-events: none; }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200">
@@ -40,6 +37,18 @@
             <h2 class="text-xl font-bold mb-4">Admin Access</h2>
             <input type="password" id="admin-key-input" class="w-full bg-gray-700 text-white p-2 rounded" placeholder="Enter Admin Key">
             <button id="login-button" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Login</button>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-sm">
+            <h2 class="text-lg font-bold mb-3" id="confirm-title">Confirm Action</h2>
+            <p class="text-gray-300 text-sm mb-4" id="confirm-text">Are you sure?</p>
+            <div class="flex gap-3">
+                <button id="confirm-cancel" class="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded">Cancel</button>
+                <button id="confirm-ok" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Confirm</button>
+            </div>
         </div>
     </div>
 
@@ -70,7 +79,7 @@
                                 <th class="p-3 text-left text-sm font-semibold">User Info</th>
                                 <th class="p-3 text-left text-sm font-semibold">Balance</th>
                                 <th class="p-3 text-left text-sm font-semibold">Total Deposits</th>
-                                <th class="p-3 text-left text-sm font-semibold">Trade Volume</th>
+                                <th class="p-3 text-left text-sm font-semibold">Package</th>
                                 <th class="p-3 text-left text-sm font-semibold">Referred By</th>
                                 <th class="p-3 text-left text-sm font-semibold">Pending Deposits</th>
                                 <th class="p-3 text-left text-sm font-semibold">Pending Withdrawals</th>
@@ -82,56 +91,56 @@
             </div>
 
             <div id="credit-tab" class="tab-content">
-                 <div class="bg-gray-800 rounded-lg p-6 max-w-md mx-auto">
-                     <h2 class="text-xl font-bold mb-4">Adjust User Balance</h2>
-                     <form id="credit-form">
-                         <div class="mb-4">
-                             <label for="credit-username" class="block mb-2 text-sm font-medium">Username</label>
-                             <input type="text" id="credit-username" class="w-full bg-gray-700 p-2 rounded" placeholder="Enter exact username" required>
-                         </div>
-                         <div class="mb-4">
-                             <label for="credit-amount" class="block mb-2 text-sm font-medium">Amount</label>
-                             <input type="number" step="0.01" id="credit-amount" class="w-full bg-gray-700 p-2 rounded" placeholder="e.g., 100 or -50" required>
-                         </div>
-                         <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Submit Adjustment</button>
-                     </form>
-                 </div>
+                <div class="bg-gray-800 rounded-lg p-6 max-w-md mx-auto">
+                    <h2 class="text-xl font-bold mb-4">Adjust User Balance</h2>
+                    <form id="credit-form">
+                        <div class="mb-4">
+                            <label for="credit-username" class="block mb-2 text-sm font-medium">Username</label>
+                            <input type="text" id="credit-username" class="w-full bg-gray-700 p-2 rounded" placeholder="Enter exact username" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="credit-amount" class="block mb-2 text-sm font-medium">Amount</label>
+                            <input type="number" step="0.01" id="credit-amount" class="w-full bg-gray-700 p-2 rounded" placeholder="e.g., 100 or -50" required>
+                        </div>
+                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Submit Adjustment</button>
+                    </form>
+                </div>
             </div>
 
             <div id="commission-tab" class="tab-content">
-                 <div class="bg-gray-800 rounded-lg p-6 max-w-md mx-auto">
-                     <h2 class="text-xl font-bold mb-4">Award Referral Commission</h2>
-                     <form id="commission-form">
-                         <div class="mb-4">
-                             <label for="commission-username" class="block mb-2 text-sm font-medium">Username</label>
-                             <input type="text" id="commission-username" class="w-full bg-gray-700 p-2 rounded" placeholder="Enter exact username of referrer" required>
-                         </div>
-                         <div class="mb-4">
-                             <label for="commission-amount" class="block mb-2 text-sm font-medium">Commission Amount</label>
-                             <input type="number" step="0.01" id="commission-amount" class="w-full bg-gray-700 p-2 rounded" placeholder="e.g., 5.00" required>
-                         </div>
-                         <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Award Commission</button>
-                     </form>
-                 </div>
+                <div class="bg-gray-800 rounded-lg p-6 max-w-md mx-auto">
+                    <h2 class="text-xl font-bold mb-4">Award Referral Commission</h2>
+                    <form id="commission-form">
+                        <div class="mb-4">
+                            <label for="commission-username" class="block mb-2 text-sm font-medium">Username</label>
+                            <input type="text" id="commission-username" class="w-full bg-gray-700 p-2 rounded" placeholder="Enter exact username of referrer" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="commission-amount" class="block mb-2 text-sm font-medium">Commission Amount</label>
+                            <input type="number" step="0.01" id="commission-amount" class="w-full bg-gray-700 p-2 rounded" placeholder="e.g., 5.00" required>
+                        </div>
+                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">Award Commission</button>
+                    </form>
+                </div>
             </div>
-            
+
             <div id="support-tab" class="tab-content">
                 <div class="bg-gray-800 rounded-lg p-6 flex flex-col md:flex-row gap-6">
                     <div class="w-full md:w-1/3 bg-gray-700 p-4 rounded-lg overflow-y-auto" style="min-height: 600px; max-height: 600px;">
                         <h2 class="text-xl font-bold mb-4 border-b border-gray-600 pb-2">Open Tickets (<span id="ticket-count">0</span>)</h2>
                         <div id="ticket-list-container" class="space-y-3">
                             <p id="tickets-loading" class="text-gray-400 text-center">Loading tickets...</p>
-                            </div>
+                        </div>
                     </div>
-                    
+
                     <div class="w-full md:w-2/3 bg-gray-700 p-4 rounded-lg flex flex-col">
                         <h2 id="current-chat-header" class="text-xl font-bold mb-4 border-b border-gray-600 pb-2">Select a Ticket to View</h2>
-                        <div id="admin-chat-window" class="flex-1 overflow-y-auto space-y-3 flex flex-col-reverse" style="max-height: 450px;">
+                        <div id="admin-chat-window" class="flex-1 overflow-y-auto space-y-3 flex flex-col" style="max-height: 450px;">
                             <p id="chat-placeholder" class="text-gray-500 text-center p-12">No chat selected.</p>
-                            </div>
-                        
+                        </div>
+
                         <div class="mt-4 flex">
-                            <input type="text" id="admin-message-input" class="flex-1 bg-gray-800 p-3 rounded-l-lg text-white border-0" placeholder="Type a reply...">
+                            <input type="text" id="admin-message-input" class="flex-1 bg-gray-800 p-3 rounded-l-lg text-white border-0" placeholder="Type a reply..." maxlength="2000">
                             <button id="admin-send-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-r-lg disabled:opacity-50" disabled>
                                 Send
                             </button>
@@ -140,346 +149,527 @@
                     </div>
                 </div>
             </div>
-            </div>
+        </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const getAdminKey = () => sessionStorage.getItem('adminKey');
-            const setAdminKey = (key) => sessionStorage.setItem('adminKey', key);
+    document.addEventListener('DOMContentLoaded', function () {
+        function getAdminKey() { return sessionStorage.getItem('adminKey'); }
+        function setAdminKey(key) { sessionStorage.setItem('adminKey', key); }
 
-            const loginModal = document.getElementById('login-modal');
-            const dashboardContent = document.getElementById('dashboard-content');
-            const adminKeyInput = document.getElementById('admin-key-input');
-            const loginButton = document.getElementById('login-button');
-            const refreshButton = document.getElementById('refresh-button');
+        var loginModal = document.getElementById('login-modal');
+        var dashboardContent = document.getElementById('dashboard-content');
+        var adminKeyInput = document.getElementById('admin-key-input');
+        var loginButton = document.getElementById('login-button');
+        var refreshButton = document.getElementById('refresh-button');
 
-            const usersTableBody = document.getElementById('users-table-body');
-            const searchInput = document.getElementById('search-input');
-            const creditForm = document.getElementById('credit-form');
-            const commissionForm = document.getElementById('commission-form');
+        var usersTableBody = document.getElementById('users-table-body');
+        var searchInput = document.getElementById('search-input');
+        var creditForm = document.getElementById('credit-form');
+        var commissionForm = document.getElementById('commission-form');
 
-            const tabs = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
+        var tabs = document.querySelectorAll('.tab-button');
+        var tabContents = document.querySelectorAll('.tab-content');
 
-            // NEW SUPPORT CHAT VARIABLES
-            const ticketsLoading = document.getElementById('tickets-loading');
-            const ticketListContainer = document.getElementById('ticket-list-container');
-            const ticketCountEl = document.getElementById('ticket-count');
-            const currentChatHeader = document.getElementById('current-chat-header');
-            const adminChatWindow = document.getElementById('admin-chat-window');
-            const adminMessageInput = document.getElementById('admin-message-input');
-            const adminSendBtn = document.getElementById('admin-send-btn');
-            const chatPlaceholder = document.getElementById('chat-placeholder');
-            const chatError = document.getElementById('chat-error');
+        var ticketsLoading = document.getElementById('tickets-loading');
+        var ticketListContainer = document.getElementById('ticket-list-container');
+        var ticketCountEl = document.getElementById('ticket-count');
+        var currentChatHeader = document.getElementById('current-chat-header');
+        var adminChatWindow = document.getElementById('admin-chat-window');
+        var adminMessageInput = document.getElementById('admin-message-input');
+        var adminSendBtn = document.getElementById('admin-send-btn');
+        var chatPlaceholder = document.getElementById('chat-placeholder');
+        var chatError = document.getElementById('chat-error');
 
-            let currentOpenChatId = null;
-            let currentChatUsername = null; 
-            // END NEW SUPPORT CHAT VARIABLES
+        /* FIX 3: Confirm modal elements */
+        var confirmModal = document.getElementById('confirm-modal');
+        var confirmTitle = document.getElementById('confirm-title');
+        var confirmText = document.getElementById('confirm-text');
+        var confirmOk = document.getElementById('confirm-ok');
+        var confirmCancel = document.getElementById('confirm-cancel');
 
+        var currentOpenChatId = null;
+        var currentChatUsername = null;
+        var searchTimeout = null;
 
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    tabContents.forEach(c => c.classList.remove('active'));
-                    document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
-                    
-                    // Trigger ticket refresh when the support tab is clicked
-                    if (tab.dataset.tab === 'support') {
-                        fetchTickets();
-                    }
-                });
+        /* FIX 1: XSS protection */
+        function esc(str) {
+            if (str === null || str === undefined) return '';
+            var div = document.createElement('div');
+            div.appendChild(document.createTextNode(String(str)));
+            return div.innerHTML;
+        }
+
+        /* FIX 3: Confirmation dialog */
+        function showConfirm(title, text, onConfirm) {
+            confirmTitle.textContent = title;
+            confirmText.textContent = text;
+            confirmModal.classList.remove('hidden');
+
+            function handleConfirm() { cleanup(); onConfirm(); }
+            function handleCancel() { cleanup(); }
+            function cleanup() {
+                confirmModal.classList.add('hidden');
+                confirmOk.removeEventListener('click', handleConfirm);
+                confirmCancel.removeEventListener('click', handleCancel);
+            }
+            confirmOk.addEventListener('click', handleConfirm);
+            confirmCancel.addEventListener('click', handleCancel);
+        }
+
+        /* Tabs */
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                tabs.forEach(function (t) { t.classList.remove('active'); });
+                tab.classList.add('active');
+                tabContents.forEach(function (c) { c.classList.remove('active'); });
+                document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+                if (tab.dataset.tab === 'support') fetchTickets();
             });
+        });
 
+        /* FIX 5: Safe message rendering */
+        function renderMessage(message, username) {
+            var isAdmin = message.sender === 'admin';
+            var messageEl = document.createElement('div');
+            messageEl.className = 'message p-3 rounded-lg text-sm ' + (isAdmin ? 'admin-message' : 'user-message');
 
-            // NEW SUPPORT CHAT FUNCTIONS
-            const renderMessage = (message, username) => {
-                const isAdmin = message.sender === 'admin';
-                const messageEl = document.createElement('div');
-                messageEl.className = `message p-3 rounded-lg text-sm ${isAdmin ? 'admin-message' : 'user-message'}`;
-                messageEl.innerHTML = `
-                    <p class="font-bold text-xs mb-1">${isAdmin ? 'Admin' : username}</p>
-                    <p>${message.content}</p>
-                    <span class="block text-xs mt-1 opacity-70 text-right">${new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                `;
-                return messageEl;
-            };
+            var senderP = document.createElement('p');
+            senderP.className = 'font-bold text-xs mb-1';
+            senderP.textContent = isAdmin ? 'Admin' : (username || 'User');
 
-            const fetchTickets = async () => {
-                ticketListContainer.innerHTML = '';
-                ticketListContainer.appendChild(ticketsLoading);
-                ticketsLoading.classList.remove('hidden');
-                
-                const adminKey = getAdminKey();
-                if (!adminKey) return;
+            var contentP = document.createElement('p');
+            contentP.textContent = message.content || '';
 
-                try {
-                    // API Endpoint: Get list of open tickets
-                    const response = await fetch('/api/admin/support/tickets', { headers: { 'x-admin-key': adminKey } });
-                    const data = await response.json();
+            var timeSpan = document.createElement('span');
+            timeSpan.className = 'block text-xs mt-1 opacity-70 text-right';
+            timeSpan.textContent = message.timestamp
+                ? new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : '';
 
+            messageEl.appendChild(senderP);
+            messageEl.appendChild(contentP);
+            messageEl.appendChild(timeSpan);
+            return messageEl;
+        }
+
+        function fetchTickets() {
+            ticketListContainer.innerHTML = '';
+            ticketListContainer.appendChild(ticketsLoading);
+            ticketsLoading.classList.remove('hidden');
+            ticketsLoading.textContent = 'Loading tickets...';
+
+            var adminKey = getAdminKey();
+            if (!adminKey) return;
+
+            fetch('/api/admin/support/tickets', { headers: { 'x-admin-key': adminKey } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     ticketsLoading.classList.add('hidden');
                     if (!data.success) throw new Error(data.message);
 
-                    const tickets = data.tickets || [];
+                    var tickets = data.tickets || [];
                     ticketCountEl.textContent = tickets.length;
-                    
+
                     if (tickets.length === 0) {
                         ticketListContainer.innerHTML = '<p class="text-gray-400 text-center p-4">No open support tickets.</p>';
                         return;
                     }
 
-                    tickets.forEach(ticket => {
-                        const ticketEl = document.createElement('div');
-                        const isActive = ticket._id === currentOpenChatId;
-                        ticketEl.className = `ticket-item p-3 rounded-lg cursor-pointer transition-colors ${isActive ? 'bg-blue-600' : 'bg-gray-800 hover:bg-gray-900'}`;
+                    tickets.forEach(function (ticket) {
+                        var ticketEl = document.createElement('div');
+                        var isActive = ticket._id === currentOpenChatId;
+                        ticketEl.className = 'ticket-item p-3 rounded-lg cursor-pointer transition-colors ' + (isActive ? 'bg-blue-600' : 'bg-gray-800 hover:bg-gray-900');
                         ticketEl.dataset.chatid = ticket._id;
-                        ticketEl.dataset.username = ticket.user.username;
 
-                        const lastMessage = ticket.lastMessage ? ticket.lastMessage.content.substring(0, 40) + '...' : 'New chat started.';
-                        const statusIndicator = ticket.status === 'pending_admin_reply' 
-                            ? '<p class="text-xs text-yellow-300 mt-1">❗ Awaiting Reply</p>' 
-                            : '<p class="text-xs text-gray-400 mt-1">Status: Open</p>';
+                        /* FIX 1: Use textContent for user data */
+                        var ticketUsername = (ticket.user && ticket.user.username) || (ticket.user && ticket.user.firstName) || 'Unknown';
 
-                        ticketEl.innerHTML = `
-                            <p class="font-bold text-white">${ticket.user.username}</p>
-                            <p class="text-xs text-gray-400">Last: ${lastMessage}</p>
-                            ${statusIndicator}
-                        `;
-                        
-                        ticketEl.addEventListener('click', () => openChat(ticket._id, ticket.user.username));
+                        var nameP = document.createElement('p');
+                        nameP.className = 'font-bold text-white';
+                        nameP.textContent = ticketUsername;
+
+                        var lastMsgP = document.createElement('p');
+                        lastMsgP.className = 'text-xs text-gray-400';
+                        var lastMsgText = ticket.lastMessage
+                            ? ticket.lastMessage.content.substring(0, 40) + '...'
+                            : 'New chat started.';
+                        lastMsgP.textContent = 'Last: ' + lastMsgText;
+
+                        var statusP = document.createElement('p');
+                        statusP.className = 'text-xs mt-1';
+                        if (ticket.status === 'pending_admin_reply') {
+                            statusP.className += ' text-yellow-300';
+                            statusP.textContent = '❗ Awaiting Reply';
+                        } else {
+                            statusP.className += ' text-gray-400';
+                            statusP.textContent = 'Status: Open';
+                        }
+
+                        ticketEl.appendChild(nameP);
+                        ticketEl.appendChild(lastMsgP);
+                        ticketEl.appendChild(statusP);
+
+                        ticketEl.addEventListener('click', function () {
+                            openChat(ticket._id, ticketUsername);
+                        });
                         ticketListContainer.appendChild(ticketEl);
                     });
+                })
+                .catch(function (error) {
+                    ticketsLoading.textContent = 'Error: ' + error.message;
+                    ticketsLoading.classList.remove('hidden');
+                });
+        }
 
-                } catch (error) {
-                    ticketsLoading.textContent = `Error: ${error.message}`;
-                }
-            };
-            
-            const openChat = async (chatId, username) => {
-                // Reset UI
-                currentOpenChatId = chatId;
-                currentChatUsername = username;
-                adminChatWindow.innerHTML = '';
-                chatPlaceholder.classList.add('hidden');
-                adminSendBtn.disabled = false;
-                currentChatHeader.textContent = `Chat with ${username}`;
-                
-                // Update active ticket highlight
-                document.querySelectorAll('.ticket-item').forEach(el => el.classList.remove('bg-blue-600'));
-                const activeTicket = document.querySelector(`.ticket-item[data-chatid="${chatId}"]`);
-                if (activeTicket) activeTicket.classList.add('bg-blue-600');
+        /* FIX 7: Normal flex-col with scroll to bottom */
+        function openChat(chatId, username) {
+            currentOpenChatId = chatId;
+            currentChatUsername = username;
+            adminChatWindow.innerHTML = '';
+            chatPlaceholder.classList.add('hidden');
+            adminSendBtn.disabled = false;
+            currentChatHeader.textContent = 'Chat with ' + (username || 'User');
 
-                // Fetch messages
-                const adminKey = getAdminKey();
-                try {
-                    // API Endpoint: Get messages for a specific chat
-                    const response = await fetch(`/api/admin/support/messages/${chatId}`, { headers: { 'x-admin-key': adminKey } });
-                    const data = await response.json();
+            document.querySelectorAll('.ticket-item').forEach(function (el) {
+                el.classList.remove('bg-blue-600');
+                el.classList.add('bg-gray-800');
+            });
+            var activeTicket = document.querySelector('.ticket-item[data-chatid="' + chatId + '"]');
+            if (activeTicket) {
+                activeTicket.classList.remove('bg-gray-800');
+                activeTicket.classList.add('bg-blue-600');
+            }
 
+            var adminKey = getAdminKey();
+            fetch('/api/admin/support/messages/' + chatId, { headers: { 'x-admin-key': adminKey } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (!data.success) throw new Error(data.message);
 
-                    data.messages.forEach(msg => {
-                        // Prepend to show newest at bottom (due to flex-col-reverse)
-                        adminChatWindow.prepend(renderMessage(msg, username)); 
+                    data.messages.forEach(function (msg) {
+                        adminChatWindow.appendChild(renderMessage(msg, username));
                     });
-                    
-                    adminChatWindow.scrollTop = adminChatWindow.scrollHeight; // Scroll to bottom
-                    
-                } catch (error) {
+
+                    /* Scroll to bottom */
+                    adminChatWindow.scrollTop = adminChatWindow.scrollHeight;
+                })
+                .catch(function (error) {
                     currentChatHeader.textContent = 'Error Loading Chat';
                     adminSendBtn.disabled = true;
-                }
-            };
-            
-            const sendAdminReply = async () => {
-                const content = adminMessageInput.value.trim();
-                if (!content || !currentOpenChatId) return;
+                });
+        }
 
-                adminMessageInput.value = '';
-                adminSendBtn.disabled = true;
+        /* FIX 6: Proper error recovery on chat send */
+        function sendAdminReply() {
+            var content = adminMessageInput.value.trim();
+            if (!content || !currentOpenChatId) return;
 
-                // Optimistically render
-                const tempMessage = { content, sender: 'admin', timestamp: new Date() };
-                adminChatWindow.prepend(renderMessage(tempMessage, currentChatUsername));
-                adminChatWindow.scrollTop = adminChatWindow.scrollHeight;
+            adminMessageInput.value = '';
+            adminSendBtn.disabled = true;
+            chatError.classList.add('hidden');
 
-                const adminKey = getAdminKey();
-                try {
-                    // API Endpoint: Send admin reply and update status
-                    const response = await fetch('/api/admin/support/send-reply', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
-                        body: JSON.stringify({ chatId: currentOpenChatId, content })
-                    });
-                    const data = await response.json();
+            /* Optimistic render */
+            var tempMessage = { content: content, sender: 'admin', timestamp: new Date() };
+            var tempEl = renderMessage(tempMessage, currentChatUsername);
+            tempEl.dataset.temp = 'true';
+            adminChatWindow.appendChild(tempEl);
+            adminChatWindow.scrollTop = adminChatWindow.scrollHeight;
 
+            var adminKey = getAdminKey();
+            fetch('/api/admin/support/send-reply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+                body: JSON.stringify({ chatId: currentOpenChatId, content: content })
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (!data.success) {
+                        /* FIX 6: Remove optimistic message on failure */
+                        var tempMsgs = adminChatWindow.querySelectorAll('[data-temp="true"]');
+                        if (tempMsgs.length > 0) tempMsgs[tempMsgs.length - 1].remove();
+                        chatError.textContent = 'Failed to send: ' + (data.message || 'Unknown error');
                         chatError.classList.remove('hidden');
-                        // In a production app, you would handle message failure/rollback here
                     } else {
+                        /* Remove temp flag on success */
+                        var tempMsgs = adminChatWindow.querySelectorAll('[data-temp="true"]');
+                        tempMsgs.forEach(function (el) { el.removeAttribute('data-temp'); });
                         chatError.classList.add('hidden');
-                        // Refresh ticket list to update status indicator
                         fetchTickets();
                     }
-                } catch (error) {
+                })
+                .catch(function (error) {
+                    var tempMsgs = adminChatWindow.querySelectorAll('[data-temp="true"]');
+                    if (tempMsgs.length > 0) tempMsgs[tempMsgs.length - 1].remove();
                     chatError.textContent = 'Network error: Reply failed.';
                     chatError.classList.remove('hidden');
-                } finally {
+                })
+                .finally(function () {
                     adminSendBtn.disabled = false;
                     adminMessageInput.focus();
-                }
-            };
+                });
+        }
 
-            adminSendBtn.addEventListener('click', sendAdminReply);
-            adminMessageInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') sendAdminReply();
-            });
-            // END NEW SUPPORT CHAT FUNCTIONS
+        adminSendBtn.addEventListener('click', sendAdminReply);
+        adminMessageInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendAdminReply();
+        });
 
+        /* FIX 1: Safe table rendering with DOM methods */
+        function fetchData() {
+            var adminKey = getAdminKey();
+            if (!adminKey) { showLogin(); return; }
 
-            const fetchData = async () => {
-                const adminKey = getAdminKey();
-                if (!adminKey) { showLogin(); return; }
+            loginModal.style.display = 'none';
+            dashboardContent.classList.remove('hidden');
 
-                loginModal.style.display = 'none';
-                dashboardContent.classList.remove('hidden');
+            var searchTerm = searchInput.value;
+            var url = searchTerm ? '/api/admin/data?search=' + encodeURIComponent(searchTerm) : '/api/admin/data';
 
-                const searchTerm = searchInput.value;
-                const url = searchTerm ? `/api/admin/data?search=${encodeURIComponent(searchTerm)}` : '/api/admin/data';
-
-                try {
-                    // This fetches the transactions/users data for the first tab
-                    const response = await fetch(url, { headers: { 'x-admin-key': adminKey } });
-                    const data = await response.json();
+            fetch(url, { headers: { 'x-admin-key': adminKey } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
                     if (!data.success) throw new Error(data.message);
 
                     usersTableBody.innerHTML = '';
-                    (data.users || []).forEach(user => {
-                        const row = document.createElement('tr');
+                    var users = data.users || [];
 
-                        const pendingDeposits = user.transactions.filter(tx => tx.status === 'pending_review');
-                        let depositsHTML = pendingDeposits.length > 0 ? '' : '<p class="text-gray-500 text-xs">None</p>';
-                        
-                        pendingDeposits.forEach(tx => {
-                            depositsHTML += `<div class="my-2 p-2 bg-gray-700 rounded">
-                                <p class="font-bold text-green-400">$${(tx.amount || 0).toFixed(2)}</p>
-                                <p class="text-xs break-all"><strong>TXID:</strong> ${tx.txid}</p>
-                                <div class="mt-2">
-                                    <button class="approve-deposit-btn bg-green-600 text-xs p-1 rounded" data-userid="${user._id}" data-txid="${tx.txid}" data-amount="${tx.amount}">Approve</button> 
-                                    <button class="reject-deposit-btn bg-red-600 text-xs p-1 rounded" data-userid="${user._id}" data-txid="${tx.txid}">Reject</button>
-                                </div>
-                            </div>`;
+                    users.forEach(function (user) {
+                        var row = document.createElement('tr');
+
+                        /* User Info - FIX 1: textContent */
+                        var tdInfo = document.createElement('td');
+                        tdInfo.className = 'p-3 align-top text-sm';
+                        var nameStrong = document.createElement('strong');
+                        nameStrong.textContent = user.username || user.firstName || 'N/A';
+                        var telegramP = document.createElement('p');
+                        telegramP.className = 'text-xs text-gray-400';
+                        telegramP.textContent = 'TG: ' + (user.telegramId || 'N/A');
+                        tdInfo.appendChild(nameStrong);
+                        tdInfo.appendChild(telegramP);
+
+                        /* Balance */
+                        var tdBalance = document.createElement('td');
+                        tdBalance.className = 'p-3 align-top text-sm font-mono';
+                        tdBalance.textContent = '$' + (user.balance || 0).toFixed(2);
+
+                        /* Total Deposits */
+                        var tdDeposits = document.createElement('td');
+                        tdDeposits.className = 'p-3 align-top text-sm font-mono';
+                        tdDeposits.textContent = '$' + (user.totalDeposits || 0).toFixed(2);
+
+                        /* FIX 9: Package instead of Trade Volume */
+                        var tdPackage = document.createElement('td');
+                        tdPackage.className = 'p-3 align-top text-sm';
+                        tdPackage.textContent = user.active_package || 'None';
+
+                        /* Referred By */
+                        var tdReferred = document.createElement('td');
+                        tdReferred.className = 'p-3 align-top text-sm';
+                        tdReferred.textContent = (user.referredBy && user.referredBy.username) ? user.referredBy.username : 'N/A';
+
+                        /* Pending Deposits - FIX 1 & 8: DOM-based with loading states */
+                        var tdPendingDep = document.createElement('td');
+                        tdPendingDep.className = 'p-3 align-top';
+                        var pendingDeposits = (user.transactions || []).filter(function (tx) {
+                            return tx.status === 'pending_review';
                         });
 
-                        const pendingWithdrawals = user.transactions.filter(tx => tx.status === 'pending_processing');
-                        let withdrawalsHTML = pendingWithdrawals.length > 0 ? '' : '<p class="text-gray-500 text-xs">None</p>';
-                        pendingWithdrawals.forEach(tx => {
-                            withdrawalsHTML += `<div class="my-2 p-2 bg-gray-700 rounded"><p class="text-sm font-bold">$${tx.amount.toFixed(2)}</p><p class="text-xs break-all"><strong>To:</strong> ${tx.address}</p><div class="mt-2"><button class="approve-withdrawal-btn bg-green-600 text-xs p-1 rounded" data-userid="${user._id}" data-txid="${tx.txid}">Approve</button> <button class="reject-withdrawal-btn bg-red-600 text-xs p-1 rounded" data-userid="${user._id}" data-txid="${tx.txid}">Reject</button></div></div>`;
+                        if (pendingDeposits.length === 0) {
+                            var noneP = document.createElement('p');
+                            noneP.className = 'text-gray-500 text-xs';
+                            noneP.textContent = 'None';
+                            tdPendingDep.appendChild(noneP);
+                        } else {
+                            pendingDeposits.forEach(function (tx) {
+                                var txDiv = document.createElement('div');
+                                txDiv.className = 'my-2 p-2 bg-gray-700 rounded';
+
+                                var amtP = document.createElement('p');
+                                amtP.className = 'font-bold text-green-400';
+                                amtP.textContent = '$' + (tx.amount || 0).toFixed(2);
+
+                                var txidP = document.createElement('p');
+                                txidP.className = 'text-xs break-all';
+                                txidP.textContent = 'TXID: ' + (tx.txid || '');
+
+                                var btnDiv = document.createElement('div');
+                                btnDiv.className = 'mt-2';
+
+                                var approveBtn = document.createElement('button');
+                                approveBtn.className = 'bg-green-600 text-xs p-1 rounded mr-1';
+                                approveBtn.textContent = 'Approve';
+                                approveBtn.addEventListener('click', function () {
+                                    showConfirm('Approve Deposit', 'Approve $' + (tx.amount || 0).toFixed(2) + ' deposit?', function () {
+                                        approveBtn.classList.add('btn-loading');
+                                        handleApiAction('/api/admin/approve-deposit', { userId: user._id, txid: tx.txid });
+                                    });
+                                });
+
+                                var rejectBtn = document.createElement('button');
+                                rejectBtn.className = 'bg-red-600 text-xs p-1 rounded';
+                                rejectBtn.textContent = 'Reject';
+                                rejectBtn.addEventListener('click', function () {
+                                    showConfirm('Reject Deposit', 'Reject this deposit?', function () {
+                                        rejectBtn.classList.add('btn-loading');
+                                        handleApiAction('/api/admin/reject-deposit', { userId: user._id, txid: tx.txid });
+                                    });
+                                });
+
+                                btnDiv.appendChild(approveBtn);
+                                btnDiv.appendChild(rejectBtn);
+                                txDiv.appendChild(amtP);
+                                txDiv.appendChild(txidP);
+                                txDiv.appendChild(btnDiv);
+                                tdPendingDep.appendChild(txDiv);
+                            });
+                        }
+
+                        /* Pending Withdrawals */
+                        var tdPendingWith = document.createElement('td');
+                        tdPendingWith.className = 'p-3 align-top';
+                        var pendingWithdrawals = (user.transactions || []).filter(function (tx) {
+                            return tx.status === 'pending_processing';
                         });
 
-                        const referrerUsername = user.referredBy ? user.referredBy.username : '<span class="text-gray-500">N/A</span>';
-                        
-                        const formattedBalance = (user.balance || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-                        const formattedDeposits = (user.totalDeposits || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-                        const formattedVolume = (user.totalTradeVolume || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                        if (pendingWithdrawals.length === 0) {
+                            var noneP2 = document.createElement('p');
+                            noneP2.className = 'text-gray-500 text-xs';
+                            noneP2.textContent = 'None';
+                            tdPendingWith.appendChild(noneP2);
+                        } else {
+                            pendingWithdrawals.forEach(function (tx) {
+                                var txDiv = document.createElement('div');
+                                txDiv.className = 'my-2 p-2 bg-gray-700 rounded';
 
-                        const userInfoHTML = `
-                            <div>
-                                <strong>${user.username}</strong>
-                                <p class="text-xs text-gray-400">${user.email || 'No email'}</p>
-                            </div>`;
+                                var amtP = document.createElement('p');
+                                amtP.className = 'text-sm font-bold';
+                                amtP.textContent = '$' + (tx.amount || 0).toFixed(2);
 
-                        row.innerHTML = `
-                            <td class="p-3 align-top text-sm">${userInfoHTML}</td>
-                            <td class="p-3 align-top text-sm font-mono">${formattedBalance}</td>
-                            <td class="p-3 align-top text-sm font-mono">${formattedDeposits}</td>
-                            <td class="p-3 align-top text-sm font-mono">${formattedVolume}</td>
-                            <td class="p-3 align-top text-sm">${referrerUsername}</td>
-                            <td class="p-3 align-top">${depositsHTML}</td>
-                            <td class="p-3 align-top">${withdrawalsHTML}</td>`;
+                                var addrP = document.createElement('p');
+                                addrP.className = 'text-xs break-all';
+                                addrP.textContent = 'To: ' + (tx.address || 'N/A');
+
+                                var btnDiv = document.createElement('div');
+                                btnDiv.className = 'mt-2';
+
+                                var approveBtn = document.createElement('button');
+                                approveBtn.className = 'bg-green-600 text-xs p-1 rounded mr-1';
+                                approveBtn.textContent = 'Approve';
+                                approveBtn.addEventListener('click', function () {
+                                    showConfirm('Approve Withdrawal', 'Approve $' + (tx.amount || 0).toFixed(2) + ' withdrawal to ' + (tx.address || '') + '?', function () {
+                                        approveBtn.classList.add('btn-loading');
+                                        handleApiAction('/api/admin/approve-withdrawal', { userId: user._id, txid: tx.txid });
+                                    });
+                                });
+
+                                var rejectBtn = document.createElement('button');
+                                rejectBtn.className = 'bg-red-600 text-xs p-1 rounded';
+                                rejectBtn.textContent = 'Reject';
+                                rejectBtn.addEventListener('click', function () {
+                                    showConfirm('Reject Withdrawal', 'Reject and refund $' + (tx.amount || 0).toFixed(2) + '?', function () {
+                                        rejectBtn.classList.add('btn-loading');
+                                        handleApiAction('/api/admin/reject-withdrawal', { userId: user._id, txid: tx.txid });
+                                    });
+                                });
+
+                                btnDiv.appendChild(approveBtn);
+                                btnDiv.appendChild(rejectBtn);
+                                txDiv.appendChild(amtP);
+                                txDiv.appendChild(addrP);
+                                txDiv.appendChild(btnDiv);
+                                tdPendingWith.appendChild(txDiv);
+                            });
+                        }
+
+                        row.appendChild(tdInfo);
+                        row.appendChild(tdBalance);
+                        row.appendChild(tdDeposits);
+                        row.appendChild(tdPackage);
+                        row.appendChild(tdReferred);
+                        row.appendChild(tdPendingDep);
+                        row.appendChild(tdPendingWith);
                         usersTableBody.appendChild(row);
                     });
-
-                } catch (error) {
-                    alert(`Error fetching data: ${error.message}`);
+                })
+                .catch(function (error) {
+                    alert('Error fetching data: ' + error.message);
                     showLogin();
-                }
-            };
+                });
+        }
 
-            const handleApiAction = async (url, body) => {
-                 const adminKey = getAdminKey();
-                 try {
-                     const response = await fetch(url, {
-                         method: 'POST',
-                         headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
-                         body: JSON.stringify(body)
-                     });
-                     const result = await response.json();
-                     if (!result.success) throw new Error(result.message);
-                     alert(result.message);
-                     fetchData();
-                 } catch (error) {
-                     alert(`Error: ${error.message}`);
-                 }
-            };
-            
-            const showLogin = () => {
-                sessionStorage.removeItem('adminKey');
-                loginModal.style.display = 'flex';
-                dashboardContent.classList.add('hidden');
-            };
+        function handleApiAction(url, body) {
+            var adminKey = getAdminKey();
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+                body: JSON.stringify(body)
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (result) {
+                    if (!result.success) throw new Error(result.message);
+                    alert(result.message);
+                    fetchData();
+                })
+                .catch(function (error) {
+                    alert('Error: ' + error.message);
+                    fetchData();
+                });
+        }
 
-            loginButton.addEventListener('click', () => {
-                const key = adminKeyInput.value;
+        function showLogin() {
+            sessionStorage.removeItem('adminKey');
+            loginModal.style.display = 'flex';
+            dashboardContent.classList.add('hidden');
+        }
+
+        loginButton.addEventListener('click', function () {
+            var key = adminKeyInput.value;
+            if (key) { setAdminKey(key); fetchData(); }
+        });
+
+        adminKeyInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                var key = adminKeyInput.value;
                 if (key) { setAdminKey(key); fetchData(); }
-            });
+            }
+        });
 
-            refreshButton.addEventListener('click', () => { 
-                fetchData(); 
-                // Only refresh tickets if the support tab is active
-                if (document.querySelector('.tab-button[data-tab="support"]').classList.contains('active')) {
-                    fetchTickets();
-                }
-            });
-            
-            searchInput.addEventListener('input', fetchData);
+        refreshButton.addEventListener('click', function () {
+            fetchData();
+            if (document.querySelector('.tab-button[data-tab="support"]').classList.contains('active')) {
+                fetchTickets();
+            }
+        });
 
-            usersTableBody.addEventListener('click', e => {
-                if (e.target.classList.contains('approve-deposit-btn')) {
-                    const amount = e.target.dataset.amount;
-                    handleApiAction('/api/admin/approve-deposit', { userId: e.target.dataset.userid, txid: e.target.dataset.txid, amount: parseFloat(amount) });
-                }
-                if (e.target.classList.contains('reject-deposit-btn')) {
-                    handleApiAction('/api/admin/reject-deposit', { userId: e.target.dataset.userid, txid: e.target.dataset.txid });
-                }
-                if (e.target.classList.contains('approve-withdrawal-btn')) {
-                    handleApiAction('/api/admin/approve-withdrawal', { userId: e.target.dataset.userid, txid: e.target.dataset.txid });
-                }
-                if (e.target.classList.contains('reject-withdrawal-btn')) {
-                    handleApiAction('/api/admin/reject-withdrawal', { userId: e.target.dataset.userid, txid: e.target.dataset.txid });
-                }
-            });
+        /* FIX 4: Debounced search */
+        searchInput.addEventListener('input', function () {
+            if (searchTimeout) clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(fetchData, 400);
+        });
 
-            creditForm.addEventListener('submit', e => {
-                e.preventDefault();
-                const username = document.getElementById('credit-username').value;
-                const amount = document.getElementById('credit-amount').value;
-                handleApiAction('/api/admin/credit-user', { username, amount });
+        creditForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var username = document.getElementById('credit-username').value;
+            var amount = document.getElementById('credit-amount').value;
+            showConfirm('Confirm Credit', 'Adjust ' + username + ' balance by $' + amount + '?', function () {
+                handleApiAction('/api/admin/credit-user', { username: username, amount: amount });
                 creditForm.reset();
             });
+        });
 
-            commissionForm.addEventListener('submit', e => {
-                e.preventDefault();
-                const username = document.getElementById('commission-username').value;
-                const amount = document.getElementById('commission-amount').value;
-                handleApiAction('/api/admin/give-commission', { username, amount });
+        commissionForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var username = document.getElementById('commission-username').value;
+            var amount = document.getElementById('commission-amount').value;
+            showConfirm('Confirm Commission', 'Award $' + amount + ' commission to ' + username + '?', function () {
+                handleApiAction('/api/admin/give-commission', { username: username, amount: amount });
                 commissionForm.reset();
             });
-            
-            if (getAdminKey()) { fetchData(); } else { showLogin(); }
         });
+
+        if (getAdminKey()) { fetchData(); } else { showLogin(); }
+    });
     </script>
 </body>
 </html>
