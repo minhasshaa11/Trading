@@ -334,11 +334,26 @@ router.post("/credit-user", async function (req, res) {
     if (creditAmount === 0) return res.status(400).json({ success: false, message: "Amount cannot be zero." });
 
     try {
-        var user = await User.findOneAndUpdate(
+        var update;
+
+if (creditAmount > 0) {
+    update = {
+        $inc: {
+            balance: creditAmount,
+            profit: creditAmount
+        }
+    };
+} else {
+    update = {
+        $inc: {
+            balance: creditAmount
+        }
+    };
+}
+
+var user = await User.findOneAndUpdate(
     { username: username },
-    {
-        $inc: { balance: creditAmount }
-    },
+    update,
     { new: true }
 );
 
