@@ -11,13 +11,10 @@
         :root{--cream:#FBF8F3;--cream-dark:#F2EDE4;--cream-border:#E8DFD0;--brown-dark:#2D1F0E;--brown-mid:#4A3020;--brown-light:#8B6040;--gold:#C9832A;--gold-light:#E8A84A;--gold-pale:#F5E8D0;--green:#3D7A52;--text-main:#1E140A;--text-muted:#9A8070;--white:#FFFFFF;}
         *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
         body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text-main);height:100vh;overflow:hidden;display:flex;flex-direction:column;}
-
-        /* Header */
         .hdr{background:var(--brown-dark);padding:16px 20px 0;position:relative;overflow:hidden;flex-shrink:0;}
         .hdr::before{content:'';position:absolute;top:-60px;right:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(201,131,42,.15),transparent 70%);}
         .hdr-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
         .hdr-logo{font-family:'Cormorant Garamond',serif;font-size:20px;font-style:italic;color:var(--gold);letter-spacing:3px;}
-        /* FIX 1: Back button bigger clickable area */
         .hdr-back{font-size:13px;color:#D4B896;text-decoration:none;font-weight:500;transition:color .2s;padding:8px 14px;background:rgba(201,131,42,.15);border-radius:10px;display:flex;align-items:center;gap:6px;}
         .hdr-back:active{color:var(--gold-light);background:rgba(201,131,42,.25);}
         .hero{background:var(--brown-mid);border-radius:18px 18px 0 0;padding:16px 20px;border:1px solid rgba(201,131,42,.15);border-bottom:none;position:relative;overflow:hidden;}
@@ -25,46 +22,26 @@
         .hero-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;color:var(--gold-light);margin-bottom:2px;}
         .hero-sub{font-size:12px;color:#D4B896;}
         .hero-online{display:inline-block;width:7px;height:7px;background:var(--green);border-radius:50%;margin-right:4px;vertical-align:middle;}
-
-        /* Chat Area */
         .chat-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;}
         .chat-card{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--white);margin:0 12px;border:1px solid var(--cream-border);border-radius:0 0 16px 16px;border-top:none;}
-
-        /* FIX 2: Normal top-to-bottom message flow (WhatsApp style) */
         .chat-container{flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:16px;gap:4px;}
-
-        /* Messages - WhatsApp style */
         .message{max-width:78%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.5;word-wrap:break-word;animation:fu .3s ease both;position:relative;}
         @keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-
         .user-message{align-self:flex-end;background:var(--gold);color:var(--brown-dark);border-bottom-right-radius:4px;margin-left:20%;}
         .admin-message{align-self:flex-start;background:var(--cream-dark);color:var(--text-main);border:1px solid var(--cream-border);border-bottom-left-radius:4px;margin-right:20%;}
-
         .msg-content{margin-bottom:2px;}
         .msg-time{display:block;font-size:9px;text-align:right;opacity:.6;margin-top:2px;}
         .user-message .msg-time{color:var(--brown-mid);}
         .admin-message .msg-time{color:var(--text-muted);}
-
-        /* Admin label */
         .msg-sender{font-size:10px;font-weight:600;margin-bottom:2px;color:var(--green);}
-
-        /* Status */
         .chat-status{text-align:center;color:var(--text-muted);padding:16px 0;font-size:13px;}
-
-        /* Welcome message */
         .welcome-msg{text-align:center;padding:20px;color:var(--text-muted);font-size:12px;line-height:1.6;}
         .welcome-msg-icon{width:48px;height:48px;border-radius:14px;background:var(--gold-pale);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;}
-
-        /* Date separator */
         .date-sep{text-align:center;font-size:10px;color:var(--text-muted);padding:8px 0;position:relative;}
         .date-sep span{background:var(--white);padding:0 10px;position:relative;z-index:1;}
         .date-sep::before{content:'';position:absolute;left:20%;right:20%;top:50%;height:1px;background:var(--cream-border);}
-
-        /* Failed message */
         .msg-failed{opacity:0.5;border:1px dashed var(--gold);}
         .msg-retry{font-size:10px;color:#C0392B;margin-top:4px;cursor:pointer;text-decoration:underline;}
-
-        /* Input Bar */
         .chat-input-bar{padding:10px 12px;background:var(--white);border-top:1px solid var(--cream-border);flex-shrink:0;}
         .chat-input-inner{display:flex;gap:8px;max-width:600px;margin:0 auto;}
         .chat-input{flex:1;background:var(--cream-dark);border:1px solid var(--cream-border);border-radius:20px;padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-main);outline:none;transition:border-color .2s;max-height:80px;}
@@ -82,8 +59,7 @@
 <div class="hdr">
     <div class="hdr-top">
         <div class="hdr-logo">Bond 1x</div>
-        <!-- FIX 1: Bigger back button with arrow icon -->
-        <a href="profile.html" class="hdr-back" id="back-btn">
+        <a href="profile.html" class="hdr-back">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             Back
         </a>
@@ -127,7 +103,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var messageInput = document.getElementById('message-input');
     var sendBtn = document.getElementById('send-btn');
     var charCount = document.getElementById('char-count');
-    var backBtn = document.getElementById('back-btn');
 
     var chatId = null;
     var isSending = false;
@@ -135,7 +110,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var pollInterval = null;
     var MAX_MSG_LENGTH = 2000;
 
-    /* Auth error handler */
     function handleAuthError(status) {
         if (status === 401) {
             localStorage.removeItem('authToken');
@@ -145,12 +119,10 @@ document.addEventListener('DOMContentLoaded', function () {
         return false;
     }
 
-    /* Scroll to bottom */
     function scrollToBottom() {
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    /* FIX 2: Render message WhatsApp style (top to bottom) */
     function renderMessage(message, animate) {
         var isUser = message.sender === 'user';
 
@@ -158,7 +130,6 @@ document.addEventListener('DOMContentLoaded', function () {
         messageEl.className = 'message ' + (isUser ? 'user-message' : 'admin-message');
         if (animate === false) messageEl.style.animation = 'none';
 
-        /* Admin label */
         if (!isUser) {
             var senderDiv = document.createElement('div');
             senderDiv.className = 'msg-sender';
@@ -178,12 +149,10 @@ document.addEventListener('DOMContentLoaded', function () {
             : '';
         messageEl.appendChild(timeSpan);
 
-        /* FIX 2: Append (not prepend) for top-to-bottom order */
         chatContainer.appendChild(messageEl);
         return messageEl;
     }
 
-    /* Date separator */
     function renderDateSeparator(dateStr) {
         var sep = document.createElement('div');
         sep.className = 'date-sep';
@@ -193,7 +162,6 @@ document.addEventListener('DOMContentLoaded', function () {
         chatContainer.appendChild(sep);
     }
 
-    /* FIX 6: Welcome message for new chats */
     function showWelcome() {
         var welcome = document.createElement('div');
         welcome.className = 'welcome-msg';
@@ -204,7 +172,6 @@ document.addEventListener('DOMContentLoaded', function () {
         chatContainer.appendChild(welcome);
     }
 
-    /* Render all messages with date separators */
     function renderAllMessages(messages) {
         chatContainer.innerHTML = '';
 
@@ -231,7 +198,6 @@ document.addEventListener('DOMContentLoaded', function () {
         scrollToBottom();
     }
 
-    /* Initialize chat */
     function initializeChat() {
         chatStatus.textContent = 'Connecting to support...';
         sendBtn.disabled = true;
@@ -253,8 +219,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     renderAllMessages(messages);
 
                     sendBtn.disabled = false;
-
-                    /* FIX 5: Start polling for new messages every 10 seconds */
                     startPolling();
                 } else {
                     chatStatus.textContent = data.message || 'Could not initialize chat.';
@@ -266,7 +230,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-    /* FIX 5: Poll for new messages (admin replies) */
     function startPolling() {
         if (pollInterval) clearInterval(pollInterval);
 
@@ -282,11 +245,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (!data || !data.success) return;
 
                     var messages = data.messages || [];
-                    /* Only re-render if new messages arrived */
                     if (messages.length > lastMessageCount) {
                         lastMessageCount = messages.length;
 
-                        /* Check if user is scrolled near bottom */
                         var isNearBottom =
                             chatContainer.scrollHeight - chatContainer.scrollTop - chatContainer.clientHeight < 100;
 
@@ -295,23 +256,18 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (isNearBottom) scrollToBottom();
                     }
                 })
-                .catch(function () {
-                    /* Silent fail on poll errors */
-                });
+                .catch(function () {});
         }, 10000);
     }
 
-    /* Cleanup polling on page leave */
     window.addEventListener('beforeunload', function () {
         if (pollInterval) clearInterval(pollInterval);
     });
 
-    /* Send message */
     function sendMessage() {
         var content = messageInput.value.trim();
         if (!content || !chatId || isSending) return;
 
-        /* FIX 3: Message length check */
         if (content.length > MAX_MSG_LENGTH) {
             alert('Message too long. Maximum ' + MAX_MSG_LENGTH + ' characters.');
             return;
@@ -322,11 +278,9 @@ document.addEventListener('DOMContentLoaded', function () {
         sendBtn.disabled = true;
         charCount.style.display = 'none';
 
-        /* Remove welcome message if exists */
         var welcome = chatContainer.querySelector('.welcome-msg');
         if (welcome) welcome.remove();
 
-        /* Optimistic render */
         var tempMessage = { content: content, sender: 'user', timestamp: new Date() };
         var tempEl = renderMessage(tempMessage, true);
         tempEl.dataset.temp = 'true';
@@ -345,36 +299,13 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(function (data) {
                 if (!data) return;
                 if (data.success) {
-                    /* Remove temp flag */
                     tempEl.removeAttribute('data-temp');
                 } else {
-                    /* FIX 4: Mark as failed */
-                    tempEl.classList.add('msg-failed');
-                    var retrySpan = document.createElement('span');
-                    retrySpan.className = 'msg-retry';
-                    retrySpan.textContent = 'Failed to send. Tap to retry.';
-                    retrySpan.addEventListener('click', function () {
-                        tempEl.remove();
-                        lastMessageCount--;
-                        messageInput.value = content;
-                        sendMessage();
-                    });
-                    tempEl.appendChild(retrySpan);
+                    markFailed(tempEl, content);
                 }
             })
             .catch(function () {
-                /* FIX 4: Mark as failed on network error */
-                tempEl.classList.add('msg-failed');
-                var retrySpan = document.createElement('span');
-                retrySpan.className = 'msg-retry';
-                retrySpan.textContent = 'Network error. Tap to retry.';
-                retrySpan.addEventListener('click', function () {
-                    tempEl.remove();
-                    lastMessageCount--;
-                    messageInput.value = content;
-                    sendMessage();
-                });
-                tempEl.appendChild(retrySpan);
+                markFailed(tempEl, content);
             })
             .finally(function () {
                 isSending = false;
@@ -383,7 +314,20 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-    /* FIX 3: Character count */
+    function markFailed(el, content) {
+        el.classList.add('msg-failed');
+        var retrySpan = document.createElement('span');
+        retrySpan.className = 'msg-retry';
+        retrySpan.textContent = 'Failed to send. Tap to retry.';
+        retrySpan.addEventListener('click', function () {
+            el.remove();
+            lastMessageCount--;
+            messageInput.value = content;
+            sendMessage();
+        });
+        el.appendChild(retrySpan);
+    }
+
     messageInput.addEventListener('input', function () {
         var len = messageInput.value.length;
         if (len > 0) {
@@ -398,16 +342,6 @@ document.addEventListener('DOMContentLoaded', function () {
     sendBtn.addEventListener('click', sendMessage);
     messageInput.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') sendMessage();
-    });
-
-    /* FIX 1: Back button with JavaScript fallback */
-    backBtn.addEventListener('click', function (e) {
-        e.preventDefault();
-        if (window.history.length > 1) {
-            window.history.back();
-        } else {
-            window.location.href = 'profile.html';
-        }
     });
 
     initializeChat();
