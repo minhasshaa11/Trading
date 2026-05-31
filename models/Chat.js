@@ -1,47 +1,64 @@
-// models/Chat.js
+const mongoose = require("mongoose");
 
-const mongoose = require('mongoose');
-
-// --- 1. Message Schema ---
-const MessageSchema = new mongoose.Schema({
+/* FIX 5: _id enabled for individual message operations */
+/* FIX 1: maxlength on content */
+/* FIX 4: sender enum validation */
+/* FIX 6: content minlength */
+var MessageSchema = new mongoose.Schema({
     sender: {
-        type: String, // 'user' or 'admin'
+        type: String,
         required: true,
+        enum: ["user", "admin"],
     },
     content: {
         type: String,
         required: true,
+        minlength: [1, "Message cannot be empty"],
+        maxlength: [2000, "Message too long"],
     },
     timestamp: {
         type: Date,
         default: Date.now,
-    }
-}, { _id: false }); // We don't need a separate ID for sub-documents
-
-// --- 2. Chat Thread Schema ---
-const ChatThreadSchema = new mongoose.Schema({
-    // Link the thread to the user who created it
-    userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
-        unique: true // A user should only have one active support thread
     },
-    // The current status of the thread
-    status: {
-        type: String,
-        enum: ['open', 'pending_admin_reply', 'closed'],
-        default: 'open' // 'open' for new chats, 'pending_admin_reply' after user sends a message
+});
+
+var ChatThreadSchema = new mongoose.Schema(
+    {
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+            unique: true,
+            index: true,
+        },
+        status: {
+            type: String,
+            enum: ["open", "pending_admin_reply", "closed"],
+            default: "open",
+            /* FIX 2: Index for admin queries */
+            index: true,
+        },
+        /* FIX 1: Limit messages array using validate */
+        messages: {
+            type: [MessageSchema],
+            validate: [
+                function (val) {
+                    return val.length <= 500;
+                },
+                "Chat history limit reached (500 messages). Please start a new thread.",
+            ],
+        },
+        lastUpdated: {
+            type: Date,
+            default: Date.now,
+            /* FIX 3: Index for admin sorting */
+            index: true,
+        },
     },
-    // The history of all messages
-    messages: [MessageSchema],
-    
-    // Quick reference fields for admin dashboard
-    lastUpdated: {
-        type: Date,
-        default: Date.now
-    }
-}, { timestamps: true });
+    { timestamps: true }
+);
 
+/* Compound index for admin dashboard: pending chats sorted by latest */
+ChatThreadSchema.index({ status: 1, lastUpdated: -1 });
 
-module.exports = mongoose.model('ChatThread', ChatThreadSchema);
+module.exports = mongoose.model("ChatThread", ChatThreadSchema);
