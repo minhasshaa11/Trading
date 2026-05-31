@@ -84,6 +84,10 @@ var userSchema = new mongoose.Schema(
             default: 0,
             min: 0,
         },
+        profit: {
+    type: Number,
+    default: 0,
+},
         active_package: {
             type: String,
             default: null,
