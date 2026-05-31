@@ -215,7 +215,10 @@ router.post("/claim-earnings", authMiddleware, async function (req, res) {
                 ],
             },
             {
-                $inc: { balance: dailyProfit },
+                $inc: {
+    balance: dailyProfit,
+    profit: dailyProfit
+},
                 $set: { last_claim_timestamp: now },
             },
             { new: true }
