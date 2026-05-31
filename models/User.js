@@ -15,9 +15,10 @@ var transactionSchema = new mongoose.Schema({
         index: true,
     },
     date: { type: Date, default: Date.now },
+    /* FIX: admin_credit type add kiya */
     type: {
         type: String,
-        enum: ["deposit", "withdrawal"],
+        enum: ["deposit", "withdrawal", "admin_credit"],
         required: true,
     },
     amount: {
@@ -38,25 +39,19 @@ var userSchema = new mongoose.Schema(
         },
         firstName: { type: String, default: "" },
         lastName: { type: String, default: "" },
-
         username: {
             type: String,
             trim: true,
             sparse: true,
             default: null,
         },
-
-        /* Admin login ke liye password field */
         password: { type: String },
-
         balance: {
             type: Number,
             default: 0.0,
             min: [0, "Balance cannot be negative"],
         },
-
         transactions: [transactionSchema],
-
         referralCode: {
             type: String,
             unique: true,
@@ -108,13 +103,10 @@ var userSchema = new mongoose.Schema(
     }
 );
 
-/* Compound indexes for common queries */
 userSchema.index({ "transactions.txid": 1, "transactions.status": 1 });
 
-/* Auto-update totalDeposits when deposit is completed */
 userSchema.pre("findOneAndUpdate", function (next) {
     var update = this.getUpdate();
-
     if (
         update &&
         update.$set &&
@@ -126,11 +118,9 @@ userSchema.pre("findOneAndUpdate", function (next) {
             update.$inc.totalDeposits = update.$inc.balance;
         }
     }
-
     next();
 });
 
-/* Password hashing middleware */
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password") || !this.password) return next();
     var salt = await bcrypt.genSalt(10);
