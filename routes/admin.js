@@ -335,22 +335,12 @@ router.post("/credit-user", async function (req, res) {
 
     try {
         var user = await User.findOneAndUpdate(
-            { username: username },
-            {
-                $inc: { balance: creditAmount },
-                $push: {
-                    transactions: {
-                        txid: "ADMIN-" + Date.now() + "-" + crypto.randomBytes(4).toString("hex"),
-                        type: "admin_credit",
-                        amount: Math.abs(creditAmount),
-                        status: "completed",
-                        currency: "USD",
-                        date: new Date(),
-                    },
-                },
-            },
-            { new: true }
-        );
+    { username: username },
+    {
+        $inc: { balance: creditAmount }
+    },
+    { new: true }
+);
 
         if (!user) return res.status(404).json({ success: false, message: "User not found." });
 
