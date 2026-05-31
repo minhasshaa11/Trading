@@ -1,264 +1,723 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const User = require('../models/User');
-const ChatThread = require('../models/Chat'); // <--- NEW REQUIREMENT
+const crypto = require("crypto");
+const mongoose = require("mongoose");
+const User = require("../models/User");
+const ChatThread = require("../models/Chat");
 
-// Admin security middleware (unchanged)
-const adminAuth = (req, res, next) => {
-    const adminKey = req.headers['x-admin-key'];
-    // IMPORTANT: Make sure the ADMIN_KEY is set in your .env file
-    if (!adminKey || adminKey !== process.env.ADMIN_KEY) {
-        return res.status(403).json({ success: false, message: "Forbidden: Invalid Admin Key" });
+/* Chat message sanitization */
+var MAX_ADMIN_MSG_LENGTH = 2000;
+function sanitizeMessage(str) {
+    if (typeof str !== "string") return "";
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#x27;")
+        .trim()
+        .substring(0, MAX_ADMIN_MSG_LENGTH);
+}
+
+/* Timing-safe admin key comparison */
+var adminAuth = function (req, res, next) {
+    var adminKey = req.headers["x-admin-key"];
+    var expectedKey = process.env.ADMIN_KEY;
+
+    if (!adminKey || !expectedKey) {
+        return res
+            .status(403)
+            .json({ success: false, message: "Forbidden: Invalid Admin Key" });
     }
+
+    try {
+        var keyBuffer = Buffer.from(adminKey);
+        var expectedBuffer = Buffer.from(expectedKey);
+        if (
+            keyBuffer.length !== expectedBuffer.length ||
+            !crypto.timingSafeEqual(keyBuffer, expectedBuffer)
+        ) {
+            return res.status(403).json({
+                success: false,
+                message: "Forbidden: Invalid Admin Key",
+            });
+        }
+    } catch (e) {
+        return res
+            .status(403)
+            .json({ success: false, message: "Forbidden: Invalid Admin Key" });
+    }
+
     next();
 };
 
+/* ObjectId validator helper */
+function isValidObjectId(id) {
+    return id && mongoose.Types.ObjectId.isValid(id);
+}
+
 router.use(adminAuth);
 
-// --- NEW ROUTES FOR SUPPORT CHAT ---
+// --- SUPPORT CHAT ROUTES ---
 
-// GET api/admin/support/tickets - Get a list of open and pending threads
-router.get('/support/tickets', async (req, res) => {
+// GET api/admin/support/tickets
+router.get("/support/tickets", async function (req, res) {
     try {
-        // Fetch threads that are not explicitly marked as 'closed'
-        const tickets = await ChatThread.find({ status: { $ne: 'closed' } })
-            .populate('userId', 'username firstName') // Populate user info for display
-            .sort({ lastUpdated: -1 }) // Sort by most recent activity
+        var page = parseInt(req.query.page) || 1;
+        var limit = parseInt(req.query.limit) || 20;
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 1;
+        if (limit > 100) limit = 100;
+        var skip = (page - 1) * limit;
 
-        // Map data to include the last message content for quick view
-        const formattedTickets = tickets.map(ticket => ({
-            _id: ticket._id,
-            user: {
-                username: ticket.userId.username,
-                firstName: ticket.userId.firstName,
-                _id: ticket.userId._id
-            },
-            status: ticket.status,
-            lastUpdated: ticket.lastUpdated,
-            // Extract the last message if it exists
-            lastMessage: ticket.messages.length > 0 ? ticket.messages[ticket.messages.length - 1] : null
-        }));
-        
-        res.json({ success: true, tickets: formattedTickets });
-    } catch (error) {
-        console.error("Error fetching support tickets:", error);
-        res.status(500).json({ success: false, message: "Server error fetching tickets." });
-    }
-});
-
-// GET api/admin/support/messages/:chatId - Get all messages for a specific thread
-router.get('/support/messages/:chatId', async (req, res) => {
-    try {
-        const { chatId } = req.params;
-        
-        const thread = await ChatThread.findById(chatId).select('messages userId');
-        
-        if (!thread) {
-            return res.status(404).json({ success: false, message: "Chat thread not found." });
+        var statusFilter = req.query.status;
+        var query = {};
+        if (statusFilter && statusFilter !== "all") {
+            query.status = statusFilter;
+        } else {
+            query.status = { $ne: "closed" };
         }
-        
-        res.json({ success: true, messages: thread.messages });
+
+        var total = await ChatThread.countDocuments(query);
+
+        var tickets = await ChatThread.find(query)
+            .populate("userId", "username firstName")
+            .sort({ lastUpdated: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        var formattedTickets = [];
+        for (var i = 0; i < tickets.length; i++) {
+            var ticket = tickets[i];
+            var userData = ticket.userId;
+
+            formattedTickets.push({
+                _id: ticket._id,
+                user: userData
+                    ? {
+                          username: userData.username || null,
+                          firstName: userData.firstName || null,
+                          _id: userData._id,
+                      }
+                    : { username: "Deleted User", firstName: "", _id: null },
+                status: ticket.status,
+                lastUpdated: ticket.lastUpdated,
+                messageCount: ticket.messages.length,
+                lastMessage:
+                    ticket.messages.length > 0
+                        ? ticket.messages[ticket.messages.length - 1]
+                        : null,
+            });
+        }
+
+        res.json({
+            success: true,
+            tickets: formattedTickets,
+            pagination: {
+                page: page,
+                limit: limit,
+                total: total,
+                totalPages: Math.ceil(total / limit),
+            },
+        });
     } catch (error) {
-        console.error("Error fetching chat messages:", error);
-        res.status(500).json({ success: false, message: "Server error fetching messages." });
+        console.error("Error fetching support tickets:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Server error fetching tickets.",
+        });
     }
 });
 
-// POST api/admin/support/send-reply - Send a message from the admin
-router.post('/support/send-reply', async (req, res) => {
-    const { chatId, content } = req.body;
+// GET api/admin/support/messages/:chatId
+router.get("/support/messages/:chatId", async function (req, res) {
+    try {
+        var chatId = req.params.chatId;
+
+        if (!isValidObjectId(chatId)) {
+            return res
+                .status(400)
+                .json({ success: false, message: "Invalid chat ID." });
+        }
+
+        var thread = await ChatThread.findById(chatId)
+            .select("messages userId status")
+            .populate("userId", "username firstName");
+
+        if (!thread) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Chat thread not found." });
+        }
+
+        res.json({
+            success: true,
+            messages: thread.messages,
+            user: thread.userId,
+            status: thread.status,
+        });
+    } catch (error) {
+        console.error("Error fetching chat messages:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Server error fetching messages.",
+        });
+    }
+});
+
+// POST api/admin/support/send-reply
+router.post("/support/send-reply", async function (req, res) {
+    var chatId = req.body.chatId;
+    var content = req.body.content;
 
     if (!content || content.trim() === "") {
-        return res.status(400).json({ success: false, message: "Reply content cannot be empty." });
+        return res
+            .status(400)
+            .json({ success: false, message: "Reply content cannot be empty." });
     }
-    
-    try {
-        const thread = await ChatThread.findById(chatId);
 
+    if (content.length > MAX_ADMIN_MSG_LENGTH) {
+        return res.status(400).json({
+            success: false,
+            message: "Message too long. Max " + MAX_ADMIN_MSG_LENGTH + " characters.",
+        });
+    }
+
+    if (!isValidObjectId(chatId)) {
+        return res
+            .status(400)
+            .json({ success: false, message: "Invalid chat ID." });
+    }
+
+    try {
+        var thread = await ChatThread.findById(chatId);
         if (!thread) {
-            return res.status(404).json({ success: false, message: "Chat thread not found." });
+            return res
+                .status(404)
+                .json({ success: false, message: "Chat thread not found." });
         }
 
-        const newMessage = {
-            sender: 'admin',
-            content: content.trim(),
-            timestamp: new Date()
+        var newMessage = {
+            sender: "admin",
+            content: sanitizeMessage(content),
+            timestamp: new Date(),
         };
-        
+
         thread.messages.push(newMessage);
-        thread.status = 'open'; // Mark back to 'open' after admin replies
+        thread.status = "open";
         thread.lastUpdated = new Date();
-        
+
         await thread.save();
 
-        res.json({ success: true, message: "Reply sent.", newMessage });
-
+        res.json({ success: true, message: "Reply sent.", newMessage: newMessage });
     } catch (err) {
-        console.error('Error sending admin reply:', err.message);
-        res.status(500).json({ success: false, message: 'Server error during reply send.' });
+        console.error("Error sending admin reply:", err.message);
+        res.status(500).json({
+            success: false,
+            message: "Server error during reply send.",
+        });
     }
 });
 
-// --- ORIGINAL ROUTES CONTINUED ---
+// POST api/admin/support/close-ticket
+router.post("/support/close-ticket", async function (req, res) {
+    var chatId = req.body.chatId;
 
-// GET all admin data (unchanged)
-router.get('/data', async (req, res) => {
+    if (!isValidObjectId(chatId)) {
+        return res
+            .status(400)
+            .json({ success: false, message: "Invalid chat ID." });
+    }
+
     try {
-        const searchQuery = req.query.search ? { username: new RegExp(req.query.search, 'i') } : {};
-        const users = await User.find(searchQuery).populate('referredBy', 'username').sort({ createdAt: -1 });
-        
+        var result = await ChatThread.findByIdAndUpdate(
+            chatId,
+            { $set: { status: "closed", lastUpdated: new Date() } },
+            { new: true }
+        );
+
+        if (!result) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Chat thread not found." });
+        }
+
+        res.json({ success: true, message: "Ticket closed." });
+    } catch (err) {
+        console.error("Error closing ticket:", err.message);
+        res.status(500).json({ success: false, message: "Server error." });
+    }
+});
+
+// --- USER DATA ---
+
+// GET api/admin/data
+router.get("/data", async function (req, res) {
+    try {
+        var page = parseInt(req.query.page) || 1;
+        var limit = parseInt(req.query.limit) || 20;
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 1;
+        if (limit > 100) limit = 100;
+        var skip = (page - 1) * limit;
+
+        var query = {};
+        if (req.query.search) {
+            var searchRegex = new RegExp(req.query.search, "i");
+            query = {
+                $or: [
+                    { username: searchRegex },
+                    { firstName: searchRegex },
+                    { telegramId: req.query.search },
+                ],
+            };
+        }
+
+        var total = await User.countDocuments(query);
+
+        var users = await User.find(query)
+            .select("-password")
+            .populate("referredBy", "username firstName")
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
         res.json({
             success: true,
             users: users,
+            pagination: {
+                page: page,
+                limit: limit,
+                total: total,
+                totalPages: Math.ceil(total / limit),
+            },
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: "Server error fetching data." });
+        console.error("Admin data error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Server error fetching data.",
+        });
     }
 });
 
-// --- DEPOSIT & WITHDRAWAL MANAGEMENT ---
-router.post('/approve-deposit', async (req, res) => {
-    const { userId, txid } = req.body;
+// --- DEPOSIT MANAGEMENT ---
+
+// POST api/admin/approve-deposit
+router.post("/approve-deposit", async function (req, res) {
+    var userId = req.body.userId;
+    var txid = req.body.txid;
+
     if (!userId || !txid) {
-        return res.status(400).json({ success: false, message: "Missing required fields." });
+        return res
+            .status(400)
+            .json({ success: false, message: "Missing required fields." });
     }
+
+    if (!isValidObjectId(userId)) {
+        return res
+            .status(400)
+            .json({ success: false, message: "Invalid user ID." });
+    }
+
     try {
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ success: false, message: "User not found." });
-        
-        const transaction = user.transactions.find(tx => tx.txid === txid);
-        if (!transaction || transaction.status !== 'pending_review') {
-            return res.status(400).json({ success: false, message: "Transaction not found or already processed." });
+        var user = await User.findById(userId).select(
+            "transactions totalDeposits referredBy"
+        );
+        if (!user)
+            return res
+                .status(404)
+                .json({ success: false, message: "User not found." });
+
+        var transaction = user.transactions.find(function (tx) {
+            return tx.txid === txid;
+        });
+        if (!transaction) {
+            return res
+                .status(400)
+                .json({ success: false, message: "Transaction not found." });
         }
-        
-        const depositAmount = parseFloat(transaction.amount);
-        if (isNaN(depositAmount)) {
-            return res.status(400).json({ success: false, message: "Invalid transaction amount stored." });
+
+        var depositAmount = parseFloat(transaction.amount);
+        if (isNaN(depositAmount) || depositAmount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid transaction amount.",
+            });
         }
 
-        // --- Check if this is the user's first deposit ---
-        const isFirstDeposit = (user.totalDeposits || 0) === 0;
-        // ---------------------------------------------------
+        var isFirstDeposit = (user.totalDeposits || 0) === 0;
 
-        transaction.status = 'completed';
-        user.balance += depositAmount;
-        user.totalDeposits += depositAmount;
-        
-        await user.save();
-
-        // --- NEW: AUTOMATIC 7% REFERRAL COMMISSION LOGIC ---
-        if (isFirstDeposit && user.referredBy) {
-            try {
-                const commissionRate = 0.07; // 7% commission
-                const commissionAmount = depositAmount * commissionRate;
-
-                // Find the referrer and award them the commission
-                await User.findByIdAndUpdate(user.referredBy, {
-                    $inc: { 
-                        balance: commissionAmount,
-                        referralCommissions: commissionAmount 
-                    }
-                });
-                console.log(`AWARDED: $${commissionAmount.toFixed(2)} (7%) commission to referrer ID: ${user.referredBy} for a $${depositAmount.toFixed(2)} deposit.`);
-            } catch (commissionError) {
-                console.error("Failed to award referral commission:", commissionError);
-                // We don't stop the main process, just log the error that it failed
-            }
-        }
-        // -------------------------------------------------
-        
-        res.json({ success: true, message: `Deposit of $${depositAmount.toFixed(2)} approved. New balance: ${user.balance.toFixed(2)}` });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Server error during approval." });
-    }
-});
-
-router.post('/reject-deposit', async (req, res) => {
-    // This route is unchanged
-    const { userId, txid } = req.body;
-    try {
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ success: false, message: "User not found." });
-        const transaction = user.transactions.find(tx => tx.txid === txid);
-        if (transaction) {
-            transaction.status = 'rejected';
-            await user.save();
-        }
-        res.json({ success: true, message: "Deposit rejected." });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Server error during rejection." });
-    }
-});
-
-router.post('/approve-withdrawal', async (req, res) => {
-    const { userId, txid } = req.body;
-    try {
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ success: false, message: "User not found." });
-        const transaction = user.transactions.find(tx => tx.txid === txid);
-        if (!transaction || transaction.status !== 'pending_processing') {
-            return res.status(400).json({ success: false, message: "Withdrawal not found or already processed." });
-        }
-        transaction.status = 'completed';
-        await user.save();
-        res.json({ success: true, message: "Withdrawal approved and marked as complete." });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Server error during withdrawal approval." });
-    }
-});
-
-router.post('/reject-withdrawal', async (req, res) => {
-    const { userId, txid } = req.body;
-    try {
-        const user = await User.findById(userId);
-        if (!user) return res.status(404).json({ success: false, message: "User not found." });
-        const transaction = user.transactions.find(tx => tx.txid === txid);
-        if (!transaction || transaction.status !== 'pending_processing') {
-            return res.status(400).json({ success: false, message: "Withdrawal not found or already processed." });
-        }
-        transaction.status = 'rejected';
-        user.balance += transaction.amount;
-        await user.save();
-        res.json({ success: true, message: `Withdrawal rejected. $${transaction.amount.toFixed(2)} has been refunded to the user.` });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Server error during withdrawal rejection." });
-    }
-});
-
-router.post('/credit-user', async (req, res) => {
-    const { username, amount } = req.body;
-    if (!username || !amount || isNaN(parseFloat(amount))) {
-        return res.status(400).json({ success: false, message: "Username and a valid amount are required." });
-    }
-    try {
-        const user = await User.findOne({ username: username });
-        if (!user) return res.status(404).json({ success: false, message: "User not found." });
-        user.balance += parseFloat(amount);
-        await user.save();
-        res.json({ success: true, message: `Successfully updated ${user.username}'s balance to ${user.balance.toFixed(2)}` });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Server error while crediting user." });
-    }
-});
-
-router.post('/give-commission', async (req, res) => {
-    const { username, amount } = req.body;
-    if (!username || !amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-        return res.status(400).json({ success: false, message: "Username and a valid positive amount are required." });
-    }
-    try {
-        const commissionAmount = parseFloat(amount);
-        const user = await User.findOneAndUpdate(
-            { username: username }, 
-            { $inc: { balance: commissionAmount, referralCommissions: commissionAmount } },
+        /* Atomic update: only approve if status is still pending_review */
+        var result = await User.findOneAndUpdate(
+            {
+                _id: userId,
+                "transactions.txid": txid,
+                "transactions.status": "pending_review",
+            },
+            {
+                $set: { "transactions.$.status": "completed" },
+                $inc: {
+                    balance: depositAmount,
+                    totalDeposits: depositAmount,
+                },
+            },
             { new: true }
         );
-        if (!user) return res.status(404).json({ success: false, message: "User not found." });
-        
-        console.log(`ADMIN ACTION: Awarded $${commissionAmount.toFixed(2)} commission to ${user.username}.`);
-        res.json({ success: true, message: `Successfully awarded $${commissionAmount.toFixed(2)} commission to ${user.username}.` });
+
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                message: "Transaction not found or already processed.",
+            });
+        }
+
+        /* Referral commission (7%) on first deposit */
+        if (isFirstDeposit && user.referredBy) {
+            try {
+                var commissionRate = 0.07;
+                var commissionAmount = depositAmount * commissionRate;
+
+                await User.findByIdAndUpdate(user.referredBy, {
+                    $inc: {
+                        balance: commissionAmount,
+                        referralCommissions: commissionAmount,
+                    },
+                });
+            } catch (commissionError) {
+                console.error(
+                    "Failed to award referral commission:",
+                    commissionError.message
+                );
+            }
+        }
+
+        res.json({
+            success: true,
+            message:
+                "Deposit of $" +
+                depositAmount.toFixed(2) +
+                " approved. New balance: $" +
+                result.balance.toFixed(2),
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: "Server error while giving commission." });
+        console.error("Approve deposit error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Server error during approval.",
+        });
+    }
+});
+
+// POST api/admin/reject-deposit
+router.post("/reject-deposit", async function (req, res) {
+    var userId = req.body.userId;
+    var txid = req.body.txid;
+
+    if (!userId || !txid) {
+        return res
+            .status(400)
+            .json({ success: false, message: "Missing required fields." });
+    }
+
+    if (!isValidObjectId(userId)) {
+        return res
+            .status(400)
+            .json({ success: false, message: "Invalid user ID." });
+    }
+
+    try {
+        var result = await User.findOneAndUpdate(
+            {
+                _id: userId,
+                "transactions.txid": txid,
+                "transactions.status": { $in: ["pending", "pending_review"] },
+            },
+            { $set: { "transactions.$.status": "rejected" } },
+            { new: true }
+        );
+
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                message: "Transaction not found or already processed.",
+            });
+        }
+
+        res.json({ success: true, message: "Deposit rejected." });
+    } catch (error) {
+        console.error("Reject deposit error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Server error during rejection.",
+        });
+    }
+});
+
+// --- WITHDRAWAL MANAGEMENT ---
+
+// POST api/admin/approve-withdrawal
+router.post("/approve-withdrawal", async function (req, res) {
+    var userId = req.body.userId;
+    var txid = req.body.txid;
+
+    if (!userId || !txid) {
+        return res
+            .status(400)
+            .json({ success: false, message: "Missing required fields." });
+    }
+
+    if (!isValidObjectId(userId)) {
+        return res
+            .status(400)
+            .json({ success: false, message: "Invalid user ID." });
+    }
+
+    try {
+        var result = await User.findOneAndUpdate(
+            {
+                _id: userId,
+                "transactions.txid": txid,
+                "transactions.status": "pending_processing",
+            },
+            { $set: { "transactions.$.status": "completed" } },
+            { new: true }
+        );
+
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                message: "Withdrawal not found or already processed.",
+            });
+        }
+
+        res.json({
+            success: true,
+            message: "Withdrawal approved and marked as complete.",
+        });
+    } catch (error) {
+        console.error("Approve withdrawal error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Server error during withdrawal approval.",
+        });
+    }
+});
+
+// POST api/admin/reject-withdrawal
+router.post("/reject-withdrawal", async function (req, res) {
+    var userId = req.body.userId;
+    var txid = req.body.txid;
+
+    if (!userId || !txid) {
+        return res
+            .status(400)
+            .json({ success: false, message: "Missing required fields." });
+    }
+
+    if (!isValidObjectId(userId)) {
+        return res
+            .status(400)
+            .json({ success: false, message: "Invalid user ID." });
+    }
+
+    try {
+        var user = await User.findOne({
+            _id: userId,
+            "transactions.txid": txid,
+            "transactions.status": "pending_processing",
+        });
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: "Withdrawal not found or already processed.",
+            });
+        }
+
+        var transaction = user.transactions.find(function (tx) {
+            return tx.txid === txid && tx.status === "pending_processing";
+        });
+
+        if (!transaction) {
+            return res.status(400).json({
+                success: false,
+                message: "Transaction not found.",
+            });
+        }
+
+        var refundAmount = transaction.amount || 0;
+
+        /* Atomic: reject + refund only if still pending_processing */
+        var result = await User.findOneAndUpdate(
+            {
+                _id: userId,
+                "transactions.txid": txid,
+                "transactions.status": "pending_processing",
+            },
+            {
+                $set: { "transactions.$.status": "rejected" },
+                $inc: { balance: refundAmount },
+            },
+            { new: true }
+        );
+
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                message: "Withdrawal already processed by another request.",
+            });
+        }
+
+        res.json({
+            success: true,
+            message:
+                "Withdrawal rejected. $" +
+                refundAmount.toFixed(2) +
+                " has been refunded.",
+        });
+    } catch (error) {
+        console.error("Reject withdrawal error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Server error during withdrawal rejection.",
+        });
+    }
+});
+
+// --- ADMIN TOOLS ---
+
+// POST api/admin/credit-user
+router.post("/credit-user", async function (req, res) {
+    var username = req.body.username;
+    var amount = req.body.amount;
+
+    if (!username || !amount || isNaN(parseFloat(amount))) {
+        return res.status(400).json({
+            success: false,
+            message: "Username and a valid amount are required.",
+        });
+    }
+
+    var creditAmount = parseFloat(amount);
+
+    if (creditAmount === 0) {
+        return res
+            .status(400)
+            .json({ success: false, message: "Amount cannot be zero." });
+    }
+
+    try {
+        var user = await User.findOneAndUpdate(
+            { username: username },
+            {
+                $inc: { balance: creditAmount },
+                $push: {
+                    transactions: {
+                        txid: "ADMIN-" + Date.now() + "-" + crypto.randomBytes(4).toString("hex"),
+                        type: creditAmount > 0 ? "deposit" : "withdrawal",
+                        amount: Math.abs(creditAmount),
+                        status: "completed",
+                        currency: "USD",
+                        date: new Date(),
+                    },
+                },
+            },
+            { new: true }
+        );
+
+        if (!user) {
+            return res
+                .status(404)
+                .json({ success: false, message: "User not found." });
+        }
+
+        console.log(
+            "ADMIN ACTION: " +
+                (creditAmount > 0 ? "Credited" : "Debited") +
+                " $" +
+                Math.abs(creditAmount).toFixed(2) +
+                " " +
+                (creditAmount > 0 ? "to" : "from") +
+                " " +
+                username
+        );
+
+        res.json({
+            success: true,
+            message:
+                "Successfully updated " +
+                username +
+                "'s balance to $" +
+                user.balance.toFixed(2),
+        });
+    } catch (error) {
+        console.error("Credit user error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Server error while crediting user.",
+        });
+    }
+});
+
+// POST api/admin/give-commission
+router.post("/give-commission", async function (req, res) {
+    var username = req.body.username;
+    var amount = req.body.amount;
+
+    if (
+        !username ||
+        !amount ||
+        isNaN(parseFloat(amount)) ||
+        parseFloat(amount) <= 0
+    ) {
+        return res.status(400).json({
+            success: false,
+            message: "Username and a valid positive amount are required.",
+        });
+    }
+
+    try {
+        var commissionAmount = parseFloat(amount);
+        var user = await User.findOneAndUpdate(
+            { username: username },
+            {
+                $inc: {
+                    balance: commissionAmount,
+                    referralCommissions: commissionAmount,
+                },
+            },
+            { new: true }
+        );
+
+        if (!user) {
+            return res
+                .status(404)
+                .json({ success: false, message: "User not found." });
+        }
+
+        console.log(
+            "ADMIN ACTION: Awarded $" +
+                commissionAmount.toFixed(2) +
+                " commission to " +
+                username
+        );
+
+        res.json({
+            success: true,
+            message:
+                "Successfully awarded $" +
+                commissionAmount.toFixed(2) +
+                " commission to " +
+                username +
+                ".",
+        });
+    } catch (error) {
+        console.error("Give commission error:", error.message);
+        res.status(500).json({
+            success: false,
+            message: "Server error while giving commission.",
+        });
     }
 });
 
